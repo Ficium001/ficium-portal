@@ -22,6 +22,18 @@ const InstitutionSettings     = lazy(() => import("../institution/settings/pages
 // ── Route guard ───────────────────────────────────────────────
 const InstitutionRoute = lazy(() => import("../institution/components/InstitutionRoute"));
 
+// ── Admin portal ──────────────────────────────────────────────
+const AdminLogin         = lazy(() => import("../admin/auth/pages/AdminLogin"));
+const AdminRoute         = lazy(() => import("../admin/components/AdminRoute"));
+const AdminPortalShell   = lazy(() => import("../admin/components/AdminPortalShell"));
+const AdminDashboard     = lazy(() => import("../admin/dashboard/pages/AdminDashboard"));
+const AdminUsers         = lazy(() => import("../admin/users/pages/AdminUsers"));
+const AdminRoles         = lazy(() => import("../admin/roles/pages/AdminRoles"));
+const AdminDualControl   = lazy(() => import("../admin/dual-control/pages/AdminDualControl"));
+const AdminSessions      = lazy(() => import("../admin/sessions/pages/AdminSessions"));
+const AdminAudit         = lazy(() => import("../admin/audit/pages/AdminAudit"));
+const AdminSystem        = lazy(() => import("../admin/system/pages/AdminSystem"));
+
 function PageLoader() {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center">
@@ -91,6 +103,25 @@ export const router = createBrowserRouter([
           { path: "/webhooks",    element: <S><InstitutionWebhooks /></S>    },
           { path: "/audit",       element: <S><InstitutionAudit /></S>       },
           { path: "/settings",    element: <S><InstitutionSettings /></S>    },
+        ],
+      },
+    ],
+  },
+  // ── Admin portal ────────────────────────────────────────────
+  { path: "/admin/login", element: <S><AdminLogin /></S> },
+  {
+    element: <S><AdminRoute /></S>,
+    children: [
+      {
+        element: <S><AdminPortalShell /></S>,
+        children: [
+          { path: "/admin/dashboard",    element: <S><AdminDashboard /></S>   },
+          { path: "/admin/users",        element: <S><AdminUsers /></S>       },
+          { path: "/admin/roles",        element: <S><AdminRoles /></S>       },
+          { path: "/admin/dual-control", element: <S><AdminDualControl /></S> },
+          { path: "/admin/sessions",     element: <S><AdminSessions /></S>    },
+          { path: "/admin/audit",        element: <S><AdminAudit /></S>       },
+          { path: "/admin/system",       element: <S><AdminSystem /></S>      },
         ],
       },
     ],
