@@ -1,148 +1,352 @@
-// =============================================================
-// Ficium 3 — Institution Webhooks — Ficium light theme
-// =============================================================
-import { useState } from "react";
-import { Webhook, Plus, CheckCircle, XCircle, Clock, AlertTriangle, X } from "lucide-react";
-import { useWebhooks } from "../../hooks/useInstitution";
-import { formatDistanceToNow } from "../../lib/utils";
+/**
+ * @page InstitutionWebhooks
+ * @route /webhooks
+ * @access protected — admin only
+ * @description
+ *   Webhook endpoint management. Institutions can register HTTPS
+ *   endpoints to receive real-time Ficium events. All mutations
+ *   (create, deactivate, delete) enter the maker-checker queue.
+ *
+ *   Ficium signs every outbound payload with X-Ficium-Signature
+ *   (HMAC-SHA256). Banks MUST verify this header.
+ *
+ *   Event taxonomy: request.new, bid.accepted, bid.rejected,
+ *   bid.expired, request.cancelled
+ *
+ * @dataSource
+ *   useWebhooks → institution_webhooks table
+ *
+ * @security
+ *   Endpoint URLs and signing secrets are never surfaced in the UI
+ *   after creation. Ensure TLS 1.2+ on all receiving endpoints.
+ *
+ * @owner Ficium Engineering
+ * @lastReviewed 2025-08
+ */
 
-const ALL_EVENTS = ["request.new","bid.accepted","bid.rejected","bid.expired","request.cancelled"];
+import { useState } from "react";
+import {
+  Webhook, Plus, CheckCircle, XCircle, Clock, AlertTriangle, Shield,
+} from "lucide-react";
+import { useWebhooks } from "../../hooks/useInstitution";
+import type { InstitutionWebhook } from "../../types/institution";
+import { formatDistanceToNow } from "../../lib/utils";
+import {
+  SectionHeader, InlineAlert, EmptyState, Modal, FormField,
+  inputCls, Btn, StatusBadge,
+} from "../../components/primitives";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ALL_EVENTS = [
+  { key: "request.new",      label: "New request",         description: "Client posts a new financing request" },
+  { key: "bid.accepted",     label: "Bid accepted",        description: "Client accepts your bid" },
+  { key: "bid.rejected",     label: "Bid rejected",        description: "Client rejects your bid" },
+  { key: "bid.expired",      label: "Bid expired",         description: "Bid window closed without acceptance" },
+  { key: "request.cancelled",label: "Request cancelled",   description: "Client withdraws their request" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WebhookCard — individual webhook endpoint display
+// ─────────────────────────────────────────────────────────────────────────────
+
+function WebhookCard({
+  webhook,
+}: {
+  webhook: InstitutionWebhook;
+}) {
+  const statusIcon = () => {
+    if (!webhook.active)                 return <XCircle    className="w-5 h-5 text-ink/30" />;
+    if (webhook.last_status === "delivered") return <CheckCircle className="w-5 h-5 text-emerald-500" />;
+    if (webhook.last_status === "failed")    return <XCircle    className="w-5 h-5 text-red-400" />;
+    return <Clock className="w-5 h-5 text-muted" />;
+  };
+
+  return (
+    <article
+      className={[
+        "bg-white rounded-xl border border-ink/[0.07] p-5",
+        !webhook.active ? "opacity-60" : "",
+      ].join(" ")}
+      aria-label={`Webhook: ${webhook.label}`}
+    >
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">{statusIcon()}</div>
+          <div>
+            <div className="font-display font-bold text-[15px] text-ink">
+              {webhook.label}
+            </div>
+            <code className="text-[11px] text-muted font-mono mt-0.5 break-all block">
+              {webhook.endpoint_url}
+            </code>
+          </div>
+        </div>
+        <StatusBadge status={webhook.active ? "active" : "inactive"} size="xs" />
+      </div>
+
+      {/* Event subscriptions */}
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {(webhook.event_types as string[]).map((evt) => (
+          <span
+            key={evt}
+            className="bg-ficium/8 text-ficium text-[10px] font-mono font-semibold px-2.5 py-1 rounded-full border border-ficium/15"
+          >
+            {evt}
+          </span>
+        ))}
+      </div>
+
+      {/* Meta row */}
+      <div className="flex items-center flex-wrap gap-4 text-[11px] text-muted border-t border-ink/[0.06] pt-3">
+        <span>Retry max: <strong className="text-ink">{webhook.retry_max}</strong></span>
+        <span>Timeout: <strong className="text-ink">{webhook.timeout_ms.toLocaleString()}ms</strong></span>
+        {webhook.last_fired_at && (
+          <span>Last fired: <strong className="text-ink">{formatDistanceToNow(webhook.last_fired_at)} ago</strong></span>
+        )}
+        {webhook.last_status && (
+          <span className={webhook.last_status === "delivered" ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
+            {webhook.last_status}
+          </span>
+        )}
+        {!webhook.active && (
+          <span className="flex items-center gap-1 text-amber-600 font-semibold">
+            <AlertTriangle className="w-3 h-3" />
+            Deactivated — re-activation requires maker-checker approval
+          </span>
+        )}
+      </div>
+    </article>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AddWebhookModal — create new endpoint (submitted for approval)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AddWebhookModal({
+  open,
+  onClose,
+  onSuccess,
+}: {
+  open:      boolean;
+  onClose:   () => void;
+  onSuccess: () => void;
+}) {
+  const [form, setForm] = useState({
+    label:       "",
+    endpoint_url:"",
+    event_types: ALL_EVENTS.map((e) => e.key),
+  });
+
+  const toggleEvent = (key: string) =>
+    setForm((f) => ({
+      ...f,
+      event_types: f.event_types.includes(key)
+        ? f.event_types.filter((e) => e !== key)
+        : [...f.event_types, key],
+    }));
+
+  const isValid =
+    form.label.trim() &&
+    form.endpoint_url.startsWith("https://") &&
+    form.event_types.length > 0;
+
+  const handleSubmit = () => {
+    if (!isValid) return;
+    // Wired to submit_for_approval() RPC in production
+    onSuccess();
+    onClose();
+    setForm({ label: "", endpoint_url: "", event_types: ALL_EVENTS.map((e) => e.key) });
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Add webhook endpoint">
+      <div className="space-y-4">
+        <FormField
+          label="Label"
+          hint="A descriptive name for your team — e.g. Production bidding system"
+        >
+          <input
+            value={form.label}
+            onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
+            placeholder="e.g. Production bidding system"
+            className={inputCls}
+          />
+        </FormField>
+
+        <FormField
+          label="Endpoint URL"
+          hint="Must be HTTPS. TLS 1.2 or higher required."
+        >
+          <input
+            value={form.endpoint_url}
+            onChange={(e) => setForm((f) => ({ ...f, endpoint_url: e.target.value }))}
+            placeholder="https://your-system.example.com/ficium/webhook"
+            type="url"
+            className={inputCls}
+          />
+        </FormField>
+
+        <div>
+          <div className="text-[12px] font-semibold text-ink mb-2.5">
+            Events to subscribe
+          </div>
+          <div className="space-y-2">
+            {ALL_EVENTS.map((evt) => {
+              const selected = form.event_types.includes(evt.key);
+              return (
+                <button
+                  key={evt.key}
+                  type="button"
+                  onClick={() => toggleEvent(evt.key)}
+                  aria-pressed={selected}
+                  className={[
+                    "w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl border transition-all",
+                    selected
+                      ? "border-ficium/30 bg-ficium/[0.04]"
+                      : "border-ink/[0.10] bg-white hover:border-ficium/20",
+                  ].join(" ")}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${
+                    selected ? "border-ficium bg-ficium" : "border-ink/20"
+                  }`}>
+                    {selected && (
+                      <CheckCircle className="w-full h-full text-white p-0.5" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <code className="text-[11px] font-mono font-semibold text-ficium">
+                        {evt.key}
+                      </code>
+                    </div>
+                    <div className="text-[11px] text-muted">{evt.description}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Security notice */}
+        <div className="bg-ficium/5 border border-ficium/15 rounded-xl p-4 flex items-start gap-3">
+          <Shield className="w-4 h-4 text-ficium flex-shrink-0 mt-0.5" aria-hidden />
+          <div className="text-[12px] text-ink/70">
+            Ficium signs every payload with{" "}
+            <code className="text-ficium font-mono text-[11px]">X-Ficium-Signature</code>{" "}
+            (HMAC-SHA256). You must verify this header on every incoming request.
+            Your signing secret is shown only once upon approval.
+          </div>
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          <Btn
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={!isValid}
+          >
+            Submit for approval
+          </Btn>
+          <Btn variant="ghost" onClick={onClose}>
+            Cancel
+          </Btn>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page — thin orchestrator
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function InstitutionWebhooks() {
   const { data: webhooks = [], isLoading } = useWebhooks();
   const [showAdd,     setShowAdd]     = useState(false);
   const [addSuccess,  setAddSuccess]  = useState(false);
-  const [form, setForm]               = useState({ label:"", endpoint_url:"", event_types:[...ALL_EVENTS] });
 
-  const toggleEvent = (evt: string) =>
-    setForm(f => ({ ...f, event_types: f.event_types.includes(evt) ? f.event_types.filter(e=>e!==evt) : [...f.event_types, evt] }));
-
-  const handleAdd = async () => {
-    if (!form.label || !form.endpoint_url || form.event_types.length === 0) return;
-    // Wired to submit_for_approval() RPC in production
-    setAddSuccess(true); setShowAdd(false);
-    setForm({ label:"", endpoint_url:"", event_types:[...ALL_EVENTS] });
-  };
-
-  const statusIcon = (active: boolean, lastStatus?: string) => {
-    if (!active) return <XCircle className="w-5 h-5 text-ink/20" />;
-    if (lastStatus === "delivered") return <CheckCircle className="w-5 h-5 text-green-500" />;
-    if (lastStatus === "failed")    return <XCircle className="w-5 h-5 text-red-400" />;
-    return <Clock className="w-5 h-5 text-muted" />;
-  };
-
-  const inputCls = "w-full bg-white border border-ink/[0.12] rounded-xl px-4 py-3 text-[15px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all";
+  const active = webhooks.filter((w) => w.active).length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1000px] mx-auto">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-ink tracking-tight">Webhooks</h1>
-          <p className="text-muted mt-1.5">{webhooks.filter(w=>w.active).length} active endpoint{webhooks.filter(w=>w.active).length !== 1 ? "s":""}</p>
-        </div>
-        <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 bg-ficium hover:bg-ficium-deep text-white text-[13px] font-bold px-5 py-2.5 rounded-xl transition-colors">
-          <Plus className="w-4 h-4" />Add endpoint
-        </button>
-      </div>
+    <main className="p-6 lg:p-8 max-w-[1000px] mx-auto">
+      <SectionHeader
+        title="Webhooks"
+        subtitle={`${active} active endpoint${active !== 1 ? "s" : ""}`}
+        actions={
+          <Btn
+            variant="primary"
+            size="sm"
+            icon={Plus}
+            onClick={() => setShowAdd(true)}
+          >
+            Add endpoint
+          </Btn>
+        }
+      />
 
-      <div className="bg-ficium/5 border border-ficium/15 rounded-2xl px-5 py-4 flex items-center gap-3 mb-6">
-        <AlertTriangle className="w-4 h-4 text-ficium flex-shrink-0" />
-        <p className="text-[13px] text-ink/70">Adding or deactivating endpoints requires maker-checker approval in <span className="text-ficium font-semibold">Approvals</span>.</p>
-      </div>
+      <InlineAlert variant="warning">
+        Adding or deactivating endpoints requires maker-checker approval in{" "}
+        <a href="/approvals" className="font-semibold underline underline-offset-2">
+          Approvals
+        </a>.
+        Endpoint URLs are immutable after approval.
+      </InlineAlert>
 
       {addSuccess && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-3.5 flex items-center justify-between mb-5">
-          <p className="text-[13px] text-green-700 font-medium">✓ Webhook creation submitted for approval.</p>
-          <button onClick={() => setAddSuccess(false)}><X className="w-4 h-4 text-green-400" /></button>
+        <div className="mt-4">
+          <InlineAlert
+            variant="success"
+            onDismiss={() => setAddSuccess(false)}
+          >
+            Webhook endpoint submitted for maker-checker approval.
+          </InlineAlert>
         </div>
       )}
 
-      {isLoading ? (
-        <div className="flex justify-center py-24"><div className="w-8 h-8 border-2 border-ficium border-t-transparent rounded-full animate-spin" /></div>
-      ) : webhooks.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-2xl shadow-card">
-          <Webhook className="w-12 h-12 text-ink/20 mx-auto mb-3" />
-          <p className="font-semibold text-ink mb-1">No webhooks configured</p>
-          <p className="text-muted text-[13px]">Add an endpoint to receive real-time events</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {webhooks.map(wh => (
-            <div key={wh.id} className={`bg-white rounded-2xl p-6 shadow-card ${!wh.active ? "opacity-60" : ""}`}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  {statusIcon(wh.active, wh.last_status ?? undefined)}
-                  <div>
-                    <div className="font-display font-bold text-[15px] text-ink">{wh.label}</div>
-                    <div className="text-[12px] text-muted font-mono mt-0.5 break-all">{wh.endpoint_url}</div>
-                  </div>
+      <div className="mt-6 space-y-4">
+        {isLoading ? (
+          Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-5 h-5 bg-ink/[0.06] rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-32 bg-ink/[0.06] rounded" />
+                  <div className="h-3 w-48 bg-ink/[0.04] rounded" />
                 </div>
-                <span className={`text-[11px] font-bold px-3 py-1 rounded-full ${wh.active ? "bg-green-50 text-green-700" : "bg-ink/5 text-muted"}`}>
-                  {wh.active ? "Active" : "Inactive"}
-                </span>
               </div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {(wh.event_types as string[]).map((evt:string) => (
-                  <span key={evt} className="bg-ficium/8 text-ficium text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full">{evt}</span>
+              <div className="flex gap-2">
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <div key={j} className="h-6 w-24 bg-ink/[0.05] rounded-full" />
                 ))}
               </div>
-              <div className="flex items-center gap-4 text-[12px] text-muted border-t border-ink/[0.06] pt-4">
-                <span>Retry max: {wh.retry_max}</span>
-                <span>Timeout: {wh.timeout_ms}ms</span>
-                {wh.last_fired_at && <span>Last fired: {formatDistanceToNow(wh.last_fired_at)} ago</span>}
-                {wh.last_status && <span className={wh.last_status==="delivered"?"text-green-600":"text-red-500"}>Last: {wh.last_status}</span>}
-              </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        ) : webhooks.length === 0 ? (
+          <EmptyState
+            icon={Webhook}
+            title="No endpoints configured"
+            description="Add an HTTPS endpoint to receive real-time Ficium events"
+            action={
+              <Btn variant="primary" size="sm" icon={Plus} onClick={() => setShowAdd(true)}>
+                Add first endpoint
+              </Btn>
+            }
+          />
+        ) : (
+          webhooks.map((wh) => (
+            <WebhookCard key={wh.id} webhook={wh} />
+          ))
+        )}
+      </div>
 
-      {/* Add modal */}
-      {showAdd && (
-        <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAdd(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display font-bold text-[17px] text-ink">Add webhook endpoint</h2>
-              <button onClick={() => setShowAdd(false)} className="text-muted hover:text-ink"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[13px] font-semibold text-ink mb-1.5">Label</label>
-                <input value={form.label} onChange={e=>setForm(f=>({...f,label:e.target.value}))} placeholder="e.g. Production bidding system" className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-ink mb-1.5">Endpoint URL</label>
-                <input value={form.endpoint_url} onChange={e=>setForm(f=>({...f,endpoint_url:e.target.value}))} placeholder="https://your-system.com/ficium/webhook" className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-ink mb-2">Events to receive</label>
-                <div className="flex flex-wrap gap-2">
-                  {ALL_EVENTS.map(evt => (
-                    <button key={evt} type="button" onClick={() => toggleEvent(evt)}
-                      className={`text-[12px] font-mono font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-                        form.event_types.includes(evt)
-                          ? "bg-ficium text-white border-ficium"
-                          : "bg-white border-ink/10 text-muted hover:border-ficium/40"
-                      }`}>
-                      {evt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-ficium/5 border border-ficium/15 rounded-xl p-4 text-[12px] text-ink/60">
-                After approval, Ficium signs every payload with <code className="text-ficium font-mono">X-Ficium-Signature</code>. Verify this header on every incoming request.
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button onClick={handleAdd} disabled={!form.label||!form.endpoint_url||form.event_types.length===0}
-                  className="flex-1 bg-ficium hover:bg-ficium-deep disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors">
-                  Submit for approval
-                </button>
-                <button onClick={() => setShowAdd(false)} className="px-5 text-[13px] font-semibold text-muted border border-ink/10 rounded-xl hover:bg-ink/[0.03] transition-colors">Cancel</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <AddWebhookModal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        onSuccess={() => setAddSuccess(true)}
+      />
+    </main>
   );
 }

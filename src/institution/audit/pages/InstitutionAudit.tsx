@@ -1,145 +1,284 @@
-// =============================================================
-// Ficium 3 — Institution Audit Log — Ficium light theme
-// =============================================================
-import { useState, useMemo } from "react";
-import { ScrollText, Filter, Download, X } from "lucide-react";
+/**
+ * @page InstitutionAudit
+ * @route /audit
+ * @access protected — all roles (read-only)
+ * @description
+ *   Immutable audit log for all institution-level events. Append-only,
+ *   WORM-compliant, FSC Mauritius reportable. No updates or deletes
+ *   are permitted at the database level (RLS enforces this).
+ *
+ *   Provides:
+ *     - Full event history with outcome, actor role, resource type
+ *     - Outcome filter (all / success / rejected / failed)
+ *     - Category filter (all / bid / webhook / user / api_key / institution)
+ *     - Free-text search across event label, resource type, actor role
+ *     - CSV export (full filtered result set)
+ *     - Pagination via "Load more" (50 records per page)
+ *
+ * @dataSource
+ *   useAuditEvents → audit_events table, ordered by created_at DESC
+ *   Default limit: 50 per fetch. Expandable in 50-record increments.
+ *
+ * @compliance
+ *   FSC Mauritius financial services regulations require a minimum
+ *   7-year retention period on all transaction audit records.
+ *   Ficium platform enforces this at the database level.
+ *
+ * @owner Ficium Engineering
+ * @lastReviewed 2025-08
+ */
+
+import { useState, useMemo, useCallback } from "react";
+import { ScrollText, Download, Search, X, Filter } from "lucide-react";
 import { useAuditEvents } from "../../hooks/useInstitution";
+import type { AuditEvent } from "../../types/institution";
+import {
+  SectionHeader, DataTable, DataRow, Td, StatusBadge,
+  KpiCard, FilterPills, EmptyState,
+  SkeletonRow, Btn,
+} from "../../components/primitives";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+const OUTCOME_OPTIONS = [
+  { key: "all",      label: "All outcomes" },
+  { key: "success",  label: "Success"      },
+  { key: "rejected", label: "Rejected"     },
+  { key: "failed",   label: "Failed"       },
+  { key: "expired",  label: "Expired"      },
+  { key: "logged",   label: "Logged"       },
+];
+
+const CATEGORY_OPTIONS = [
+  { key: "all",         label: "All categories" },
+  { key: "bid",         label: "Bids"           },
+  { key: "webhook",     label: "Webhooks"        },
+  { key: "user",        label: "Users"           },
+  { key: "api_key",     label: "API keys"        },
+  { key: "institution", label: "Institution"     },
+];
+
+type OutcomeKey = "all" | "success" | "rejected" | "failed" | "expired" | "logged";
+type CategoryKey = "all" | "bid" | "webhook" | "user" | "api_key" | "institution";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function fmtDate(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString("en-MU", { day: "2-digit", month: "short", year: "numeric" }),
+    time: d.toLocaleTimeString("en-MU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+  };
+}
+
+function exportCSV(events: AuditEvent[], filename: string) {
+  const headers = ["Timestamp (UTC)", "Event", "Category", "Resource", "Resource ID", "Actor role", "Outcome", "Note"];
+  const rows = events.map((e) => [
+    new Date(e.created_at).toISOString(),
+    e.event_label,
+    e.action_category ?? "",
+    e.resource_type ?? "",
+    e.resource_id   ?? "",
+    e.actor_role    ?? "system",
+    e.outcome,
+    e.outcome_note  ?? "",
+  ]);
+  const csv = [headers, ...rows]
+    .map((row) => row.map((v) => JSON.stringify(v)).join(","))
+    .join("\n");
+  const a = document.createElement("a");
+  a.href     = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page — thin orchestrator
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function InstitutionAudit() {
-  const [limit,  setLimit]  = useState(50);
-  const [outcome,setOutcome] = useState("all");
-  const [search, setSearch]  = useState("");
+  const [limit,    setLimit]    = useState(50);
+  const [outcome,  setOutcome]  = useState<OutcomeKey>("all");
+  const [category, setCategory] = useState<CategoryKey>("all");
+  const [search,   setSearch]   = useState("");
+
   const { data: events = [], isLoading } = useAuditEvents(limit);
 
-  const filtered = useMemo(() => events.filter(e => {
-    const mo = outcome === "all" || e.outcome === outcome;
-    const ms = !search || e.event_label.toLowerCase().includes(search.toLowerCase()) || (e.resource_type ?? "").toLowerCase().includes(search.toLowerCase()) || (e.actor_role ?? "").toLowerCase().includes(search.toLowerCase());
-    return mo && ms;
-  }), [events, outcome, search]);
+  const filtered = useMemo(() => {
+    const lc = search.toLowerCase();
+    return events.filter((e) => {
+      const matchOutcome   = outcome  === "all" || e.outcome === outcome;
+      const matchCategory  = category === "all" || (e.action_category ?? "").startsWith(category);
+      const matchSearch    = !search  ||
+        e.event_label.toLowerCase().includes(lc) ||
+        (e.resource_type ?? "").toLowerCase().includes(lc) ||
+        (e.actor_role    ?? "").toLowerCase().includes(lc) ||
+        (e.action_category ?? "").toLowerCase().includes(lc);
+      return matchOutcome && matchCategory && matchSearch;
+    });
+  }, [events, outcome, category, search]);
 
-  const exportCSV = () => {
-    const headers = ["Timestamp","Event","Resource","Resource ID","Actor role","Outcome","Note"];
-    const rowData = filtered.map(e => [
-      new Date(e.created_at).toISOString(),
-      e.event_label,
-      e.resource_type ?? "",
-      e.resource_id ?? "",
-      e.actor_role ?? "",
-      e.outcome,
-      e.outcome_note ?? "",
-    ]);
-    const csv = [headers, ...rowData]
-      .map(row => row.map(v => JSON.stringify(v)).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
-    a.download = "ficium-audit-" + new Date().toISOString().slice(0, 10) + ".csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const handleExport = useCallback(() => {
+    const filename = `ficium-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    exportCSV(filtered, filename);
+  }, [filtered]);
 
-  const outcomeBadge = (o: string) => {
-    const map: Record<string,string> = { success:"bg-green-50 text-green-700", rejected:"bg-red-50 text-red-500", failed:"bg-red-50 text-red-500", expired:"bg-amber-50 text-amber-600", logged:"bg-ink/5 text-muted" };
-    return <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${map[o] ?? map.logged}`}>{o}</span>;
-  };
+  // KPIs
+  const totalEvents = events.length;
+  const successCount = events.filter((e) => e.outcome === "success").length;
+  const failCount    = events.filter((e) => ["rejected", "failed"].includes(e.outcome)).length;
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-ink tracking-tight">Audit log</h1>
-          <p className="text-muted mt-1.5">{filtered.length} event{filtered.length !== 1 ? "s" : ""} · append-only · WORM compliant</p>
-        </div>
-        <button onClick={exportCSV} className="flex items-center gap-2 border border-ink/10 bg-white text-muted text-[13px] font-semibold px-4 py-2 rounded-xl hover:bg-ink/[0.03] transition-colors shadow-sm">
-          <Download className="w-4 h-4" />Export CSV
-        </button>
+    <main className="p-6 lg:p-8 max-w-[1440px] mx-auto">
+      <SectionHeader
+        title="Audit log"
+        subtitle={`${filtered.length} event${filtered.length !== 1 ? "s" : ""} · append-only · WORM compliant`}
+        actions={
+          <Btn
+            variant="secondary"
+            size="sm"
+            icon={Download}
+            onClick={handleExport}
+          >
+            Export CSV
+          </Btn>
+        }
+      />
+
+      {/* Compliance banner */}
+      <div className="bg-ink/[0.025] border border-ink/[0.07] rounded-xl px-5 py-3 flex items-center gap-3 mb-6">
+        <ScrollText className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+        <p className="text-[11px] text-muted font-mono tracking-wide uppercase">
+          Append-only · WORM compliant · FSC Mauritius reportable · 7-year retention ·
+          No updates or deletes permitted
+        </p>
       </div>
 
-      {/* FSC banner */}
-      <div className="bg-ink/[0.03] border border-ink/[0.07] rounded-2xl px-5 py-3.5 flex items-center gap-3 mb-6">
-        <ScrollText className="w-4 h-4 text-muted flex-shrink-0" />
-        <p className="text-[12px] text-muted font-mono tracking-wide">APPEND-ONLY · WORM COMPLIANT · FSC MAURITIUS REPORTABLE · NO UPDATES OR DELETES PERMITTED</p>
-      </div>
-
-      {/* Stats */}
+      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label:"Total events",    value:events.length },
-          { label:"Successful",      value:events.filter(e=>e.outcome==="success").length },
-          { label:"Rejected/failed", value:events.filter(e=>["rejected","failed"].includes(e.outcome)).length },
-          { label:"Showing",         value:filtered.length },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-5 shadow-card">
-            <div className="text-3xl font-bold text-ink tracking-tight mb-1">{s.value}</div>
-            <div className="text-[13px] text-muted">{s.label}</div>
-          </div>
-        ))}
+        <KpiCard label="Total events"    value={totalEvents}   />
+        <KpiCard label="Successful"      value={successCount}  />
+        <KpiCard label="Rejected/failed" value={failCount} alert={failCount > 0} />
+        <KpiCard label="Showing"         value={filtered.length} />
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted" />
-          {["all","success","rejected","failed"].map(o => (
-            <button key={o} onClick={() => setOutcome(o)}
-              className={`text-[13px] font-medium px-4 py-1.5 rounded-full border transition-colors ${outcome === o ? "bg-ficium text-white border-ficium" : "bg-white border-ink/10 text-muted hover:border-ficium/40 hover:text-ficium"}`}>
-              {o.charAt(0).toUpperCase()+o.slice(1)}
+      {/* Filters row */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+          <FilterPills
+            options={OUTCOME_OPTIONS}
+            value={outcome}
+          onChange={(v) => setOutcome(v as OutcomeKey)}
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap lg:ml-4">
+          <FilterPills
+            options={CATEGORY_OPTIONS}
+            value={category}
+          onChange={(v) => setCategory(v as CategoryKey)}
+          />
+        </div>
+        {/* Search */}
+        <div className="relative lg:ml-auto">
+          <Search className="w-3.5 h-3.5 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search event, resource, role…"
+            aria-label="Search audit events"
+            className="bg-white border border-ink/[0.12] rounded-xl pl-9 pr-9 py-2 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 w-full lg:w-60 transition-all"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+            >
+              <X className="w-3.5 h-3.5" />
             </button>
-          ))}
-        </div>
-        <div className="relative ml-auto">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search event, resource, role…"
-            className="bg-white border border-ink/[0.12] rounded-xl px-4 py-2 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 w-60 transition-all" />
-          {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"><X className="w-3.5 h-3.5" /></button>}
+          )}
         </div>
       </div>
 
+      {/* Table */}
       {isLoading ? (
-        <div className="flex justify-center py-24"><div className="w-8 h-8 border-2 border-ficium border-t-transparent rounded-full animate-spin" /></div>
+        <DataTable
+          headers={["Timestamp", "Event", "Category", "Resource", "Actor role", "Outcome", "Note"]}
+          caption="Audit events loading…"
+        >
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonRow key={i} cols={7} />
+          ))}
+        </DataTable>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-2xl shadow-card">
-          <ScrollText className="w-12 h-12 text-ink/20 mx-auto mb-3" />
-          <p className="font-semibold text-ink mb-1">No events match</p>
-        </div>
+        <EmptyState
+          icon={ScrollText}
+          title="No events match"
+          description={search || outcome !== "all" || category !== "all"
+            ? "Try adjusting your filters or clearing the search"
+            : "Audit events will appear here as actions occur"
+          }
+        />
       ) : (
         <>
-          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-ink/[0.06]">
-                  {["Timestamp","Event","Resource","Actor role","Outcome","Note"].map(h => (
-                    <th key={h} className="px-5 pb-4 pt-5 text-left text-[12px] font-semibold text-muted">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(e => (
-                  <tr key={e.id} className="border-b border-ink/[0.04] hover:bg-cream/60 transition-colors">
-                    <td className="px-5 py-4 whitespace-nowrap">
-                      <div className="text-[13px] font-semibold text-ink">{new Date(e.created_at).toLocaleDateString("en-MU",{day:"2-digit",month:"short",year:"numeric"})}</div>
-                      <div className="text-[11px] text-muted font-mono">{new Date(e.created_at).toLocaleTimeString("en-MU",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</div>
-                    </td>
-                    <td className="px-5 py-4"><code className="text-[12px] text-ink bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono">{e.event_label}</code></td>
-                    <td className="px-5 py-4 text-[13px] text-ficium font-medium">{e.resource_type ?? "—"}</td>
-                    <td className="px-5 py-4 text-[13px] text-muted">{e.actor_role ?? "system"}</td>
-                    <td className="px-5 py-4">{outcomeBadge(e.outcome)}</td>
-                    <td className="px-5 py-4 text-[12px] text-muted max-w-[200px] truncate">{e.outcome_note ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            headers={["Timestamp", "Event", "Category", "Resource", "Actor role", "Outcome", "Note"]}
+            caption="Institution audit log"
+          >
+            {filtered.map((e) => {
+              const { date, time } = fmtDate(e.created_at);
+              return (
+                <DataRow key={e.id}>
+                  <Td>
+                    <div className="font-semibold text-[13px] whitespace-nowrap">{date}</div>
+                    <div className="text-[11px] text-muted font-mono">{time}</div>
+                  </Td>
+                  <Td>
+                    <code className="text-[11px] text-ink bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono">
+                      {e.event_label}
+                    </code>
+                  </Td>
+                  <Td className="text-muted text-[12px]">
+                    {e.action_category ?? "—"}
+                  </Td>
+                  <Td className="text-ficium font-medium">
+                    {e.resource_type ?? "—"}
+                  </Td>
+                  <Td className="text-muted text-[12px]">
+                    {e.actor_role ?? "system"}
+                  </Td>
+                  <Td>
+                    <StatusBadge status={e.outcome} size="xs" />
+                  </Td>
+                  <Td className="text-muted max-w-[200px]">
+                    <span className="block truncate text-[12px]" title={e.outcome_note ?? ""}>
+                      {e.outcome_note ?? "—"}
+                    </span>
+                  </Td>
+                </DataRow>
+              );
+            })}
+          </DataTable>
+
           {events.length >= limit && (
             <div className="flex justify-center mt-5">
-              <button onClick={() => setLimit(l => l+50)} className="border border-ink/10 bg-white text-muted text-[13px] font-semibold px-6 py-2.5 rounded-xl hover:bg-ink/[0.03] transition-colors shadow-sm">
+              <Btn
+                variant="secondary"
+                size="sm"
+                onClick={() => setLimit((l) => l + 50)}
+              >
                 Load more (showing {limit})
-              </button>
+              </Btn>
             </div>
           )}
         </>
       )}
-    </div>
+    </main>
   );
 }
