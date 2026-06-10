@@ -230,7 +230,7 @@ export default function AdminPortalShell() {
   ).length
 
   return (
-    <div className='flex flex-col h-screen bg-ink text-ink overflow-hidden'>
+    <div className='flex flex-col h-screen bg-cream text-ink overflow-hidden'>
       {warning && <IdleWarning onStay={reset} onLeave={signOut} />}
 
       <div className='flex flex-1 overflow-hidden'>
@@ -323,7 +323,7 @@ export default function AdminPortalShell() {
             </div>
           </header>
 
-          <main className='flex-1 overflow-auto bg-ink' id='admin-main'>
+          <main className='flex-1 overflow-auto bg-cream' id='admin-main'>
             <Outlet />
           </main>
         </div>
