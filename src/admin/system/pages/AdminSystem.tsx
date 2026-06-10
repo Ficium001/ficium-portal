@@ -31,17 +31,17 @@ export default function AdminSystem() {
       />
 
       {/* Overall status banner */}
-      <div className={`bg-ink/80 border rounded-xl px-5 py-4 flex items-center gap-4 mb-6 ${
+      <div className={`bg-[#111827] border rounded-xl px-5 py-4 flex items-center gap-4 mb-6 ${
         overallStatus === 'critical' ? 'border-red-800' : overallStatus === 'warn' ? 'border-amber-800' : 'border-emerald-800'
       }`}>
         <MonitorDot className={`w-5 h-5 ${overallColor}`} aria-hidden />
         <div>
           <div className={`font-black text-[16px] ${overallColor}`}>{overallLabel}</div>
-          <div className='text-[11px] text-ink/45 font-mono'>
+          <div className='text-[11px] text-white/45 font-mono'>
             {ok} ok · {warnings} warning{warnings !== 1 ? 's' : ''} · {critical} critical
           </div>
         </div>
-        <div className='ml-auto text-[10px] text-ink/30 font-mono'>
+        <div className='ml-auto text-[10px] text-white/30 font-mono'>
           {new Date().toLocaleString('en-MU')}
         </div>
       </div>
@@ -66,8 +66,8 @@ export default function AdminSystem() {
       )}
 
       {/* Immutability notice */}
-      <div className='mt-8 bg-ink/95 border border-ficium/[0.12] rounded-xl p-5'>
-        <div className='text-[9px] font-bold text-ink/20 uppercase tracking-widest mb-3'>Platform guarantees</div>
+      <div className='mt-8 bg-[#0d1117] border border-[#1f2937] rounded-xl p-5'>
+        <div className='text-[9px] font-bold text-white/20 uppercase tracking-widest mb-3'>Platform guarantees</div>
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
           {[
             ['Audit log', 'Append-only · WORM · 7-year retention'],
@@ -76,8 +76,8 @@ export default function AdminSystem() {
             ['Authentication', 'MFA required · 5-attempt lockout'],
           ].map(([label, desc]) => (
             <div key={label}>
-              <div className='text-[10px] font-bold text-ink/45 mb-1'>{label}</div>
-              <div className='text-[10px] text-ink/30 font-mono'>{desc}</div>
+              <div className='text-[10px] font-bold text-white/45 mb-1'>{label}</div>
+              <div className='text-[10px] text-white/30 font-mono'>{desc}</div>
             </div>
           ))}
         </div>

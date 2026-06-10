@@ -68,19 +68,19 @@ export default function AdminSessions() {
             return (
               <ATr key={s.id}>
                 <ATd>
-                  <div className='font-semibold text-[12px] text-ink/90'>{s.admin_email ?? '—'}</div>
+                  <div className='font-semibold text-[12px] text-white/90'>{s.admin_email ?? '—'}</div>
                   <AMonoRef value={s.id} />
                   {isSelf && <span className='text-[9px] text-ficium font-bold block'>CURRENT SESSION</span>}
                 </ATd>
                 <ATd className='text-[11px] font-mono text-ficium-bright'>{s.admin_role ?? '—'}</ATd>
                 <ATd className='text-[11px] font-mono'>{s.ip_address}</ATd>
-                <ATd className='text-[11px] text-ink/45'>
+                <ATd className='text-[11px] text-white/45'>
                   {[s.city, s.country].filter(Boolean).join(', ') || '—'}
                 </ATd>
-                <ATd className='text-[11px] text-ink/45 whitespace-nowrap'>
+                <ATd className='text-[11px] text-white/45 whitespace-nowrap'>
                   {new Date(s.started_at).toLocaleString('en-MU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </ATd>
-                <ATd className='text-[11px] text-ink/45 whitespace-nowrap'>
+                <ATd className='text-[11px] text-white/45 whitespace-nowrap'>
                   {new Date(s.last_active_at).toLocaleTimeString('en-MU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </ATd>
                 <ATd className='text-[11px] font-mono'>{fmtDuration(s.started_at, s.ended_at)}</ATd>
