@@ -22,8 +22,6 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
 import { supabase } from '../../shared/lib/supabase'
-import adminDb from '../../admin/lib/adminSupabase'
-import institutionSupabase from '../../institution/lib/institutionSupabase'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Logo
@@ -47,26 +45,18 @@ function FLogo({ size = 32 }: { size?: number }) {
 type UserType = 'admin' | 'institution' | 'unknown'
 
 async function detectUserType(authUserId: string): Promise<UserType> {
-  // Check admin_users first (higher privilege)
-  const { data: adminUser } = await adminDb
-    .from('admin_users')
-    .select('id, status')
-    .eq('auth_user_id', authUserId)
-    .eq('status', 'active')
-    .maybeSingle()
+  // Use a SECURITY DEFINER RPC to bypass RLS — direct table queries 403
+  // because the anon key can't read cross-schema tables before the session
+  // is fully established as a known user type.
+  const { data, error } = await supabase
+    .rpc('detect_portal_user_type', { p_auth_user_id: authUserId })
 
-  if (adminUser) return 'admin'
+  if (error) {
+    console.error('detectUserType error:', error.message)
+    return 'unknown'
+  }
 
-  // Check institution_members
-  const { data: instMember } = await institutionSupabase
-    .from('institution_members')
-    .select('id, institution_id')
-    .eq('user_id', authUserId)
-    .maybeSingle()
-
-  if (instMember) return 'institution'
-
-  return 'unknown'
+  return (data as UserType) ?? 'unknown'
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
