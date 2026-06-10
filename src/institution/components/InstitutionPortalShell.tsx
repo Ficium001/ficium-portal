@@ -548,7 +548,7 @@ export default function InstitutionPortalShell() {
 
   const handleSignOut = useCallback(async () => {
     await institutionSupabase.auth.signOut();
-    navigate("/login");
+    navigate("/login?signedout=1");
   }, [navigate]);
 
   // Session guard

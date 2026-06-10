@@ -67,8 +67,10 @@ function useConn(): Conn {
     let dead = false
     const ping = async () => {
       try {
-        const { error } = await adminDb.from('admin_users').select('id').limit(1).maybeSingle()
-        if (!dead) setStatus(error ? 'reconnecting' : 'connected')
+        const { data } = await adminDb.rpc('detect_portal_user_type', {
+          p_auth_user_id: '00000000-0000-0000-0000-000000000000'
+        })
+        if (!dead) setStatus('connected')
       } catch { if (!dead) setStatus('offline') }
     }
     ping()
@@ -177,7 +179,7 @@ export default function AdminPortalShell() {
   const { data: dcPending = [] } = useDualControlActions('pending')
 
   const signOut = useCallback(async () => {
-    await adminDb.auth.signOut(); navigate('/admin/login')
+    await adminDb.auth.signOut(); navigate('/login?signedout=1')
   }, [navigate])
 
   const { warning, reset } = useIdleGuard(signOut)

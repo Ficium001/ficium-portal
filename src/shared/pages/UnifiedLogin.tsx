@@ -147,6 +147,10 @@ export default function UnifiedLogin() {
 
   // If already signed in, detect and redirect
   useEffect(() => {
+    // Don't auto-redirect if user explicitly signed out
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('signedout') === '1') return
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return
       setDetecting(true)
