@@ -28,12 +28,12 @@ import adminDb from '../../lib/adminSupabase'
 function AdminLogo() {
   return (
     <div className='flex items-center justify-center gap-3 mb-2'>
-      <div className='w-10 h-10 bg-indigo-500/10 border border-indigo-500/30 rounded-xl flex items-center justify-center'>
-        <Shield className='w-5 h-5 text-indigo-400' aria-hidden />
+      <div className='w-10 h-10 bg-ficium/10 border border-ficium/30 rounded-xl flex items-center justify-center'>
+        <Shield className='w-5 h-5 text-ficium' aria-hidden />
       </div>
       <div>
         <div className='text-white font-black text-[18px] tracking-tight'>Ficium</div>
-        <div className='text-indigo-400 text-[10px] font-bold uppercase tracking-widest'>Admin Portal</div>
+        <div className='text-ficium text-[10px] font-bold uppercase tracking-widest'>Admin Portal</div>
       </div>
     </div>
   )
@@ -58,9 +58,9 @@ export default function AdminLogin() {
   const [attempts,     setAttempts]   = useState(0)
 
   const inputCls = (err?: boolean) => [
-    'w-full bg-[#0d1117] border rounded-xl px-4 py-3 text-[13px] text-slate-200 outline-none',
-    'focus:ring-2 focus:ring-indigo-500/30 transition-all placeholder:text-slate-600 font-mono',
-    err ? 'border-red-700' : 'border-[#2d3748] focus:border-indigo-500',
+    'w-full bg-ink/95 border rounded-xl px-4 py-3 text-[13px] text-ink/90 outline-none',
+    'focus:ring-2 focus:ring-ficium/30 transition-all placeholder:text-ink/30 font-mono',
+    err ? 'border-red-700' : 'border-ficium/[0.20] focus:border-ficium',
   ].join(' ')
 
   const handleCredentials = useCallback(async () => {
@@ -168,7 +168,7 @@ export default function AdminLogin() {
   const locked = attempts >= 5
 
   return (
-    <div className='min-h-screen bg-[#0a0d14] flex items-center justify-center p-4'>
+    <div className='min-h-screen bg-ink flex items-center justify-center p-4'>
       {/* Security warning bar */}
       <div className='fixed top-0 inset-x-0 bg-amber-900/40 border-b border-amber-800 px-4 py-1.5 text-center'>
         <p className='text-[10px] text-amber-400 font-bold uppercase tracking-widest'>
@@ -179,20 +179,20 @@ export default function AdminLogin() {
       <div className='w-full max-w-[380px] mt-8'>
         <div className='text-center mb-8'>
           <AdminLogo />
-          <p className='text-[12px] text-slate-500 mt-3 font-mono'>
+          <p className='text-[12px] text-ink/45 mt-3 font-mono'>
             Ficium Internal Administration System
           </p>
         </div>
 
-        <div className='bg-[#111827] rounded-2xl border border-[#1f2937] shadow-2xl overflow-hidden'>
+        <div className='bg-ink/80 rounded-2xl border border-ficium/[0.12] shadow-2xl overflow-hidden'>
           {/* Step indicator */}
-          <div className='flex border-b border-[#1f2937]'>
+          <div className='flex border-b border-ficium/[0.12]'>
             {(['credentials', 'mfa'] as const).map((s, i) => (
               <div
                 key={s}
                 className={[
                   'flex-1 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest transition-colors',
-                  step === s ? 'bg-indigo-500/10 text-indigo-400 border-b-2 border-indigo-500' : 'text-slate-600',
+                  step === s ? 'bg-ficium/10 text-ficium border-b-2 border-ficium' : 'text-ink/30',
                 ].join(' ')}
               >
                 {i + 1}. {s === 'credentials' ? 'Credentials' : 'MFA'}
@@ -212,11 +212,11 @@ export default function AdminLogin() {
             {step === 'credentials' && (
               <div className='space-y-4'>
                 <div>
-                  <label className='block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5'>
+                  <label className='block text-[10px] font-bold text-ink/45 uppercase tracking-widest mb-1.5'>
                     Admin email
                   </label>
                   <div className='relative'>
-                    <Mail className='w-3.5 h-3.5 text-slate-600 absolute left-3.5 top-1/2 -translate-y-1/2' aria-hidden />
+                    <Mail className='w-3.5 h-3.5 text-ink/30 absolute left-3.5 top-1/2 -translate-y-1/2' aria-hidden />
                     <input
                       type='email'
                       value={email}
@@ -231,7 +231,7 @@ export default function AdminLogin() {
                   </div>
                 </div>
                 <div>
-                  <label className='block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5'>
+                  <label className='block text-[10px] font-bold text-ink/45 uppercase tracking-widest mb-1.5'>
                     Password
                   </label>
                   <div className='relative'>
@@ -249,7 +249,7 @@ export default function AdminLogin() {
                     <button
                       type='button'
                       onClick={() => setShowPassword(v => !v)}
-                      className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400'
+                      className='absolute right-3 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60'
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <EyeOff className='w-4 h-4' /> : <Eye className='w-4 h-4' />}
@@ -267,7 +267,7 @@ export default function AdminLogin() {
                 <button
                   onClick={handleCredentials}
                   disabled={loading || locked || !email || !password}
-                  className='w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-[13px] transition-colors flex items-center justify-center gap-2'
+                  className='w-full bg-ficium hover:bg-ficium-deep disabled:opacity-40 text-white font-bold py-3 rounded-xl text-[13px] transition-colors flex items-center justify-center gap-2'
                 >
                   {loading
                     ? <><span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' /> Verifying…</>
@@ -280,11 +280,11 @@ export default function AdminLogin() {
             {step === 'mfa' && (
               <div className='space-y-4'>
                 <div className='text-center mb-4'>
-                  <div className='w-12 h-12 bg-indigo-500/10 border border-indigo-500/30 rounded-xl flex items-center justify-center mx-auto mb-3'>
-                    <Shield className='w-6 h-6 text-indigo-400' aria-hidden />
+                  <div className='w-12 h-12 bg-ficium/10 border border-ficium/30 rounded-xl flex items-center justify-center mx-auto mb-3'>
+                    <Shield className='w-6 h-6 text-ficium' aria-hidden />
                   </div>
-                  <p className='text-[13px] text-slate-300 font-semibold'>Enter your authenticator code</p>
-                  <p className='text-[11px] text-slate-500 mt-1'>6-digit TOTP from your authenticator app</p>
+                  <p className='text-[13px] text-ink/75 font-semibold'>Enter your authenticator code</p>
+                  <p className='text-[11px] text-ink/45 mt-1'>6-digit TOTP from your authenticator app</p>
                 </div>
                 <input
                   type='text'
@@ -308,7 +308,7 @@ export default function AdminLogin() {
                 <button
                   onClick={handleMfa}
                   disabled={loading || totp.length !== 6}
-                  className='w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-[13px] transition-colors flex items-center justify-center gap-2'
+                  className='w-full bg-ficium hover:bg-ficium-deep disabled:opacity-40 text-white font-bold py-3 rounded-xl text-[13px] transition-colors flex items-center justify-center gap-2'
                 >
                   {loading
                     ? <><span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' /> Verifying…</>
@@ -317,7 +317,7 @@ export default function AdminLogin() {
                 </button>
                 <button
                   onClick={() => { setStep('credentials'); setTotp(''); setError(null) }}
-                  className='w-full text-[11px] text-slate-600 hover:text-slate-400 transition-colors py-1'
+                  className='w-full text-[11px] text-ink/30 hover:text-ink/60 transition-colors py-1'
                 >
                   ← Back to credentials
                 </button>
@@ -326,9 +326,9 @@ export default function AdminLogin() {
           </div>
         </div>
 
-        <p className='text-center text-[10px] text-slate-700 mt-6 font-mono'>
+        <p className='text-center text-[10px] text-ink/20 mt-6 font-mono'>
           FICIUM INTERNAL SYSTEM · v{import.meta.env.VITE_APP_VERSION ?? '0.0.0'} ·{' '}
-          <a href='mailto:security@ficium.mu' className='text-slate-600 hover:text-slate-400'>
+          <a href='mailto:security@ficium.mu' className='text-ink/30 hover:text-ink/60'>
             security@ficium.mu
           </a>
         </p>

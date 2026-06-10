@@ -58,11 +58,11 @@ function CreateRoleModal({ open, onClose, onSuccess }: { open: boolean; onClose:
             placeholder='What this role does…' className={aInputCls} />
         </AFormField>
         <div>
-          <div className='text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3'>Permissions</div>
+          <div className='text-[10px] font-bold text-ink/45 uppercase tracking-widest mb-3'>Permissions</div>
           <div className='space-y-4 max-h-72 overflow-y-auto pr-1'>
             {categories.map(cat => (
               <div key={cat}>
-                <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2 capitalize'>{cat}</div>
+                <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-2 capitalize'>{cat}</div>
                 <div className='space-y-1.5'>
                   {PERMISSION_CATALOGUE.filter(p => p.category === cat).map(p => (
                     <button key={p.key} type='button' onClick={() => toggle(p.key)}
@@ -70,15 +70,15 @@ function CreateRoleModal({ open, onClose, onSuccess }: { open: boolean; onClose:
                       className={[
                         'w-full flex items-center gap-3 text-left px-3 py-2 rounded-lg border transition-all',
                         form.permissions.includes(p.key)
-                          ? 'border-indigo-600 bg-indigo-900/20'
-                          : 'border-[#2d3748] hover:border-indigo-800',
+                          ? 'border-ficium-deep bg-ficium/[0.08]'
+                          : 'border-ficium/[0.20] hover:border-ficium/30',
                       ].join(' ')}>
-                      <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${form.permissions.includes(p.key) ? 'bg-indigo-500 border-indigo-500' : 'border-slate-600'}`}>
+                      <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${form.permissions.includes(p.key) ? 'bg-ficium border-ficium' : 'border-slate-600'}`}>
                         {form.permissions.includes(p.key) && <span className='text-white text-[8px]'>✓</span>}
                       </div>
                       <div className='flex-1 min-w-0'>
-                        <div className='text-[11px] font-mono text-slate-300'>{p.key}</div>
-                        <div className='text-[10px] text-slate-600'>{p.description}</div>
+                        <div className='text-[11px] font-mono text-ink/75'>{p.key}</div>
+                        <div className='text-[10px] text-ink/30'>{p.description}</div>
                       </div>
                       <RiskBadge risk={p.risk} />
                     </button>
@@ -130,63 +130,63 @@ export default function AdminRoles() {
       <div className='mt-5 space-y-3'>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className='bg-[#111827] rounded-xl border border-[#1f2937] p-5 animate-pulse h-16' />
+            <div key={i} className='bg-ink/80 rounded-xl border border-ficium/[0.12] p-5 animate-pulse h-16' />
           ))
         ) : roles.length === 0 ? (
           <AEmptyState icon={Shield} title='No roles' />
         ) : roles.map(role => {
           const isOpen = expanded === role.id
           return (
-            <div key={role.id} className='bg-[#111827] rounded-xl border border-[#1f2937] overflow-hidden'>
+            <div key={role.id} className='bg-ink/80 rounded-xl border border-ficium/[0.12] overflow-hidden'>
               <button
                 onClick={() => setExpanded(isOpen ? null : role.id)}
                 aria-expanded={isOpen}
-                className='w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#1a2236] transition-colors'
+                className='w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-ficium/[0.06] transition-colors'
               >
-                <div className='w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0'>
+                <div className='w-9 h-9 rounded-xl bg-ficium/10 border border-ficium/20 flex items-center justify-center flex-shrink-0'>
                   {role.is_system
-                    ? <Lock className='w-4 h-4 text-indigo-400' aria-hidden />
-                    : <Shield className='w-4 h-4 text-indigo-400' aria-hidden />
+                    ? <Lock className='w-4 h-4 text-ficium' aria-hidden />
+                    : <Shield className='w-4 h-4 text-ficium' aria-hidden />
                   }
                 </div>
                 <div className='flex-1 min-w-0 text-left'>
                   <div className='flex items-center gap-2'>
                     <span className='font-bold text-[14px] text-white'>{role.label}</span>
                     {role.is_system && (
-                      <span className='text-[9px] font-bold bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full border border-slate-700 uppercase tracking-widest'>System</span>
+                      <span className='text-[9px] font-bold bg-ink/60 text-ink/45 px-2 py-0.5 rounded-full border border-ink/[0.25] uppercase tracking-widest'>System</span>
                     )}
-                    <span className='text-[9px] font-mono text-slate-600'>{role.slug}</span>
+                    <span className='text-[9px] font-mono text-ink/30'>{role.slug}</span>
                   </div>
-                  <div className='text-[11px] text-slate-600 mt-0.5'>{role.description}</div>
+                  <div className='text-[11px] text-ink/30 mt-0.5'>{role.description}</div>
                 </div>
-                <div className='text-[11px] text-slate-600 flex-shrink-0'>
+                <div className='text-[11px] text-ink/30 flex-shrink-0'>
                   {role.permissions[0] === '*' ? 'All permissions' : `${role.permissions.length} permissions`}
                 </div>
-                <div className='text-slate-600 ml-2'>
+                <div className='text-ink/30 ml-2'>
                   {isOpen ? '▲' : '▼'}
                 </div>
               </button>
               {isOpen && (
-                <div className='border-t border-[#1f2937] px-5 py-4 bg-[#0d1117]/60'>
-                  <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-3'>
+                <div className='border-t border-ficium/[0.12] px-5 py-4 bg-ink/95/60'>
+                  <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-3'>
                     Granted permissions
                   </div>
                   {role.permissions[0] === '*' ? (
-                    <p className='text-[11px] text-indigo-400 font-mono'>All permissions (super admin)</p>
+                    <p className='text-[11px] text-ficium font-mono'>All permissions (super admin)</p>
                   ) : (
                     <div className='flex flex-wrap gap-1.5'>
                       {role.permissions.map(p => <PermissionTag key={p} perm={p} />)}
                     </div>
                   )}
                   <div className='mt-4'>
-                    <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2'>Permission details</div>
+                    <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-2'>Permission details</div>
                     <div className='space-y-1'>
                       {PERMISSION_CATALOGUE.filter(p => role.permissions[0] === '*' || role.permissions.includes(p.key)).map(p => (
                         <div key={p.key} className='flex items-center gap-3 text-[11px]'>
                           <RiskBadge risk={p.risk} />
-                          <code className='font-mono text-indigo-300'>{p.key}</code>
-                          <span className='text-slate-500'>—</span>
-                          <span className='text-slate-500'>{p.description}</span>
+                          <code className='font-mono text-ficium-bright'>{p.key}</code>
+                          <span className='text-ink/45'>—</span>
+                          <span className='text-ink/45'>{p.description}</span>
                         </div>
                       ))}
                     </div>

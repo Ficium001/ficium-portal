@@ -13,8 +13,8 @@ type State = 'loading' | 'ok' | 'unauthed' | 'no_admin' | 'locked'
 
 function Spinner() {
   return (
-    <div className='min-h-screen bg-[#0a0d14] flex items-center justify-center'>
-      <div className='w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin' aria-label='Loading' />
+    <div className='min-h-screen bg-ink flex items-center justify-center'>
+      <div className='w-8 h-8 border-2 border-ficium border-t-transparent rounded-full animate-spin' aria-label='Loading' />
     </div>
   )
 }
@@ -50,7 +50,7 @@ export default function AdminRoute() {
   if (state === 'unauthed') return <Navigate to='/login' state={{ from: location }} replace />
   if (state === 'no_admin') return <Navigate to='/login' replace />
   if (state === 'locked')   return (
-    <div className='min-h-screen bg-[#0a0d14] flex items-center justify-center p-6'>
+    <div className='min-h-screen bg-ink flex items-center justify-center p-6'>
       <div className='bg-red-900/20 border border-red-800 rounded-2xl p-8 max-w-sm text-center'>
         <div className='text-red-400 text-4xl mb-4'>⊘</div>
         <h2 className='text-red-300 font-black text-[18px] mb-2'>Account locked</h2>

@@ -33,15 +33,15 @@ import type { ActionRisk } from '../../types/admin'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const A = {
-  bg:      'bg-[#0a0d14]',
-  surface: 'bg-[#111827]',
-  surface2:'bg-[#1a2236]',
-  border:  'border-[#1f2937]',
-  border2: 'border-[#2d3748]',
-  accent:  'text-indigo-400',
-  accentBg:'bg-indigo-500',
-  muted:   'text-slate-500',
-  text:    'text-slate-200',
+  bg:      'bg-ink',
+  surface: 'bg-ink/80',
+  surface2:'bg-ficium/[0.06]',
+  border:  'border-ficium/[0.12]',
+  border2: 'border-ficium/[0.20]',
+  accent:  'text-ficium',
+  accentBg:'bg-ficium',
+  muted:   'text-ink/45',
+  text:    'text-ink/90',
   heading: 'text-white',
 } as const
 
@@ -77,20 +77,20 @@ const STATUS_STYLE: Record<string, string> = {
   active:       'bg-emerald-900/40 text-emerald-400 border-emerald-800',
   locked:       'bg-amber-900/40   text-amber-400   border-amber-800',
   suspended:    'bg-red-900/40     text-red-400     border-red-800',
-  pending_mfa:  'bg-indigo-900/40  text-indigo-400  border-indigo-800',
-  deactivated:  'bg-slate-800      text-slate-500   border-slate-700',
+  pending_mfa:  'bg-ficium/[0.15]  text-ficium  border-ficium/30',
+  deactivated:  'bg-ink/60      text-ink/45   border-ink/[0.25]',
   // dc
-  pending:      'bg-indigo-900/40  text-indigo-400  border-indigo-800',
+  pending:      'bg-ficium/[0.15]  text-ficium  border-ficium/30',
   approved:     'bg-emerald-900/40 text-emerald-400 border-emerald-800',
   rejected:     'bg-red-900/40     text-red-400     border-red-800',
-  expired:      'bg-slate-800      text-slate-500   border-slate-700',
-  cancelled:    'bg-slate-800      text-slate-500   border-slate-700',
+  expired:      'bg-ink/60      text-ink/45   border-ink/[0.25]',
+  cancelled:    'bg-ink/60      text-ink/45   border-ink/[0.25]',
   executed:     'bg-emerald-900/40 text-emerald-400 border-emerald-800',
   // audit
   success:      'bg-emerald-900/40 text-emerald-400 border-emerald-800',
   failed:       'bg-red-900/40     text-red-400     border-red-800',
   blocked:      'bg-orange-900/40  text-orange-400  border-orange-800',
-  logged:       'bg-slate-800      text-slate-500   border-slate-700',
+  logged:       'bg-ink/60      text-ink/45   border-ink/[0.25]',
 }
 
 export function AStatusBadge({
@@ -132,27 +132,27 @@ export function AKpiCard({
 }) {
   const borderCls = status === 'critical' ? 'border-red-800'
                   : status === 'warn'     ? 'border-amber-800'
-                  :                         'border-[#1f2937]'
+                  :                         'border-ficium/[0.12]'
   const valCls    = status === 'critical' ? 'text-red-400'
                   : status === 'warn'     ? 'text-amber-400'
                   :                         'text-white'
   return (
-    <div className={`bg-[#111827] rounded-xl border ${borderCls} p-5`}>
+    <div className={`bg-ink/80 rounded-xl border ${borderCls} p-5`}>
       {Icon && (
-        <div className='w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-3'>
-          <Icon className='w-4 h-4 text-indigo-400' aria-hidden />
+        <div className='w-8 h-8 rounded-lg bg-ficium/10 flex items-center justify-center mb-3'>
+          <Icon className='w-4 h-4 text-ficium' aria-hidden />
         </div>
       )}
       {loading ? (
         <>
-          <div className='h-7 w-16 bg-slate-700 rounded-lg mb-2 animate-pulse' />
-          <div className='h-3 w-24 bg-slate-800 rounded animate-pulse' />
+          <div className='h-7 w-16 bg-ink/40 rounded-lg mb-2 animate-pulse' />
+          <div className='h-3 w-24 bg-ink/60 rounded animate-pulse' />
         </>
       ) : (
         <>
-          <div className='text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1'>{label}</div>
+          <div className='text-[10px] font-bold text-ink/45 uppercase tracking-widest mb-1'>{label}</div>
           <div className={`text-[28px] font-black tracking-tight leading-none mb-1 ${valCls}`}>{value}</div>
-          {sub && <div className='text-[11px] text-slate-500'>{sub}</div>}
+          {sub && <div className='text-[11px] text-ink/45'>{sub}</div>}
         </>
       )}
     </div>
@@ -181,7 +181,7 @@ export function ASectionHeader({
           <h1 className='text-[24px] font-black text-white tracking-tight'>{title}</h1>
           {badge}
         </div>
-        {subtitle && <p className='text-[12px] text-slate-500 mt-1 font-mono'>{subtitle}</p>}
+        {subtitle && <p className='text-[12px] text-ink/45 mt-1 font-mono'>{subtitle}</p>}
       </div>
       {actions && <div className='flex items-center gap-2 flex-shrink-0'>{actions}</div>}
     </div>
@@ -202,24 +202,24 @@ export function ADataTable({
   caption?: string
 }) {
   return (
-    <div className='bg-[#111827] rounded-xl border border-[#1f2937] overflow-hidden'>
+    <div className='bg-ink/80 rounded-xl border border-ficium/[0.12] overflow-hidden'>
       <div className='overflow-x-auto'>
         <table className='w-full' role='grid' aria-label={caption}>
           {caption && <caption className='sr-only'>{caption}</caption>}
           <thead>
-            <tr className='border-b border-[#1f2937] bg-[#0d1117]'>
+            <tr className='border-b border-ficium/[0.12] bg-ink/95'>
               {headers.map(h => (
                 <th
                   key={h}
                   scope='col'
-                  className='px-5 py-3.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap'
+                  className='px-5 py-3.5 text-left text-[10px] font-bold text-ink/45 uppercase tracking-widest whitespace-nowrap'
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className='divide-y divide-[#1f2937]'>{children}</tbody>
+          <tbody className='divide-y divide-ficium/[0.12]'>{children}</tbody>
         </table>
       </div>
     </div>
@@ -239,8 +239,8 @@ export function ATr({
     <tr
       className={[
         'transition-colors',
-        onClick    ? 'cursor-pointer hover:bg-[#1a2236]' : 'hover:bg-[#131920]',
-        selected   ? 'bg-indigo-900/20' : '',
+        onClick    ? 'cursor-pointer hover:bg-ficium/[0.06]' : 'hover:bg-[#131920]',
+        selected   ? 'bg-ficium/[0.08]' : '',
       ].join(' ')}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
@@ -260,8 +260,8 @@ export function ATd({
   className?: string
 }) {
   return (
-    <td className={`px-5 py-3.5 text-[13px] text-slate-300 ${className}`}>
-      {children ?? <span className='text-slate-600'>—</span>}
+    <td className={`px-5 py-3.5 text-[13px] text-ink/75 ${className}`}>
+      {children ?? <span className='text-ink/30'>—</span>}
     </td>
   )
 }
@@ -272,10 +272,10 @@ export function ATd({
 
 export function ASkeletonRow({ cols }: { cols: number }) {
   return (
-    <tr className='border-b border-[#1f2937]' aria-hidden>
+    <tr className='border-b border-ficium/[0.12]' aria-hidden>
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className='px-5 py-4'>
-          <div className={`h-3 bg-slate-800 rounded animate-pulse ${i === 0 ? 'w-32' : i === cols - 1 ? 'w-16' : 'w-24'}`} />
+          <div className={`h-3 bg-ink/60 rounded animate-pulse ${i === 0 ? 'w-32' : i === cols - 1 ? 'w-16' : 'w-24'}`} />
         </td>
       ))}
     </tr>
@@ -284,11 +284,11 @@ export function ASkeletonRow({ cols }: { cols: number }) {
 
 export function ASkeletonCard() {
   return (
-    <div className='bg-[#111827] rounded-xl border border-[#1f2937] p-5 animate-pulse' aria-hidden>
-      <div className='w-8 h-8 bg-slate-800 rounded-lg mb-4' />
-      <div className='h-3 w-16 bg-slate-700 rounded mb-2' />
+    <div className='bg-ink/80 rounded-xl border border-ficium/[0.12] p-5 animate-pulse' aria-hidden>
+      <div className='w-8 h-8 bg-ink/60 rounded-lg mb-4' />
+      <div className='h-3 w-16 bg-ink/40 rounded mb-2' />
       <div className='h-7 w-12 bg-slate-600 rounded mb-2' />
-      <div className='h-3 w-24 bg-slate-800 rounded' />
+      <div className='h-3 w-24 bg-ink/60 rounded' />
     </div>
   )
 }
@@ -309,10 +309,10 @@ export function AEmptyState({
   action?:      ReactNode
 }) {
   return (
-    <div className='flex flex-col items-center justify-center py-20 bg-[#111827] rounded-xl border border-[#1f2937]'>
-      {Icon && <Icon className='w-10 h-10 text-slate-700 mb-4' aria-hidden />}
-      <p className='font-semibold text-slate-300 text-[14px] mb-1'>{title}</p>
-      {description && <p className='text-[12px] text-slate-500 mb-4'>{description}</p>}
+    <div className='flex flex-col items-center justify-center py-20 bg-ink/80 rounded-xl border border-ficium/[0.12]'>
+      {Icon && <Icon className='w-10 h-10 text-ink/20 mb-4' aria-hidden />}
+      <p className='font-semibold text-ink/75 text-[14px] mb-1'>{title}</p>
+      {description && <p className='text-[12px] text-ink/45 mb-4'>{description}</p>}
       {action}
     </div>
   )
@@ -367,17 +367,17 @@ export function AModal({
         role='dialog'
         aria-modal
         aria-labelledby='admin-modal-title'
-        className={`bg-[#111827] rounded-2xl border ${danger ? 'border-red-800' : 'border-[#1f2937]'} w-full ${width} shadow-2xl`}
+        className={`bg-ink/80 rounded-2xl border ${danger ? 'border-red-800' : 'border-ficium/[0.12]'} w-full ${width} shadow-2xl`}
         onClick={e => e.stopPropagation()}
       >
-        <div className={`flex items-center justify-between px-6 pt-5 pb-4 border-b ${danger ? 'border-red-900' : 'border-[#1f2937]'}`}>
+        <div className={`flex items-center justify-between px-6 pt-5 pb-4 border-b ${danger ? 'border-red-900' : 'border-ficium/[0.12]'}`}>
           <h2 id='admin-modal-title' className='font-bold text-[16px] text-white'>
             {title}
           </h2>
           <button
             onClick={onClose}
             aria-label='Close dialog'
-            className='text-slate-500 hover:text-slate-200 transition-colors p-1 rounded-lg hover:bg-white/5'
+            className='text-ink/45 hover:text-ink/90 transition-colors p-1 rounded-lg hover:bg-ficium/[0.04]'
           >
             <X className='w-4 h-4' />
           </button>
@@ -393,7 +393,7 @@ export function AModal({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ALERT_STYLES = {
-  info:    { bg: 'bg-indigo-900/30 border-indigo-800',   text: 'text-indigo-300',  Icon: Info          },
+  info:    { bg: 'bg-ficium/[0.12] border-ficium/30',   text: 'text-ficium-bright',  Icon: Info          },
   warning: { bg: 'bg-amber-900/30  border-amber-800',    text: 'text-amber-300',   Icon: AlertTriangle },
   success: { bg: 'bg-emerald-900/30 border-emerald-800', text: 'text-emerald-300', Icon: CheckCircle   },
   error:   { bg: 'bg-red-900/30    border-red-800',      text: 'text-red-300',     Icon: XCircle       },
@@ -446,8 +446,8 @@ export function AFilterPills<T extends string>({
           className={[
             'text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all uppercase tracking-wide',
             value === opt.key
-              ? 'bg-indigo-500 text-white border-indigo-500'
-              : 'bg-transparent border-[#2d3748] text-slate-500 hover:border-indigo-700 hover:text-indigo-400',
+              ? 'bg-ficium text-white border-ficium'
+              : 'bg-transparent border-ficium/[0.20] text-ink/45 hover:border-ficium/50 hover:text-ficium',
           ].join(' ')}
         >
           {opt.label}
@@ -483,9 +483,9 @@ export function ABtn({
   const base  = 'inline-flex items-center gap-2 font-bold rounded-xl transition-all disabled:opacity-40'
   const sizes = { sm: 'px-3.5 py-2 text-[11px]', md: 'px-5 py-2.5 text-[13px]' }
   const vars  = {
-    primary:   'bg-indigo-500 hover:bg-indigo-600 text-white',
-    secondary: 'bg-[#1f2937] border border-[#374151] text-slate-300 hover:border-indigo-600',
-    ghost:     'bg-transparent text-slate-500 hover:text-slate-200 hover:bg-white/5',
+    primary:   'bg-ficium hover:bg-ficium-deep text-white',
+    secondary: 'bg-[#1f2937] border border-ficium/[0.25] text-ink/75 hover:border-ficium-deep',
+    ghost:     'bg-transparent text-ink/45 hover:text-ink/90 hover:bg-ficium/[0.04]',
     danger:    'bg-red-500 hover:bg-red-600 text-white',
     warn:      'bg-amber-500 hover:bg-amber-600 text-white',
   }
@@ -510,7 +510,7 @@ export function ABtn({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const aInputCls =
-  'w-full bg-[#0d1117] border border-[#2d3748] rounded-xl px-4 py-2.5 text-[13px] text-slate-200 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-600 font-mono'
+  'w-full bg-ink/95 border border-ficium/[0.20] rounded-xl px-4 py-2.5 text-[13px] text-ink/90 outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all placeholder:text-ink/30 font-mono'
 
 export function AFormField({
   label,
@@ -525,9 +525,9 @@ export function AFormField({
 }) {
   return (
     <div>
-      <label className='block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5'>{label}</label>
+      <label className='block text-[11px] font-bold text-ink/60 uppercase tracking-widest mb-1.5'>{label}</label>
       {children}
-      {hint  && <p className='text-[11px] text-slate-600 mt-1'>{hint}</p>}
+      {hint  && <p className='text-[11px] text-ink/30 mt-1'>{hint}</p>}
       {error && <p className='text-[11px] text-red-400 mt-1 font-semibold'>{error}</p>}
     </div>
   )
@@ -540,7 +540,7 @@ export function AFormField({
 export function AMonoRef({ value, short = true }: { value: string; short?: boolean }) {
   const display = short ? `${value.slice(0, 8)}…` : value
   return (
-    <code title={value} className='text-[11px] font-mono bg-slate-800 px-2 py-0.5 rounded-lg text-slate-400'>
+    <code title={value} className='text-[11px] font-mono bg-ink/60 px-2 py-0.5 rounded-lg text-ink/60'>
       {display}
     </code>
   )
@@ -583,10 +583,10 @@ export function AConfirmModal({
 
   return (
     <AModal open={open} onClose={onClose} title={title} danger={risk === 'critical' || risk === 'high'}>
-      {description && <p className='text-[13px] text-slate-400 mb-4'>{description}</p>}
+      {description && <p className='text-[13px] text-ink/60 mb-4'>{description}</p>}
       <div className='mb-4'>
         <RiskBadge risk={risk} />
-        <p className='text-[11px] text-slate-500 mt-2'>
+        <p className='text-[11px] text-ink/45 mt-2'>
           This action enters the dual-control queue. A second admin must approve before execution.
         </p>
       </div>
@@ -616,7 +616,7 @@ export function AConfirmModal({
         </button>
         <button
           onClick={onClose}
-          className='px-5 text-[13px] font-semibold text-slate-400 border border-[#2d3748] rounded-xl hover:bg-white/5 transition-colors'
+          className='px-5 text-[13px] font-semibold text-ink/60 border border-ficium/[0.20] rounded-xl hover:bg-ficium/[0.04] transition-colors'
         >
           Cancel
         </button>
@@ -644,7 +644,7 @@ export function ALiveBadge({ label = 'LIVE' }: { label?: string }) {
 
 export function PermissionTag({ perm }: { perm: string }) {
   return (
-    <span className='inline-block bg-slate-800 text-slate-400 text-[10px] font-mono px-2 py-0.5 rounded border border-slate-700'>
+    <span className='inline-block bg-ink/60 text-ink/60 text-[10px] font-mono px-2 py-0.5 rounded border border-ink/[0.25]'>
       {perm}
     </span>
   )
@@ -655,7 +655,7 @@ export function PermissionTag({ perm }: { perm: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ADivider() {
-  return <div className='border-t border-[#1f2937] my-5' aria-hidden />
+  return <div className='border-t border-ficium/[0.12] my-5' aria-hidden />
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -665,6 +665,6 @@ export function ADivider() {
 export function ASpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const s = { sm: 'w-4 h-4', md: 'w-6 h-6', lg: 'w-10 h-10' }[size]
   return (
-    <div className={`${s} border-2 border-indigo-500 border-t-transparent rounded-full animate-spin`} aria-label='Loading' />
+    <div className={`${s} border-2 border-ficium border-t-transparent rounded-full animate-spin`} aria-label='Loading' />
   )
 }

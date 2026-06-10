@@ -76,7 +76,7 @@ function LeftPanel() {
       />
       <div className='absolute top-1/3 -left-10 w-72 h-72 rounded-full bg-blue-600/20 blur-[80px] animate-pulse' />
       <div
-        className='absolute bottom-1/4 right-0 w-64 h-64 rounded-full bg-indigo-500/15 blur-[80px] animate-pulse'
+        className='absolute bottom-1/4 right-0 w-64 h-64 rounded-full bg-ficium/15 blur-[80px] animate-pulse'
         style={{ animationDelay: '1.5s' }}
       />
 
@@ -105,7 +105,7 @@ function LeftPanel() {
             { icon: Zap,       label: 'Live marketplace with real-time intelligence'     },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className='flex items-center gap-3'>
-              <div className='w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0'>
+              <div className='w-8 h-8 rounded-lg bg-ficium/[0.06] flex items-center justify-center flex-shrink-0'>
                 <Icon className='w-4 h-4 text-white/70' aria-hidden />
               </div>
               <span className='text-white/60 text-[13px]'>{label}</span>

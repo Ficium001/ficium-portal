@@ -81,20 +81,20 @@ function ActionDetailPanel({
   const isExpired = new Date(action.expires_at).getTime() <= Date.now()
 
   return (
-    <tr className='bg-[#090c13]'>
+    <tr className='bg-ink/98'>
       <td colSpan={7} className='px-5 py-5'>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-5'>
 
           {/* Payload */}
           <div>
-            <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2.5'>Action payload</div>
-            <pre className='text-[10px] font-mono text-slate-400 bg-[#0d1117] border border-[#1f2937] rounded-lg p-3 overflow-auto max-h-52 leading-relaxed'>
+            <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-2.5'>Action payload</div>
+            <pre className='text-[10px] font-mono text-ink/60 bg-ink/95 border border-ficium/[0.12] rounded-lg p-3 overflow-auto max-h-52 leading-relaxed'>
               {JSON.stringify(action.payload, null, 2)}
             </pre>
             {action.payload_before && (
               <>
-                <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2.5 mt-4'>Previous state</div>
-                <pre className='text-[10px] font-mono text-slate-500 bg-[#0d1117] border border-[#1f2937] rounded-lg p-3 overflow-auto max-h-32 leading-relaxed'>
+                <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-2.5 mt-4'>Previous state</div>
+                <pre className='text-[10px] font-mono text-ink/45 bg-ink/95 border border-ficium/[0.12] rounded-lg p-3 overflow-auto max-h-32 leading-relaxed'>
                   {JSON.stringify(action.payload_before, null, 2)}
                 </pre>
               </>
@@ -103,7 +103,7 @@ function ActionDetailPanel({
 
           {/* Maker + timeline */}
           <div>
-            <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2.5'>Provenance</div>
+            <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-2.5'>Provenance</div>
             <div className='space-y-2 text-[11px]'>
               {[
                 ['Maker',       action.maker_email],
@@ -116,20 +116,20 @@ function ActionDetailPanel({
                 ['Action ID',   action.id.slice(0, 12) + '…'],
               ].map(([l, v]) => (
                 <div key={l} className='flex justify-between'>
-                  <span className='text-slate-600'>{l}</span>
-                  <span className='font-mono text-slate-400 max-w-[55%] text-right truncate'>{v}</span>
+                  <span className='text-ink/30'>{l}</span>
+                  <span className='font-mono text-ink/60 max-w-[55%] text-right truncate'>{v}</span>
                 </div>
               ))}
             </div>
             {action.checker_id && (
-              <div className='mt-4 bg-[#0d1117] border border-[#1f2937] rounded-lg p-3 text-[11px]'>
-                <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2'>Checker decision</div>
+              <div className='mt-4 bg-ink/95 border border-ficium/[0.12] rounded-lg p-3 text-[11px]'>
+                <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-2'>Checker decision</div>
                 <div className='space-y-1'>
-                  <div className='flex justify-between'><span className='text-slate-600'>Checker</span><span className='font-mono text-slate-400'>{action.checker_email}</span></div>
-                  <div className='flex justify-between'><span className='text-slate-600'>Role</span><span className='font-mono text-slate-400'>{action.checker_role}</span></div>
-                  <div className='flex justify-between'><span className='text-slate-600'>IP</span><span className='font-mono text-slate-400'>{action.checker_ip}</span></div>
-                  <div className='flex justify-between'><span className='text-slate-600'>At</span><span className='font-mono text-slate-400'>{action.checked_at ? new Date(action.checked_at).toLocaleString('en-MU') : '—'}</span></div>
-                  {action.checker_note && <div className='text-slate-500 italic mt-1'>"{action.checker_note}"</div>}
+                  <div className='flex justify-between'><span className='text-ink/30'>Checker</span><span className='font-mono text-ink/60'>{action.checker_email}</span></div>
+                  <div className='flex justify-between'><span className='text-ink/30'>Role</span><span className='font-mono text-ink/60'>{action.checker_role}</span></div>
+                  <div className='flex justify-between'><span className='text-ink/30'>IP</span><span className='font-mono text-ink/60'>{action.checker_ip}</span></div>
+                  <div className='flex justify-between'><span className='text-ink/30'>At</span><span className='font-mono text-ink/60'>{action.checked_at ? new Date(action.checked_at).toLocaleString('en-MU') : '—'}</span></div>
+                  {action.checker_note && <div className='text-ink/45 italic mt-1'>"{action.checker_note}"</div>}
                 </div>
               </div>
             )}
@@ -137,7 +137,7 @@ function ActionDetailPanel({
 
           {/* Action buttons */}
           <div>
-            <div className='text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2.5'>Decision</div>
+            <div className='text-[9px] font-bold text-ink/30 uppercase tracking-widest mb-2.5'>Decision</div>
 
             {!isPending && (
               <AStatusBadge status={action.status} />
@@ -155,8 +155,8 @@ function ActionDetailPanel({
             )}
 
             {isPending && !isExpired && !isMaker && !canApprove && (
-              <p className='text-[11px] text-slate-600'>
-                You do not have <code className='font-mono text-indigo-400'>dual_control:approve</code> permission.
+              <p className='text-[11px] text-ink/30'>
+                You do not have <code className='font-mono text-ficium'>dual_control:approve</code> permission.
               </p>
             )}
 
@@ -239,7 +239,7 @@ function ActionDetailPanel({
 function AFormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className='block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5'>{label}</label>
+      <label className='block text-[10px] font-bold text-ink/45 uppercase tracking-widest mb-1.5'>{label}</label>
       {children}
     </div>
   )
@@ -285,9 +285,9 @@ export default function AdminDualControl() {
         badge={<ALiveBadge />}
       />
 
-      <div className='bg-[#0d1117] border border-indigo-900/50 rounded-xl px-5 py-3 flex items-center gap-3 mb-5'>
-        <ShieldCheck className='w-4 h-4 text-indigo-400 flex-shrink-0' aria-hidden />
-        <p className='text-[10px] text-indigo-400 font-mono uppercase tracking-widest'>
+      <div className='bg-ink/95 border border-ficium/20/50 rounded-xl px-5 py-3 flex items-center gap-3 mb-5'>
+        <ShieldCheck className='w-4 h-4 text-ficium flex-shrink-0' aria-hidden />
+        <p className='text-[10px] text-ficium font-mono uppercase tracking-widest'>
           Four-eyes control enforced · Self-approval blocked at DB level · All decisions immutably logged · Maker IP recorded
         </p>
       </div>
@@ -330,14 +330,14 @@ export default function AdminDualControl() {
               <>
                 <ATr key={a.id} selected={isOpen} onClick={() => setExpanded(isOpen ? null : a.id)}>
                   <ATd>
-                    <div className='font-mono text-indigo-300 text-[11px]'>{a.action_label}</div>
-                    <div className='text-[9px] text-slate-600 mt-0.5'>{a.action_category}</div>
+                    <div className='font-mono text-ficium-bright text-[11px]'>{a.action_label}</div>
+                    <div className='text-[9px] text-ink/30 mt-0.5'>{a.action_category}</div>
                   </ATd>
                   <ATd><RiskBadge risk={a.risk} /></ATd>
                   <ATd>
-                    <div className='text-[11px] font-mono text-slate-400'>{a.maker_email}</div>
-                    <div className='text-[9px] text-slate-600 font-mono'>{a.maker_ip}</div>
-                    {isMaker && <span className='text-[9px] text-indigo-400 font-bold'>YOU</span>}
+                    <div className='text-[11px] font-mono text-ink/60'>{a.maker_email}</div>
+                    <div className='text-[9px] text-ink/30 font-mono'>{a.maker_ip}</div>
+                    {isMaker && <span className='text-[9px] text-ficium font-bold'>YOU</span>}
                   </ATd>
                   <ATd className='text-[11px]'>
                     <div>{a.resource_label ?? a.resource_type}</div>
@@ -352,7 +352,7 @@ export default function AdminDualControl() {
                   </ATd>
                   <td className='px-5 py-3.5'>
                     <button aria-label={isOpen ? 'Collapse' : 'Expand'}
-                      className='text-slate-600 hover:text-slate-300 transition-colors'>
+                      className='text-ink/30 hover:text-ink/75 transition-colors'>
                       {isOpen ? <ChevronUp className='w-4 h-4' /> : <ChevronDown className='w-4 h-4' />}
                     </button>
                   </td>

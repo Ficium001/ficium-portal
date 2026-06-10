@@ -72,19 +72,19 @@ function UrgentDualControl() {
   )
 
   return (
-    <div className='bg-[#111827] rounded-xl border border-[#1f2937] overflow-hidden mb-5'>
-      <div className='flex items-center justify-between px-5 py-4 border-b border-[#1f2937]'>
+    <div className='bg-ink/80 rounded-xl border border-ficium/[0.12] overflow-hidden mb-5'>
+      <div className='flex items-center justify-between px-5 py-4 border-b border-ficium/[0.12]'>
         <h2 className='font-black text-[14px] text-white flex items-center gap-2'>
-          <GitMerge className='w-4 h-4 text-indigo-400' aria-hidden />
+          <GitMerge className='w-4 h-4 text-ficium' aria-hidden />
           Dual-control queue
           {pending.length > 0 && (
-            <span className='bg-indigo-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full'>
+            <span className='bg-ficium text-white text-[9px] font-black px-2 py-0.5 rounded-full'>
               {pending.length}
             </span>
           )}
         </h2>
         <Link to='/admin/dual-control'
-          className='flex items-center gap-1 text-[11px] text-indigo-400 font-bold hover:underline'>
+          className='flex items-center gap-1 text-[11px] text-ficium font-bold hover:underline'>
           View all <ArrowRight className='w-3 h-3' aria-hidden />
         </Link>
       </div>
@@ -103,7 +103,7 @@ function UrgentDualControl() {
           {Array.from({ length: 3 }).map((_, i) => <ASkeletonRow key={i} cols={5} />)}
         </ADataTable>
       ) : pending.length === 0 ? (
-        <p className='text-[12px] text-slate-600 text-center py-10 font-mono'>Queue clear — no pending actions</p>
+        <p className='text-[12px] text-ink/30 text-center py-10 font-mono'>Queue clear — no pending actions</p>
       ) : (
         <ADataTable headers={['Action', 'Risk', 'Maker', 'Resource', 'Expires']} caption='Pending dual-control actions'>
           {pending.slice(0, 5).map(a => {
@@ -114,7 +114,7 @@ function UrgentDualControl() {
             return (
               <ATr key={a.id}>
                 <ATd>
-                  <span className='font-mono text-indigo-300 text-[11px]'>{a.action_label}</span>
+                  <span className='font-mono text-ficium-bright text-[11px]'>{a.action_label}</span>
                 </ATd>
                 <ATd><RiskBadge risk={a.risk} /></ATd>
                 <ATd className='text-[11px] font-mono'>{a.maker_email}</ATd>
@@ -138,14 +138,14 @@ function UrgentDualControl() {
 function RecentAudit() {
   const { data: entries = [], isLoading } = useAdminAudit(10)
   return (
-    <div className='bg-[#111827] rounded-xl border border-[#1f2937] overflow-hidden'>
-      <div className='flex items-center justify-between px-5 py-4 border-b border-[#1f2937]'>
+    <div className='bg-ink/80 rounded-xl border border-ficium/[0.12] overflow-hidden'>
+      <div className='flex items-center justify-between px-5 py-4 border-b border-ficium/[0.12]'>
         <h2 className='font-black text-[14px] text-white flex items-center gap-2'>
-          <ScrollText className='w-4 h-4 text-indigo-400' aria-hidden />
+          <ScrollText className='w-4 h-4 text-ficium' aria-hidden />
           Recent audit events
         </h2>
         <Link to='/admin/audit'
-          className='flex items-center gap-1 text-[11px] text-indigo-400 font-bold hover:underline'>
+          className='flex items-center gap-1 text-[11px] text-ficium font-bold hover:underline'>
           Full log <ArrowRight className='w-3 h-3' aria-hidden />
         </Link>
       </div>
@@ -157,14 +157,14 @@ function RecentAudit() {
         <ADataTable headers={['Time', 'Event', 'Actor', 'Outcome']} caption='Recent admin audit log'>
           {entries.map(e => (
             <ATr key={e.id}>
-              <ATd className='text-[10px] font-mono text-slate-500 whitespace-nowrap'>
+              <ATd className='text-[10px] font-mono text-ink/45 whitespace-nowrap'>
                 {fmtTime(e.created_at)}
               </ATd>
               <ATd>
-                <div className='font-mono text-[11px] text-slate-300'>{e.event_label}</div>
-                <div className='text-[10px] text-slate-600'>{e.action_category}</div>
+                <div className='font-mono text-[11px] text-ink/75'>{e.event_label}</div>
+                <div className='text-[10px] text-ink/30'>{e.action_category}</div>
               </ATd>
-              <ATd className='text-[11px] text-slate-400 font-mono'>{e.actor_email ?? 'system'}</ATd>
+              <ATd className='text-[11px] text-ink/60 font-mono'>{e.actor_email ?? 'system'}</ATd>
               <ATd><AStatusBadge status={e.outcome} /></ATd>
             </ATr>
           ))}
@@ -181,8 +181,8 @@ function RecentAudit() {
 function ActiveSessionsSummary() {
   const { data: sessions = [], isLoading } = useAdminSessions(true)
   return (
-    <div className='bg-[#111827] rounded-xl border border-[#1f2937] overflow-hidden h-full'>
-      <div className='flex items-center justify-between px-5 py-4 border-b border-[#1f2937]'>
+    <div className='bg-ink/80 rounded-xl border border-ficium/[0.12] overflow-hidden h-full'>
+      <div className='flex items-center justify-between px-5 py-4 border-b border-ficium/[0.12]'>
         <h2 className='font-black text-[14px] text-white flex items-center gap-2'>
           <Radio className='w-4 h-4 text-emerald-400' aria-hidden />
           Active sessions
@@ -193,27 +193,27 @@ function ActiveSessionsSummary() {
         <div className='p-5 space-y-3'>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className='flex gap-3 items-center animate-pulse'>
-              <div className='w-6 h-6 bg-slate-800 rounded-full' />
-              <div className='flex-1 h-3 bg-slate-800 rounded' />
+              <div className='w-6 h-6 bg-ink/60 rounded-full' />
+              <div className='flex-1 h-3 bg-ink/60 rounded' />
             </div>
           ))}
         </div>
       ) : sessions.length === 0 ? (
-        <p className='text-[12px] text-slate-600 text-center py-10 font-mono'>No active sessions</p>
+        <p className='text-[12px] text-ink/30 text-center py-10 font-mono'>No active sessions</p>
       ) : (
-        <ul className='divide-y divide-[#1f2937]'>
+        <ul className='divide-y divide-ficium/[0.12]'>
           {sessions.slice(0, 8).map(s => (
             <li key={s.id} className='flex items-center gap-3 px-5 py-3'>
               <span className='w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0 animate-pulse' aria-hidden />
               <div className='flex-1 min-w-0'>
-                <div className='text-[12px] font-semibold text-slate-300 truncate'>
+                <div className='text-[12px] font-semibold text-ink/75 truncate'>
                   {s.admin_email ?? s.admin_user_id.slice(0, 12)}
                 </div>
-                <div className='text-[10px] text-slate-600 font-mono'>
+                <div className='text-[10px] text-ink/30 font-mono'>
                   {s.ip_address} · {fmtAgo(s.last_active_at)}
                 </div>
               </div>
-              <span className='text-[9px] font-mono text-slate-700 flex-shrink-0'>
+              <span className='text-[9px] font-mono text-ink/20 flex-shrink-0'>
                 {s.admin_role?.slice(0, 6) ?? '—'}
               </span>
             </li>
@@ -221,8 +221,8 @@ function ActiveSessionsSummary() {
         </ul>
       )}
       {sessions.length > 8 && (
-        <div className='px-5 py-3 border-t border-[#1f2937]'>
-          <Link to='/admin/sessions' className='text-[11px] text-indigo-400 font-bold hover:underline'>
+        <div className='px-5 py-3 border-t border-ficium/[0.12]'>
+          <Link to='/admin/sessions' className='text-[11px] text-ficium font-bold hover:underline'>
             +{sessions.length - 8} more →
           </Link>
         </div>
