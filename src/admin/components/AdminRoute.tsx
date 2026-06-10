@@ -1,11 +1,13 @@
 /**
  * @component AdminRoute
  * @description Route guard for all /admin/* protected pages.
+ * Uses the same detect_portal_user_type RPC as UnifiedLogin
+ * to avoid RLS 403s on cross-schema table queries.
  * @owner Ficium Engineering
  */
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import adminDb from '../lib/adminSupabase'
+import { supabase } from '../../shared/lib/supabase'
 
 type State = 'loading' | 'ok' | 'unauthed' | 'no_admin' | 'locked'
 
@@ -24,25 +26,18 @@ export default function AdminRoute() {
   useEffect(() => {
     let cancelled = false
     async function check() {
-      const { data: { session } } = await adminDb.auth.getSession()
+      // Get session from shared auth client
+      const { data: { session } } = await supabase.auth.getSession()
       if (!session) { if (!cancelled) setState('unauthed'); return }
 
-      const { data: admin } = await adminDb
-        .from('admin_users')
-        .select('id, status')
-        .eq('auth_user_id', session.user.id)
-        .single()
+      // Use RPC to check user type — avoids RLS 403 on direct table queries
+      const { data: userType } = await supabase
+        .rpc('detect_portal_user_type', { p_auth_user_id: session.user.id })
 
-      if (!admin) { if (!cancelled) setState('no_admin'); return }
-      if (['locked','suspended','deactivated'].includes(admin.status)) {
-        if (!cancelled) setState('locked'); return
+      if (userType !== 'admin') {
+        if (!cancelled) setState('no_admin')
+        return
       }
-
-      await adminDb
-        .from('admin_sessions')
-        .update({ last_active_at: new Date().toISOString() })
-        .eq('admin_user_id', admin.id)
-        .eq('is_active', true)
 
       if (!cancelled) setState('ok')
     }
@@ -51,8 +46,9 @@ export default function AdminRoute() {
   }, [location.pathname])
 
   if (state === 'loading')  return <Spinner />
-  if (state === 'unauthed') return <Navigate to='/admin/login' state={{ from: location }} replace />
-  if (state === 'no_admin') return <Navigate to='/admin/login' replace />
+  // Redirect to unified login — not /admin/login (which would loop)
+  if (state === 'unauthed') return <Navigate to='/login' state={{ from: location }} replace />
+  if (state === 'no_admin') return <Navigate to='/login' replace />
   if (state === 'locked')   return (
     <div className='min-h-screen bg-[#0a0d14] flex items-center justify-center p-6'>
       <div className='bg-red-900/20 border border-red-800 rounded-2xl p-8 max-w-sm text-center'>
