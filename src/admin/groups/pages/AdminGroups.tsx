@@ -23,7 +23,7 @@ import {
   CheckSquare, Square,
 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../../shared/lib/supabase'
+import adminDb from '../../lib/adminSupabase'
 import {
   MODULE_CATALOGUE, INSTITUTION_MODULE_LIST, ADMIN_MODULE_LIST,
   type PortalModule,
@@ -58,7 +58,7 @@ function useGroups() {
   return useQuery<UserGroup[]>({
     queryKey: ['admin', 'groups'],
     queryFn:  async () => {
-      const { data, error } = await supabase.rpc('get_user_groups')
+      const { data, error } = await adminDb.rpc('get_user_groups')
       if (error) throw error
       return (data as UserGroup[]) ?? []
     },

@@ -404,7 +404,7 @@ export function useAdminGroups() {
   return useQuery({
     queryKey: ['admin', 'groups'],
     queryFn:  async () => {
-      const { data, error } = await supabase.rpc('get_user_groups')
+      const { data, error } = await adminDb.rpc('get_user_groups')
       if (error) throw error
       return data ?? []
     },
@@ -416,7 +416,7 @@ export function useMyGroup() {
   return useQuery({
     queryKey: ['admin', 'my-group'],
     queryFn:  async () => {
-      const { data, error } = await supabase.rpc('get_my_group')
+      const { data, error } = await adminDb.rpc('get_my_group')
       if (error) throw error
       return data
     },
