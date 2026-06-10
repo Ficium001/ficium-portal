@@ -32,7 +32,6 @@ export interface PortalModule {
 }
 
 // ─── Institution modules ──────────────────────────────────────
-// Keys must match institution schema module slugs where applicable.
 
 const INSTITUTION_MODULES: PortalModule[] = [
   {
@@ -55,7 +54,7 @@ const INSTITUTION_MODULES: PortalModule[] = [
   },
   {
     key:         'inst:bids',
-    label:       'My Bids',
+    label:       'Bids',
     description: 'View and manage submitted bids',
     category:    'institution',
     path:        '/bids',
@@ -64,7 +63,7 @@ const INSTITUTION_MODULES: PortalModule[] = [
   },
   {
     key:         'inst:bid_approval',
-    label:       'Bid Approval',
+    label:       'Approval',
     description: 'Approve or reject bids as checker',
     category:    'institution',
     path:        '/approvals',
@@ -91,7 +90,7 @@ const INSTITUTION_MODULES: PortalModule[] = [
   },
   {
     key:         'inst:audit',
-    label:       'Audit Log',
+    label:       'Audit Trail',
     description: 'Read-only audit trail for institution activity',
     category:    'institution',
     path:        '/audit',
@@ -117,16 +116,16 @@ const ADMIN_MODULES: PortalModule[] = [
     label:       'Dashboard',
     description: 'Ficium platform overview',
     category:    'admin',
-    path:        '/admin/dashboard',
+    path:        '/dashboard',
     iconKey:     'LayoutDashboard',
     shortcut:    'D',
   },
   {
     key:         'admin:users',
     label:       'Users',
-    description: 'Manage Ficium admin and institution user accounts',
+    description: 'Manage admin and institution user accounts',
     category:    'admin',
-    path:        '/admin/users',
+    path:        '/users',
     iconKey:     'Users',
     shortcut:    'U',
   },
@@ -135,7 +134,7 @@ const ADMIN_MODULES: PortalModule[] = [
     label:       'Groups',
     description: 'Define user groups and module access',
     category:    'admin',
-    path:        '/admin/groups',
+    path:        '/groups',
     iconKey:     'Shield',
     shortcut:    'G',
   },
@@ -144,16 +143,16 @@ const ADMIN_MODULES: PortalModule[] = [
     label:       'Dual Control',
     description: 'Four-eyes approval queue for high-risk actions',
     category:    'admin',
-    path:        '/admin/dual-control',
+    path:        '/dual-control',
     iconKey:     'GitMerge',
     shortcut:    'Q',
   },
   {
     key:         'admin:sessions',
     label:       'Sessions',
-    description: 'Active admin session monitoring',
+    description: 'Active session monitoring',
     category:    'admin',
-    path:        '/admin/sessions',
+    path:        '/sessions',
     iconKey:     'Radio',
     shortcut:    'E',
   },
@@ -162,7 +161,7 @@ const ADMIN_MODULES: PortalModule[] = [
     label:       'Audit Log',
     description: 'Immutable platform-wide audit trail',
     category:    'admin',
-    path:        '/admin/audit',
+    path:        '/admin-audit',
     iconKey:     'ScrollText',
     shortcut:    'L',
   },
@@ -171,7 +170,7 @@ const ADMIN_MODULES: PortalModule[] = [
     label:       'System',
     description: 'Infrastructure health and platform config',
     category:    'admin',
-    path:        '/admin/system',
+    path:        '/system',
     iconKey:     'MonitorDot',
     shortcut:    'Y',
   },

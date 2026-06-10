@@ -155,7 +155,7 @@ export default function UnifiedLogin() {
       if (!session) return
       setDetecting(true)
       const userType = await detectUserType(session.user.id)
-      if (userType === 'admin') navigate('/admin/dashboard', { replace: true })
+      if (userType === 'admin') navigate('/dashboard', { replace: true })
       else if (userType === 'institution') navigate(from ?? '/dashboard', { replace: true })
       else setDetecting(false)
     })
@@ -184,7 +184,7 @@ export default function UnifiedLogin() {
     const userType = await detectUserType(data.user.id)
 
     if (userType === 'admin') {
-      navigate('/admin/dashboard', { replace: true })
+      navigate('/dashboard', { replace: true })
     } else if (userType === 'institution') {
       navigate(from ?? '/dashboard', { replace: true })
     } else {
