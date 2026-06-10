@@ -33,8 +33,9 @@ import {
 import {
   useMyInstitution, useMyRole, usePendingActions,
 } from "../hooks/useInstitution";
+import { useMyGroup } from "../../admin/hooks/useAdmin";
 import institutionSupabase from "../lib/institutionSupabase";
-import type { PortalSection } from "../types/institution";
+import { INSTITUTION_MODULE_LIST, allowedModules } from "../../shared/lib/modules";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -320,14 +321,13 @@ function IdleWarningBanner({
 // Sidebar
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface NavItem {
-  section: PortalSection;
-  label:   string;
-  path:    string;
-  icon:    React.ElementType;
-  module?: string;
-  badge?:  number;
-  key?:    string; // keyboard shortcut hint (after G+)
+const ICON_MAP: Record<string, React.ElementType> = {
+  LayoutDashboard, Store, FileText, Clock, Package,
+  Webhook, ScrollText, Settings,
+}
+
+function resolveIcon(iconKey: string): React.ElementType {
+  return ICON_MAP[iconKey] ?? LayoutDashboard
 }
 
 function Sidebar({
@@ -335,28 +335,17 @@ function Sidebar({
   institution,
   role,
   pendingCount,
-  modules,
+  modulePermissions,
   onSignOut,
 }: {
-  collapsed:    boolean;
-  institution?: { name: string; deployment_model: string; primary_contact_name?: string };
-  role?:        { role: string };
-  pendingCount: number;
-  modules:      string[];
-  onSignOut:    () => void;
+  collapsed:          boolean;
+  institution?:       { name: string; deployment_model: string; primary_contact_name?: string };
+  role?:              { role: string };
+  pendingCount:       number;
+  modulePermissions:  string[];
+  onSignOut:          () => void;
 }) {
-  const NAV: NavItem[] = [
-    { section: "dashboard",       label: "Dashboard",   path: "/dashboard",  icon: LayoutDashboard, key: "D" },
-    { section: "marketplace",     label: "Marketplace", path: "/marketplace",icon: Store,   module: "marketplace", key: "M" },
-    { section: "my-bids",         label: "My bids",     path: "/bids",       icon: FileText,module: "marketplace", key: "B" },
-    { section: "pending-actions", label: "Approvals",   path: "/approvals",  icon: Clock,   badge: pendingCount,   key: "A" },
-    { section: "products",        label: "Products",    path: "/products",   icon: Package,                         key: "P" },
-    { section: "webhooks",        label: "Webhooks",    path: "/webhooks",   icon: Webhook,                         key: "W" },
-    { section: "audit",           label: "Audit log",   path: "/audit",      icon: ScrollText,                      key: "L" },
-    { section: "settings",        label: "Settings",    path: "/settings",   icon: Settings,                        key: "S" },
-  ];
-
-  const visible = NAV.filter((item) => !item.module || modules.includes(item.module));
+  const visibleModules = allowedModules(INSTITUTION_MODULE_LIST, modulePermissions);
 
   return (
     <aside
@@ -386,42 +375,46 @@ function Sidebar({
             Portal
           </p>
         )}
-        {visible.map((item) => (
-          <NavLink
-            key={item.section}
-            to={item.path}
-            end={item.path === "/dashboard"}
-            title={collapsed ? `${item.label} (G+${item.key})` : undefined}
-            className={({ isActive }) =>
-              [
-                "flex items-center gap-3 mx-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-all",
-                collapsed ? "justify-center" : "",
-                isActive
-                  ? "bg-ficium/10 text-ficium font-semibold"
-                  : "text-ink/50 hover:text-ink hover:bg-ink/[0.04]",
-              ].join(" ")
-            }
-            aria-label={item.label}
-          >
-            <item.icon className="w-[15px] h-[15px] flex-shrink-0" aria-hidden />
-            {!collapsed && (
-              <>
-                <span className="flex-1">{item.label}</span>
-                {item.badge && item.badge > 0 ? (
-                  <span
-                    className="bg-ficium text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-                    aria-label={`${item.badge} pending`}
-                  >
-                    {item.badge}
-                  </span>
-                ) : null}
-              </>
-            )}
-            {collapsed && item.badge && item.badge > 0 ? (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-ficium rounded-full" aria-hidden />
-            ) : null}
-          </NavLink>
-        ))}
+        {visibleModules.map((item) => {
+          const Icon        = resolveIcon(item.iconKey)
+          const isApprovals = item.key === 'inst:bid_approval'
+          return (
+            <NavLink
+              key={item.key}
+              to={item.path}
+              end={item.path === "/dashboard"}
+              title={collapsed ? `${item.label} (G+${item.shortcut})` : undefined}
+              className={({ isActive }) =>
+                [
+                  "flex items-center gap-3 mx-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-all",
+                  collapsed ? "justify-center" : "",
+                  isActive
+                    ? "bg-ficium/10 text-ficium font-semibold"
+                    : "text-ink/50 hover:text-ink hover:bg-ink/[0.04]",
+                ].join(" ")
+              }
+              aria-label={item.label}
+            >
+              <Icon className="w-[15px] h-[15px] flex-shrink-0" aria-hidden />
+              {!collapsed && (
+                <>
+                  <span className="flex-1">{item.label}</span>
+                  {isApprovals && pendingCount > 0 ? (
+                    <span
+                      className="bg-ficium text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                      aria-label={`${pendingCount} pending`}
+                    >
+                      {pendingCount}
+                    </span>
+                  ) : null}
+                </>
+              )}
+              {collapsed && isApprovals && pendingCount > 0 ? (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-ficium rounded-full" aria-hidden />
+              ) : null}
+            </NavLink>
+          )
+        })}
       </nav>
 
       {/* User footer */}
@@ -540,11 +533,13 @@ export default function InstitutionPortalShell() {
   const { data: institution }    = useMyInstitution();
   const { data: role }           = useMyRole();
   const { data: pendingActions } = usePendingActions();
+  const { data: myGroup }        = useMyGroup();
 
   const [collapsed, setCollapsed] = useState(false);
 
-  const modules      = institution?.modules ?? [];
-  const pendingCount = pendingActions?.length ?? 0;
+  // Nav driven by group module_permissions — not institution.modules
+  const modulePermissions = myGroup?.module_permissions ?? []
+  const pendingCount      = pendingActions?.length ?? 0;
 
   const handleSignOut = useCallback(async () => {
     await institutionSupabase.auth.signOut();
@@ -589,7 +584,7 @@ export default function InstitutionPortalShell() {
           institution={institution ?? undefined}
           role={role ?? undefined}
           pendingCount={pendingCount}
-          modules={modules}
+          modulePermissions={modulePermissions}
           onSignOut={handleSignOut}
         />
 

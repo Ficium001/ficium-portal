@@ -23,9 +23,9 @@ import {
   MonitorDot, Radio, LogOut, ChevronRight, Bell,
   Wifi, WifiOff, Clock, ShieldCheck,
 } from 'lucide-react'
-import { useAdminMe, useDualControlActions } from '../hooks/useAdmin'
+import { useAdminMe, useDualControlActions, useMyGroup } from '../hooks/useAdmin'
 import adminDb from '../lib/adminSupabase'
-import type { AdminSection } from '../types/admin'
+import { ADMIN_MODULE_LIST, allowedModules } from '../../../shared/lib/modules'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -36,24 +36,13 @@ const IDLE_LOGOUT_MS = 10 * 60 * 1000
 const HEARTBEAT_MS   = 60 * 1000
 const PING_MS        = 30 * 1000
 
-interface NavItem {
-  section:    AdminSection
-  label:      string
-  path:       string
-  icon:       React.ElementType
-  permission?: string
-  key:        string
+const ICON_MAP: Record<string, React.ElementType> = {
+  LayoutDashboard, Users, Shield, GitMerge, ScrollText, MonitorDot, Radio,
 }
 
-const NAV: NavItem[] = [
-  { section: 'dashboard',    label: 'Dashboard',      path: '/admin/dashboard',    icon: LayoutDashboard, key: 'D' },
-  { section: 'users',        label: 'Users',          path: '/admin/users',        icon: Users,     permission: 'users:view',         key: 'U' },
-  { section: 'roles',        label: 'Roles',          path: '/admin/roles',        icon: Shield,    permission: 'roles:view',         key: 'R' },
-  { section: 'dual-control', label: 'Dual Control',   path: '/admin/dual-control', icon: GitMerge,  permission: 'dual_control:view',  key: 'Q' },
-  { section: 'sessions',     label: 'Sessions',       path: '/admin/sessions',     icon: Radio,     permission: 'sessions:view',      key: 'S' },
-  { section: 'audit',        label: 'Audit Log',      path: '/admin/audit',        icon: ScrollText, permission: 'audit:view',        key: 'L' },
-  { section: 'system',       label: 'System',         path: '/admin/system',       icon: MonitorDot, permission: 'system:view',       key: 'Y' },
-]
+function resolveIcon(iconKey: string): React.ElementType {
+  return ICON_MAP[iconKey] ?? Shield
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Connection indicator
@@ -176,6 +165,7 @@ function StatusBar({
 export default function AdminPortalShell() {
   const navigate  = useNavigate()
   const { data: me } = useAdminMe()
+  const { data: myGroup } = useMyGroup()
   const { data: dcPending = [] } = useDualControlActions('pending')
 
   const signOut = useCallback(async () => {
@@ -185,13 +175,18 @@ export default function AdminPortalShell() {
   const { warning, reset } = useIdleGuard(signOut)
   const conn = useConn()
 
-  // Keyboard nav
+  // Build nav from group module_permissions
+  const groupPerms: string[] = myGroup?.module_permissions ?? me?.module_permissions ?? []
+  const visibleModules = allowedModules(ADMIN_MODULE_LIST, groupPerms)
+
+  // Keyboard nav — built from visible modules
   useEffect(() => {
     const gRef = { pressed: false, timer: 0 as unknown as ReturnType<typeof setTimeout> }
-    const routes: Record<string, string> = {
-      d: '/admin/dashboard', u: '/admin/users', r: '/admin/roles',
-      q: '/admin/dual-control', s: '/admin/sessions', l: '/admin/audit', y: '/admin/system',
-    }
+    const routes: Record<string, string> = Object.fromEntries(
+      visibleModules
+        .filter(m => m.shortcut)
+        .map(m => [m.shortcut!.toLowerCase(), m.path])
+    )
     const h = (e: KeyboardEvent) => {
       if (['INPUT','TEXTAREA','SELECT'].includes((e.target as HTMLElement).tagName)) return
       if (e.key.toLowerCase() === 'g') {
@@ -205,7 +200,7 @@ export default function AdminPortalShell() {
     }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
-  }, [navigate])
+  }, [navigate, visibleModules])
 
   // Heartbeat
   useEffect(() => {
@@ -216,13 +211,6 @@ export default function AdminPortalShell() {
     }, HEARTBEAT_MS)
     return () => clearInterval(t)
   }, [me])
-
-  const permissions: string[] = me?.permissions ?? []
-  const isSuperAdmin = me?.role_slug === 'super_admin'
-
-  const visible = NAV.filter(item =>
-    !item.permission || isSuperAdmin || permissions.includes(item.permission)
-  )
 
   const pendingCount = dcPending.length
   const urgentCount  = dcPending.filter(a =>
@@ -250,28 +238,32 @@ export default function AdminPortalShell() {
           {/* Nav */}
           <nav className='flex-1 py-3 overflow-y-auto' aria-label='Primary navigation'>
             <p className='text-[8px] font-bold text-muted/30 uppercase tracking-[0.15em] px-4 mb-2'>Navigation</p>
-            {visible.map(item => (
-              <NavLink
-                key={item.section}
-                to={item.path}
-                title={`${item.label} (G+${item.key})`}
-                className={({ isActive }) => [
-                  'flex items-center gap-3 mx-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all',
-                  isActive
-                    ? 'bg-ficium/15 text-ficium-bright font-bold border border-ficium/20'
-                    : 'text-muted/70 hover:text-ink hover:bg-ficium/[0.04]',
-                ].join(' ')}
-                aria-label={item.label}
-              >
-                <item.icon className='w-3.5 h-3.5 flex-shrink-0' aria-hidden />
-                <span className='flex-1'>{item.label}</span>
-                {item.section === 'dual-control' && pendingCount > 0 && (
-                  <span className='bg-ficium text-ink text-[8px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center'>
-                    {pendingCount > 99 ? '99+' : pendingCount}
-                  </span>
-                )}
-              </NavLink>
-            ))}
+            {visibleModules.map(item => {
+              const Icon = resolveIcon(item.iconKey)
+              const isDualControl = item.key === 'admin:dual_control'
+              return (
+                <NavLink
+                  key={item.key}
+                  to={item.path}
+                  title={`${item.label} (G+${item.shortcut})`}
+                  className={({ isActive }) => [
+                    'flex items-center gap-3 mx-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all',
+                    isActive
+                      ? 'bg-ficium/15 text-ficium-bright font-bold border border-ficium/20'
+                      : 'text-muted/70 hover:text-ink hover:bg-ficium/[0.04]',
+                  ].join(' ')}
+                  aria-label={item.label}
+                >
+                  <Icon className='w-3.5 h-3.5 flex-shrink-0' aria-hidden />
+                  <span className='flex-1'>{item.label}</span>
+                  {isDualControl && pendingCount > 0 && (
+                    <span className='bg-ficium text-ink text-[8px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center'>
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  )}
+                </NavLink>
+              )
+            })}
           </nav>
 
           {/* Footer */}

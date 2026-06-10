@@ -1,0 +1,267 @@
+/**
+ * @module shared/lib/modules
+ * @description
+ *   Single source of truth for every portal module across both
+ *   institution and admin surfaces.
+ *
+ *   A "module" maps 1:1 to a nav item and a permission key stored
+ *   in user_groups.module_permissions[]. Shells filter their nav
+ *   from this catalogue — no hardcoded visibility rules anywhere.
+ *
+ *   Categories:
+ *     'institution' — visible to institution users
+ *     'admin'       — visible to Ficium internal admins
+ *
+ * @owner Ficium Engineering
+ */
+
+export type ModuleCategory = 'institution' | 'admin'
+
+export interface PortalModule {
+  /** Stored in DB — never rename without a migration. */
+  key:         string
+  label:       string
+  description: string
+  category:    ModuleCategory
+  /** React Router path. */
+  path:        string
+  /** Lucide icon name — resolved in shells. */
+  iconKey:     string
+  /** Vim-style keyboard shortcut (after G+). */
+  shortcut?:   string
+}
+
+// ─── Institution modules ──────────────────────────────────────
+// Keys must match institution schema module slugs where applicable.
+
+const INSTITUTION_MODULES: PortalModule[] = [
+  {
+    key:         'inst:dashboard',
+    label:       'Dashboard',
+    description: 'Institution overview and KPIs',
+    category:    'institution',
+    path:        '/dashboard',
+    iconKey:     'LayoutDashboard',
+    shortcut:    'D',
+  },
+  {
+    key:         'inst:marketplace',
+    label:       'Marketplace',
+    description: 'Browse and filter client financing requests',
+    category:    'institution',
+    path:        '/marketplace',
+    iconKey:     'Store',
+    shortcut:    'M',
+  },
+  {
+    key:         'inst:bids',
+    label:       'My Bids',
+    description: 'View and manage submitted bids',
+    category:    'institution',
+    path:        '/bids',
+    iconKey:     'FileText',
+    shortcut:    'B',
+  },
+  {
+    key:         'inst:bid_approval',
+    label:       'Bid Approval',
+    description: 'Approve or reject bids as checker',
+    category:    'institution',
+    path:        '/approvals',
+    iconKey:     'Clock',
+    shortcut:    'A',
+  },
+  {
+    key:         'inst:products',
+    label:       'Products',
+    description: 'Manage product catalogue and rate configs',
+    category:    'institution',
+    path:        '/products',
+    iconKey:     'Package',
+    shortcut:    'P',
+  },
+  {
+    key:         'inst:webhooks',
+    label:       'Webhooks',
+    description: 'Configure outbound webhook endpoints',
+    category:    'institution',
+    path:        '/webhooks',
+    iconKey:     'Webhook',
+    shortcut:    'W',
+  },
+  {
+    key:         'inst:audit',
+    label:       'Audit Log',
+    description: 'Read-only audit trail for institution activity',
+    category:    'institution',
+    path:        '/audit',
+    iconKey:     'ScrollText',
+    shortcut:    'L',
+  },
+  {
+    key:         'inst:settings',
+    label:       'Settings',
+    description: 'Institution profile and configuration',
+    category:    'institution',
+    path:        '/settings',
+    iconKey:     'Settings',
+    shortcut:    'S',
+  },
+]
+
+// ─── Admin modules ────────────────────────────────────────────
+
+const ADMIN_MODULES: PortalModule[] = [
+  {
+    key:         'admin:dashboard',
+    label:       'Dashboard',
+    description: 'Ficium platform overview',
+    category:    'admin',
+    path:        '/admin/dashboard',
+    iconKey:     'LayoutDashboard',
+    shortcut:    'D',
+  },
+  {
+    key:         'admin:users',
+    label:       'Users',
+    description: 'Manage Ficium admin and institution user accounts',
+    category:    'admin',
+    path:        '/admin/users',
+    iconKey:     'Users',
+    shortcut:    'U',
+  },
+  {
+    key:         'admin:groups',
+    label:       'Groups',
+    description: 'Define user groups and module access',
+    category:    'admin',
+    path:        '/admin/groups',
+    iconKey:     'Shield',
+    shortcut:    'G',
+  },
+  {
+    key:         'admin:dual_control',
+    label:       'Dual Control',
+    description: 'Four-eyes approval queue for high-risk actions',
+    category:    'admin',
+    path:        '/admin/dual-control',
+    iconKey:     'GitMerge',
+    shortcut:    'Q',
+  },
+  {
+    key:         'admin:sessions',
+    label:       'Sessions',
+    description: 'Active admin session monitoring',
+    category:    'admin',
+    path:        '/admin/sessions',
+    iconKey:     'Radio',
+    shortcut:    'E',
+  },
+  {
+    key:         'admin:audit',
+    label:       'Audit Log',
+    description: 'Immutable platform-wide audit trail',
+    category:    'admin',
+    path:        '/admin/audit',
+    iconKey:     'ScrollText',
+    shortcut:    'L',
+  },
+  {
+    key:         'admin:system',
+    label:       'System',
+    description: 'Infrastructure health and platform config',
+    category:    'admin',
+    path:        '/admin/system',
+    iconKey:     'MonitorDot',
+    shortcut:    'Y',
+  },
+]
+
+// ─── Exports ──────────────────────────────────────────────────
+
+export const MODULE_CATALOGUE: PortalModule[] = [
+  ...INSTITUTION_MODULES,
+  ...ADMIN_MODULES,
+]
+
+export const MODULE_BY_KEY = Object.fromEntries(
+  MODULE_CATALOGUE.map(m => [m.key, m])
+) as Record<string, PortalModule>
+
+/** All institution modules in display order. */
+export const INSTITUTION_MODULE_LIST = INSTITUTION_MODULES
+
+/** All admin modules in display order. */
+export const ADMIN_MODULE_LIST = ADMIN_MODULES
+
+/** Filter a module list to only those keys present in a permission set. */
+export function allowedModules(
+  list: PortalModule[],
+  permissions: string[],
+): PortalModule[] {
+  if (permissions.includes('*')) return list
+  return list.filter(m => permissions.includes(m.key))
+}
+
+// ─── System group seeds ───────────────────────────────────────
+// Mirrors DB seed data — used for display labels in the UI.
+
+export interface GroupSeed {
+  slug:               string
+  label:              string
+  description:        string
+  module_permissions: string[]
+  is_system:          boolean
+}
+
+export const SYSTEM_GROUPS: GroupSeed[] = [
+  {
+    slug:               'super_admin',
+    label:              'Super Admin',
+    description:        'Full platform access — all modules',
+    module_permissions: ['*'],
+    is_system:          true,
+  },
+  {
+    slug:               'institution_admin',
+    label:              'Institution Admin',
+    description:        'Full institution portal + team management',
+    module_permissions: INSTITUTION_MODULES.map(m => m.key),
+    is_system:          true,
+  },
+  {
+    slug:               'bank_officer',
+    label:              'Bank Officer',
+    description:        'Marketplace browse and bid submission',
+    module_permissions: ['inst:dashboard', 'inst:marketplace', 'inst:bids'],
+    is_system:          true,
+  },
+  {
+    slug:               'bank_officer_approver',
+    label:              'Bank Officer + Approval',
+    description:        'Marketplace, bid submission and bid approval',
+    module_permissions: ['inst:dashboard', 'inst:marketplace', 'inst:bids', 'inst:bid_approval'],
+    is_system:          true,
+  },
+  {
+    slug:               'it_admin',
+    label:              'IT Admin',
+    description:        'Technical setup — webhooks, settings, products',
+    module_permissions: ['inst:dashboard', 'inst:products', 'inst:webhooks', 'inst:settings'],
+    is_system:          true,
+  },
+  {
+    slug:               'compliance',
+    label:              'Compliance',
+    description:        'Read-only audit access',
+    module_permissions: ['inst:dashboard', 'inst:audit'],
+    is_system:          true,
+  },
+  {
+    slug:               'ficium_support',
+    label:              'Ficium Support',
+    description:        'Admin portal — users and sessions only',
+    module_permissions: ['admin:dashboard', 'admin:users', 'admin:sessions', 'admin:audit'],
+    is_system:          true,
+  },
+]

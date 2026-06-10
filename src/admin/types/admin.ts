@@ -58,6 +58,10 @@ export interface AdminUser {
   display_name:         string
   role_slug:            AdminRoleSlug
   custom_role_id?:      string | null
+  /** Group assigned via user_groups system. */
+  group_id?:            string | null
+  /** Resolved from group.module_permissions — used for nav gating. */
+  module_permissions?:  string[]
   status:               AdminUserStatus
   mfa_enabled:          boolean
   mfa_verified_at?:     string | null
@@ -75,6 +79,7 @@ export interface AdminUser {
   created_at:           string
   updated_at:           string
   role_label?:          string
+  /** Legacy — kept for backward compat during migration. */
   permissions?:         string[]
 }
 

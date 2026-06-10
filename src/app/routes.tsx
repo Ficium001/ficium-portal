@@ -48,7 +48,7 @@ const AdminRoute       = lazy(() => import('../admin/components/AdminRoute'))
 const AdminPortalShell = lazy(() => import('../admin/components/AdminPortalShell'))
 const AdminDashboard   = lazy(() => import('../admin/dashboard/pages/AdminDashboard'))
 const AdminUsers       = lazy(() => import('../admin/users/pages/AdminUsers'))
-const AdminRoles       = lazy(() => import('../admin/roles/pages/AdminRoles'))
+const AdminGroups      = lazy(() => import('../admin/groups/pages/AdminGroups'))
 const AdminDualControl = lazy(() => import('../admin/dual-control/pages/AdminDualControl'))
 const AdminSessions    = lazy(() => import('../admin/sessions/pages/AdminSessions'))
 const AdminAudit       = lazy(() => import('../admin/audit/pages/AdminAudit'))
@@ -130,6 +130,8 @@ export const router = createBrowserRouter([
 
   // Legacy admin login redirect → unified login
   { path: '/admin/login', element: <Navigate to='/login' replace /> },
+  // Legacy roles redirect → groups
+  { path: '/admin/roles', element: <Navigate to='/admin/groups' replace /> },
 
   // ── Institution public ─────────────────────────────────────────────────────
   { path: '/register',   element: <S><RegisterInstitution /></S>   },
@@ -167,7 +169,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/admin/dashboard',    element: <S><AdminDashboard /></S>   },
           { path: '/admin/users',        element: <S><AdminUsers /></S>       },
-          { path: '/admin/roles',        element: <S><AdminRoles /></S>       },
+          { path: '/admin/groups',       element: <S><AdminGroups /></S>      },
           { path: '/admin/dual-control', element: <S><AdminDualControl /></S> },
           { path: '/admin/sessions',     element: <S><AdminSessions /></S>    },
           { path: '/admin/audit',        element: <S><AdminAudit /></S>       },

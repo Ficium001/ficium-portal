@@ -395,3 +395,63 @@ export function useTerminateSession() {
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.sessions }),
   })
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Groups
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function useAdminGroups() {
+  return useQuery({
+    queryKey: ['admin', 'groups'],
+    queryFn:  async () => {
+      const { data, error } = await supabase.rpc('get_user_groups')
+      if (error) throw error
+      return data ?? []
+    },
+    staleTime: 30_000,
+  })
+}
+
+export function useMyGroup() {
+  return useQuery({
+    queryKey: ['admin', 'my-group'],
+    queryFn:  async () => {
+      const { data, error } = await supabase.rpc('get_my_group')
+      if (error) throw error
+      return data
+    },
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useCreateAdminGroup() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: import('../../shared/lib/groups').CreateGroupPayload) =>
+      submitDualControl({
+        action_category: 'group.create',
+        action_label:    `Create group: ${payload.label}`,
+        risk:            'high',
+        resource_type:   'user_group',
+        resource_label:  payload.label,
+        payload,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'groups'] }),
+  })
+}
+
+export function useUpdateGroupModules() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: import('../../shared/lib/groups').UpdateGroupModulesPayload) =>
+      submitDualControl({
+        action_category: 'group.update_modules',
+        action_label:    `Update module access for group`,
+        risk:            'high',
+        resource_type:   'user_group',
+        resource_id:     payload.group_id,
+        payload,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'groups'] }),
+  })
+}
