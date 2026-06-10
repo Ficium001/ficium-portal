@@ -51,7 +51,7 @@ export default function AdminRoute() {
   if (state === 'no_admin') return <Navigate to='/login' replace />
   if (state === 'locked')   return (
     <div className='min-h-screen bg-ink flex items-center justify-center p-6'>
-      <div className='bg-red-900/20 border border-red-800 rounded-2xl p-8 max-w-sm text-center'>
+      <div className='bg-white border border-red-200 rounded-2xl p-8 max-w-sm text-center shadow-card'>
         <div className='text-red-400 text-4xl mb-4'>⊘</div>
         <h2 className='text-red-300 font-black text-[18px] mb-2'>Account locked</h2>
         <p className='text-red-600 text-[12px]'>

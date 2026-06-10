@@ -58,11 +58,11 @@ function CreateRoleModal({ open, onClose, onSuccess }: { open: boolean; onClose:
             placeholder='What this role does…' className={aInputCls} />
         </AFormField>
         <div>
-          <div className='text-[10px] font-bold text-white/45 uppercase tracking-widest mb-3'>Permissions</div>
+          <div className='text-[10px] font-bold text-muted/70 uppercase tracking-widest mb-3'>Permissions</div>
           <div className='space-y-4 max-h-72 overflow-y-auto pr-1'>
             {categories.map(cat => (
               <div key={cat}>
-                <div className='text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 capitalize'>{cat}</div>
+                <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-2 capitalize'>{cat}</div>
                 <div className='space-y-1.5'>
                   {PERMISSION_CATALOGUE.filter(p => p.category === cat).map(p => (
                     <button key={p.key} type='button' onClick={() => toggle(p.key)}
@@ -71,14 +71,14 @@ function CreateRoleModal({ open, onClose, onSuccess }: { open: boolean; onClose:
                         'w-full flex items-center gap-3 text-left px-3 py-2 rounded-lg border transition-all',
                         form.permissions.includes(p.key)
                           ? 'border-ficium-deep bg-ficium/[0.08]'
-                          : 'border-[#2d3748] hover:border-ficium/30',
+                          : 'border-ink/[0.12] hover:border-ficium/30',
                       ].join(' ')}>
                       <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${form.permissions.includes(p.key) ? 'bg-ficium border-ficium' : 'border-slate-600'}`}>
-                        {form.permissions.includes(p.key) && <span className='text-white text-[8px]'>✓</span>}
+                        {form.permissions.includes(p.key) && <span className='text-ink text-[8px]'>✓</span>}
                       </div>
                       <div className='flex-1 min-w-0'>
-                        <div className='text-[11px] font-mono text-white/75'>{p.key}</div>
-                        <div className='text-[10px] text-white/30'>{p.description}</div>
+                        <div className='text-[11px] font-mono text-ink/80'>{p.key}</div>
+                        <div className='text-[10px] text-muted/50'>{p.description}</div>
                       </div>
                       <RiskBadge risk={p.risk} />
                     </button>
@@ -130,18 +130,18 @@ export default function AdminRoles() {
       <div className='mt-5 space-y-3'>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className='bg-[#111827] rounded-xl border border-[#1f2937] p-5 animate-pulse h-16' />
+            <div key={i} className='bg-white rounded-xl border border-ink/[0.08] p-5 animate-pulse h-16' />
           ))
         ) : roles.length === 0 ? (
           <AEmptyState icon={Shield} title='No roles' />
         ) : roles.map(role => {
           const isOpen = expanded === role.id
           return (
-            <div key={role.id} className='bg-[#111827] rounded-xl border border-[#1f2937] overflow-hidden'>
+            <div key={role.id} className='bg-white rounded-xl border border-ink/[0.08] overflow-hidden'>
               <button
                 onClick={() => setExpanded(isOpen ? null : role.id)}
                 aria-expanded={isOpen}
-                className='w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-white/[0.06] transition-colors'
+                className='w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-ficium/[0.04] transition-colors'
               >
                 <div className='w-9 h-9 rounded-xl bg-ficium/10 border border-ficium/20 flex items-center justify-center flex-shrink-0'>
                   {role.is_system
@@ -151,24 +151,24 @@ export default function AdminRoles() {
                 </div>
                 <div className='flex-1 min-w-0 text-left'>
                   <div className='flex items-center gap-2'>
-                    <span className='font-bold text-[14px] text-white'>{role.label}</span>
+                    <span className='font-bold text-[14px] text-ink'>{role.label}</span>
                     {role.is_system && (
-                      <span className='text-[9px] font-bold bg-[#1a2236] text-white/45 px-2 py-0.5 rounded-full border border-[#374151] uppercase tracking-widest'>System</span>
+                      <span className='text-[9px] font-bold bg-cream/50 text-muted/70 px-2 py-0.5 rounded-full border border-ink/[0.15] uppercase tracking-widest'>System</span>
                     )}
-                    <span className='text-[9px] font-mono text-white/30'>{role.slug}</span>
+                    <span className='text-[9px] font-mono text-muted/50'>{role.slug}</span>
                   </div>
-                  <div className='text-[11px] text-white/30 mt-0.5'>{role.description}</div>
+                  <div className='text-[11px] text-muted/50 mt-0.5'>{role.description}</div>
                 </div>
-                <div className='text-[11px] text-white/30 flex-shrink-0'>
+                <div className='text-[11px] text-muted/50 flex-shrink-0'>
                   {role.permissions[0] === '*' ? 'All permissions' : `${role.permissions.length} permissions`}
                 </div>
-                <div className='text-white/30 ml-2'>
+                <div className='text-muted/50 ml-2'>
                   {isOpen ? '▲' : '▼'}
                 </div>
               </button>
               {isOpen && (
-                <div className='border-t border-[#1f2937] px-5 py-4 bg-[#0d1117]/60'>
-                  <div className='text-[9px] font-bold text-white/30 uppercase tracking-widest mb-3'>
+                <div className='border-t border-ink/[0.08] px-5 py-4 bg-white/60'>
+                  <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-3'>
                     Granted permissions
                   </div>
                   {role.permissions[0] === '*' ? (
@@ -179,14 +179,14 @@ export default function AdminRoles() {
                     </div>
                   )}
                   <div className='mt-4'>
-                    <div className='text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2'>Permission details</div>
+                    <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-2'>Permission details</div>
                     <div className='space-y-1'>
                       {PERMISSION_CATALOGUE.filter(p => role.permissions[0] === '*' || role.permissions.includes(p.key)).map(p => (
                         <div key={p.key} className='flex items-center gap-3 text-[11px]'>
                           <RiskBadge risk={p.risk} />
                           <code className='font-mono text-ficium-bright'>{p.key}</code>
-                          <span className='text-white/45'>—</span>
-                          <span className='text-white/45'>{p.description}</span>
+                          <span className='text-muted/70'>—</span>
+                          <span className='text-muted/70'>{p.description}</span>
                         </div>
                       ))}
                     </div>

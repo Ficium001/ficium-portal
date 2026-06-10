@@ -86,29 +86,29 @@ export default function AdminAudit() {
         actions={<ABtn variant='secondary' size='sm' icon={Download} onClick={handleExport}>Export CSV</ABtn>}
       />
 
-      <div className='bg-[#0d1117] border border-[#1f2937] rounded-xl px-5 py-3 flex items-center gap-3 mb-5'>
-        <ScrollText className='w-4 h-4 text-white/30' aria-hidden />
-        <p className='text-[9px] text-white/20 font-mono uppercase tracking-widest'>
+      <div className='bg-white border border-ink/[0.08] rounded-xl px-5 py-3 flex items-center gap-3 mb-5'>
+        <ScrollText className='w-4 h-4 text-muted/50' aria-hidden />
+        <p className='text-[9px] text-muted/30 font-mono uppercase tracking-widest'>
           Append-only · No updates or deletes permitted · WORM enforced at database level · FSC Mauritius compliant
         </p>
       </div>
 
       <div className='flex flex-col lg:flex-row lg:items-center gap-3 mb-5'>
         <div className='flex items-center gap-2 flex-wrap'>
-          <Filter className='w-3.5 h-3.5 text-white/30' aria-hidden />
+          <Filter className='w-3.5 h-3.5 text-muted/50' aria-hidden />
           <AFilterPills options={OUTCOME_OPTS} value={outcome} onChange={setOutcome} />
         </div>
         <div className='flex items-center gap-2 flex-wrap lg:ml-4'>
           <AFilterPills options={CAT_OPTS} value={cat} onChange={setCat} />
         </div>
         <div className='relative lg:ml-auto'>
-          <Search className='w-3.5 h-3.5 text-white/30 absolute left-3 top-1/2 -translate-y-1/2' aria-hidden />
+          <Search className='w-3.5 h-3.5 text-muted/50 absolute left-3 top-1/2 -translate-y-1/2' aria-hidden />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder='Search event, actor, resource…'
             aria-label='Search audit events'
-            className='bg-[#111827] border border-[#2d3748] rounded-xl pl-8 pr-8 py-2 text-[11px] text-white/75 outline-none focus:border-ficium font-mono w-56 transition-all' />
+            className='bg-white border border-ink/[0.12] rounded-xl pl-8 pr-8 py-2 text-[11px] text-ink/80 outline-none focus:border-ficium font-mono w-56 transition-all' />
           {search && (
-            <button onClick={() => setSearch('')} aria-label='Clear' className='absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/75'>
+            <button onClick={() => setSearch('')} aria-label='Clear' className='absolute right-3 top-1/2 -translate-y-1/2 text-muted/50 hover:text-ink/80'>
               <X className='w-3 h-3' />
             </button>
           )}
@@ -130,23 +130,23 @@ export default function AdminAudit() {
               return (
                 <ATr key={e.id}>
                   <ATd>
-                    <div className='text-[11px] font-mono text-white/60 whitespace-nowrap'>{date}</div>
-                    <div className='text-[10px] font-mono text-white/30'>{time}</div>
+                    <div className='text-[11px] font-mono text-muted whitespace-nowrap'>{date}</div>
+                    <div className='text-[10px] font-mono text-muted/50'>{time}</div>
                   </ATd>
-                  <ATd className='text-[10px] font-mono text-white/45'>{e.action_category}</ATd>
+                  <ATd className='text-[10px] font-mono text-muted/70'>{e.action_category}</ATd>
                   <ATd>
-                    <div className='text-[11px] text-white/75'>{e.event_label}</div>
+                    <div className='text-[11px] text-ink/80'>{e.event_label}</div>
                     {e.dual_control_id && <AMonoRef value={e.dual_control_id} />}
                   </ATd>
-                  <ATd className='text-[11px] font-mono text-white/60'>{e.actor_email ?? 'system'}</ATd>
-                  <ATd className='text-[11px] font-mono text-white/30'>{e.actor_ip ?? '—'}</ATd>
-                  <ATd className='text-[11px] text-white/45'>
+                  <ATd className='text-[11px] font-mono text-muted'>{e.actor_email ?? 'system'}</ATd>
+                  <ATd className='text-[11px] font-mono text-muted/50'>{e.actor_ip ?? '—'}</ATd>
+                  <ATd className='text-[11px] text-muted/70'>
                     {e.resource_type ?? '—'}
-                    {e.resource_label && <div className='text-white/30 text-[10px]'>{e.resource_label}</div>}
+                    {e.resource_label && <div className='text-muted/50 text-[10px]'>{e.resource_label}</div>}
                   </ATd>
                   <ATd><AStatusBadge status={e.outcome} /></ATd>
                   <ATd className='max-w-[180px]'>
-                    <span className='block truncate text-[11px] text-white/45' title={e.outcome_note ?? ''}>
+                    <span className='block truncate text-[11px] text-muted/70' title={e.outcome_note ?? ''}>
                       {e.outcome_note ?? '—'}
                     </span>
                   </ATd>

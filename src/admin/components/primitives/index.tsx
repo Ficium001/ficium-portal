@@ -34,15 +34,15 @@ import type { ActionRisk } from '../../types/admin'
 
 export const A = {
   bg:      'bg-ink',
-  surface: 'bg-[#111827]',
-  surface2:'bg-white/[0.06]',
-  border:  'border-[#1f2937]',
-  border2: 'border-[#2d3748]',
+  surface: 'bg-white',
+  surface2:'bg-ficium/[0.04]',
+  border:  'border-ink/[0.08]',
+  border2: 'border-ink/[0.12]',
   accent:  'text-ficium',
   accentBg:'bg-ficium',
-  muted:   'text-white/45',
-  text:    'text-white/90',
-  heading: 'text-white',
+  muted:   'text-muted/70',
+  text:    'text-ink',
+  heading: 'text-ink',
 } as const
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,19 +78,19 @@ const STATUS_STYLE: Record<string, string> = {
   locked:       'bg-amber-900/40   text-amber-400   border-amber-800',
   suspended:    'bg-red-900/40     text-red-400     border-red-800',
   pending_mfa:  'bg-ficium/[0.15]  text-ficium  border-ficium/30',
-  deactivated:  'bg-[#1a2236]      text-white/45   border-[#374151]',
+  deactivated:  'bg-cream/50      text-muted/70   border-ink/[0.15]',
   // dc
   pending:      'bg-ficium/[0.15]  text-ficium  border-ficium/30',
   approved:     'bg-emerald-900/40 text-emerald-400 border-emerald-800',
   rejected:     'bg-red-900/40     text-red-400     border-red-800',
-  expired:      'bg-[#1a2236]      text-white/45   border-[#374151]',
-  cancelled:    'bg-[#1a2236]      text-white/45   border-[#374151]',
+  expired:      'bg-cream/50      text-muted/70   border-ink/[0.15]',
+  cancelled:    'bg-cream/50      text-muted/70   border-ink/[0.15]',
   executed:     'bg-emerald-900/40 text-emerald-400 border-emerald-800',
   // audit
   success:      'bg-emerald-900/40 text-emerald-400 border-emerald-800',
   failed:       'bg-red-900/40     text-red-400     border-red-800',
   blocked:      'bg-orange-900/40  text-orange-400  border-orange-800',
-  logged:       'bg-[#1a2236]      text-white/45   border-[#374151]',
+  logged:       'bg-cream/50      text-muted/70   border-ink/[0.15]',
 }
 
 export function AStatusBadge({
@@ -132,12 +132,12 @@ export function AKpiCard({
 }) {
   const borderCls = status === 'critical' ? 'border-red-800'
                   : status === 'warn'     ? 'border-amber-800'
-                  :                         'border-[#1f2937]'
+                  :                         'border-ink/[0.08]'
   const valCls    = status === 'critical' ? 'text-red-400'
                   : status === 'warn'     ? 'text-amber-400'
-                  :                         'text-white'
+                  :                         'text-ink'
   return (
-    <div className={`bg-[#111827] rounded-xl border ${borderCls} p-5`}>
+    <div className={`bg-white rounded-xl border ${borderCls} p-5`}>
       {Icon && (
         <div className='w-8 h-8 rounded-lg bg-ficium/10 flex items-center justify-center mb-3'>
           <Icon className='w-4 h-4 text-ficium' aria-hidden />
@@ -146,13 +146,13 @@ export function AKpiCard({
       {loading ? (
         <>
           <div className='h-7 w-16 bg-[#374151] rounded-lg mb-2 animate-pulse' />
-          <div className='h-3 w-24 bg-[#1a2236] rounded animate-pulse' />
+          <div className='h-3 w-24 bg-cream/50 rounded animate-pulse' />
         </>
       ) : (
         <>
-          <div className='text-[10px] font-bold text-white/45 uppercase tracking-widest mb-1'>{label}</div>
+          <div className='text-[10px] font-bold text-muted/70 uppercase tracking-widest mb-1'>{label}</div>
           <div className={`text-[28px] font-black tracking-tight leading-none mb-1 ${valCls}`}>{value}</div>
-          {sub && <div className='text-[11px] text-white/45'>{sub}</div>}
+          {sub && <div className='text-[11px] text-muted/70'>{sub}</div>}
         </>
       )}
     </div>
@@ -178,10 +178,10 @@ export function ASectionHeader({
     <div className='flex items-start justify-between mb-7'>
       <div>
         <div className='flex items-center gap-3'>
-          <h1 className='text-[24px] font-black text-white tracking-tight'>{title}</h1>
+          <h1 className='text-[24px] font-black text-ink tracking-tight'>{title}</h1>
           {badge}
         </div>
-        {subtitle && <p className='text-[12px] text-white/45 mt-1 font-mono'>{subtitle}</p>}
+        {subtitle && <p className='text-[12px] text-muted/70 mt-1 font-mono'>{subtitle}</p>}
       </div>
       {actions && <div className='flex items-center gap-2 flex-shrink-0'>{actions}</div>}
     </div>
@@ -202,24 +202,24 @@ export function ADataTable({
   caption?: string
 }) {
   return (
-    <div className='bg-[#111827] rounded-xl border border-[#1f2937] overflow-hidden'>
+    <div className='bg-white rounded-xl border border-ink/[0.08] overflow-hidden'>
       <div className='overflow-x-auto'>
         <table className='w-full' role='grid' aria-label={caption}>
           {caption && <caption className='sr-only'>{caption}</caption>}
           <thead>
-            <tr className='border-b border-[#1f2937] bg-[#0d1117]'>
+            <tr className='border-b border-ink/[0.08] bg-white'>
               {headers.map(h => (
                 <th
                   key={h}
                   scope='col'
-                  className='px-5 py-3.5 text-left text-[10px] font-bold text-white/45 uppercase tracking-widest whitespace-nowrap'
+                  className='px-5 py-3.5 text-left text-[10px] font-bold text-muted/70 uppercase tracking-widest whitespace-nowrap'
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className='divide-y divide-[#1f2937]'>{children}</tbody>
+          <tbody className='divide-y divide-ink/[0.07]'>{children}</tbody>
         </table>
       </div>
     </div>
@@ -239,7 +239,7 @@ export function ATr({
     <tr
       className={[
         'transition-colors',
-        onClick    ? 'cursor-pointer hover:bg-white/[0.06]' : 'hover:bg-[#131920]',
+        onClick    ? 'cursor-pointer hover:bg-ficium/[0.04]' : 'hover:bg-cream/50',
         selected   ? 'bg-ficium/[0.08]' : '',
       ].join(' ')}
       onClick={onClick}
@@ -260,8 +260,8 @@ export function ATd({
   className?: string
 }) {
   return (
-    <td className={`px-5 py-3.5 text-[13px] text-white/75 ${className}`}>
-      {children ?? <span className='text-white/30'>—</span>}
+    <td className={`px-5 py-3.5 text-[13px] text-ink/80 ${className}`}>
+      {children ?? <span className='text-muted/50'>—</span>}
     </td>
   )
 }
@@ -272,10 +272,10 @@ export function ATd({
 
 export function ASkeletonRow({ cols }: { cols: number }) {
   return (
-    <tr className='border-b border-[#1f2937]' aria-hidden>
+    <tr className='border-b border-ink/[0.08]' aria-hidden>
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className='px-5 py-4'>
-          <div className={`h-3 bg-[#1a2236] rounded animate-pulse ${i === 0 ? 'w-32' : i === cols - 1 ? 'w-16' : 'w-24'}`} />
+          <div className={`h-3 bg-cream/50 rounded animate-pulse ${i === 0 ? 'w-32' : i === cols - 1 ? 'w-16' : 'w-24'}`} />
         </td>
       ))}
     </tr>
@@ -284,11 +284,11 @@ export function ASkeletonRow({ cols }: { cols: number }) {
 
 export function ASkeletonCard() {
   return (
-    <div className='bg-[#111827] rounded-xl border border-[#1f2937] p-5 animate-pulse' aria-hidden>
-      <div className='w-8 h-8 bg-[#1a2236] rounded-lg mb-4' />
+    <div className='bg-white rounded-xl border border-ink/[0.08] p-5 animate-pulse' aria-hidden>
+      <div className='w-8 h-8 bg-cream/50 rounded-lg mb-4' />
       <div className='h-3 w-16 bg-[#374151] rounded mb-2' />
       <div className='h-7 w-12 bg-slate-600 rounded mb-2' />
-      <div className='h-3 w-24 bg-[#1a2236] rounded' />
+      <div className='h-3 w-24 bg-cream/50 rounded' />
     </div>
   )
 }
@@ -309,10 +309,10 @@ export function AEmptyState({
   action?:      ReactNode
 }) {
   return (
-    <div className='flex flex-col items-center justify-center py-20 bg-[#111827] rounded-xl border border-[#1f2937]'>
-      {Icon && <Icon className='w-10 h-10 text-white/20 mb-4' aria-hidden />}
-      <p className='font-semibold text-white/75 text-[14px] mb-1'>{title}</p>
-      {description && <p className='text-[12px] text-white/45 mb-4'>{description}</p>}
+    <div className='flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-ink/[0.08]'>
+      {Icon && <Icon className='w-10 h-10 text-muted/30 mb-4' aria-hidden />}
+      <p className='font-semibold text-ink/80 text-[14px] mb-1'>{title}</p>
+      {description && <p className='text-[12px] text-muted/70 mb-4'>{description}</p>}
       {action}
     </div>
   )
@@ -367,17 +367,17 @@ export function AModal({
         role='dialog'
         aria-modal
         aria-labelledby='admin-modal-title'
-        className={`bg-[#111827] rounded-2xl border ${danger ? 'border-red-800' : 'border-[#1f2937]'} w-full ${width} shadow-2xl`}
+        className={`bg-white rounded-2xl border ${danger ? 'border-red-800' : 'border-ink/[0.08]'} w-full ${width} shadow-2xl`}
         onClick={e => e.stopPropagation()}
       >
-        <div className={`flex items-center justify-between px-6 pt-5 pb-4 border-b ${danger ? 'border-red-900' : 'border-[#1f2937]'}`}>
-          <h2 id='admin-modal-title' className='font-bold text-[16px] text-white'>
+        <div className={`flex items-center justify-between px-6 pt-5 pb-4 border-b ${danger ? 'border-red-900' : 'border-ink/[0.08]'}`}>
+          <h2 id='admin-modal-title' className='font-bold text-[16px] text-ink'>
             {title}
           </h2>
           <button
             onClick={onClose}
             aria-label='Close dialog'
-            className='text-white/45 hover:text-white/90 transition-colors p-1 rounded-lg hover:bg-white/5'
+            className='text-muted/70 hover:text-ink transition-colors p-1 rounded-lg hover:bg-ficium/[0.04]'
           >
             <X className='w-4 h-4' />
           </button>
@@ -446,8 +446,8 @@ export function AFilterPills<T extends string>({
           className={[
             'text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all uppercase tracking-wide',
             value === opt.key
-              ? 'bg-ficium text-white border-ficium'
-              : 'bg-transparent border-[#2d3748] text-white/45 hover:border-ficium/50 hover:text-ficium',
+              ? 'bg-ficium text-ink border-ficium'
+              : 'bg-transparent border-ink/[0.12] text-muted/70 hover:border-ficium/50 hover:text-ficium',
           ].join(' ')}
         >
           {opt.label}
@@ -483,11 +483,11 @@ export function ABtn({
   const base  = 'inline-flex items-center gap-2 font-bold rounded-xl transition-all disabled:opacity-40'
   const sizes = { sm: 'px-3.5 py-2 text-[11px]', md: 'px-5 py-2.5 text-[13px]' }
   const vars  = {
-    primary:   'bg-ficium hover:bg-ficium-deep text-white',
-    secondary: 'bg-[#1f2937] border border-[#374151] text-white/75 hover:border-ficium-deep',
-    ghost:     'bg-transparent text-white/45 hover:text-white/90 hover:bg-white/5',
-    danger:    'bg-red-500 hover:bg-red-600 text-white',
-    warn:      'bg-amber-500 hover:bg-amber-600 text-white',
+    primary:   'bg-ficium hover:bg-ficium-deep text-ink',
+    secondary: 'bg-[#1f2937] border border-ink/[0.15] text-ink/80 hover:border-ficium-deep',
+    ghost:     'bg-transparent text-muted/70 hover:text-ink hover:bg-ficium/[0.04]',
+    danger:    'bg-red-500 hover:bg-red-600 text-ink',
+    warn:      'bg-amber-500 hover:bg-amber-600 text-ink',
   }
   return (
     <button
@@ -510,7 +510,7 @@ export function ABtn({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const aInputCls =
-  'w-full bg-[#0d1117] border border-[#2d3748] rounded-xl px-4 py-2.5 text-[13px] text-white/90 outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all placeholder:text-white/30 font-mono'
+  'w-full bg-white border border-ink/[0.12] rounded-xl px-4 py-2.5 text-[13px] text-ink outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all placeholder:text-muted/50 font-mono'
 
 export function AFormField({
   label,
@@ -525,9 +525,9 @@ export function AFormField({
 }) {
   return (
     <div>
-      <label className='block text-[11px] font-bold text-white/60 uppercase tracking-widest mb-1.5'>{label}</label>
+      <label className='block text-[11px] font-bold text-muted uppercase tracking-widest mb-1.5'>{label}</label>
       {children}
-      {hint  && <p className='text-[11px] text-white/30 mt-1'>{hint}</p>}
+      {hint  && <p className='text-[11px] text-muted/50 mt-1'>{hint}</p>}
       {error && <p className='text-[11px] text-red-400 mt-1 font-semibold'>{error}</p>}
     </div>
   )
@@ -540,7 +540,7 @@ export function AFormField({
 export function AMonoRef({ value, short = true }: { value: string; short?: boolean }) {
   const display = short ? `${value.slice(0, 8)}…` : value
   return (
-    <code title={value} className='text-[11px] font-mono bg-[#1a2236] px-2 py-0.5 rounded-lg text-white/60'>
+    <code title={value} className='text-[11px] font-mono bg-cream/50 px-2 py-0.5 rounded-lg text-muted'>
       {display}
     </code>
   )
@@ -578,15 +578,15 @@ export function AConfirmModal({
   onNoteChange?:    (v: string) => void
 }) {
   const btnCls = risk === 'critical' || risk === 'high'
-    ? 'bg-red-500 hover:bg-red-600 text-white'
-    : 'bg-amber-500 hover:bg-amber-600 text-white'
+    ? 'bg-red-500 hover:bg-red-600 text-ink'
+    : 'bg-amber-500 hover:bg-amber-600 text-ink'
 
   return (
     <AModal open={open} onClose={onClose} title={title} danger={risk === 'critical' || risk === 'high'}>
-      {description && <p className='text-[13px] text-white/60 mb-4'>{description}</p>}
+      {description && <p className='text-[13px] text-muted mb-4'>{description}</p>}
       <div className='mb-4'>
         <RiskBadge risk={risk} />
-        <p className='text-[11px] text-white/45 mt-2'>
+        <p className='text-[11px] text-muted/70 mt-2'>
           This action enters the dual-control queue. A second admin must approve before execution.
         </p>
       </div>
@@ -616,7 +616,7 @@ export function AConfirmModal({
         </button>
         <button
           onClick={onClose}
-          className='px-5 text-[13px] font-semibold text-white/60 border border-[#2d3748] rounded-xl hover:bg-white/5 transition-colors'
+          className='px-5 text-[13px] font-semibold text-muted border border-ink/[0.12] rounded-xl hover:bg-ficium/[0.04] transition-colors'
         >
           Cancel
         </button>
@@ -644,7 +644,7 @@ export function ALiveBadge({ label = 'LIVE' }: { label?: string }) {
 
 export function PermissionTag({ perm }: { perm: string }) {
   return (
-    <span className='inline-block bg-[#1a2236] text-white/60 text-[10px] font-mono px-2 py-0.5 rounded border border-[#374151]'>
+    <span className='inline-block bg-cream/50 text-muted text-[10px] font-mono px-2 py-0.5 rounded border border-ink/[0.15]'>
       {perm}
     </span>
   )
@@ -655,7 +655,7 @@ export function PermissionTag({ perm }: { perm: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ADivider() {
-  return <div className='border-t border-[#1f2937] my-5' aria-hidden />
+  return <div className='border-t border-ink/[0.08] my-5' aria-hidden />
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

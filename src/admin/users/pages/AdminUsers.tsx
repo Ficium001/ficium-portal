@@ -186,12 +186,12 @@ function RoleChangeModal({
   return (
     <AModal open={open} onClose={onClose} title='Change user role' danger>
       <div className='space-y-4'>
-        <div className='bg-[#0d1117] rounded-xl p-4'>
-          <div className='text-[10px] text-white/45 font-mono mb-1'>Target user</div>
-          <div className='text-white/90 font-semibold'>{user.display_name}</div>
-          <div className='text-white/45 text-[12px] font-mono'>{user.email}</div>
-          <div className='text-[11px] text-white/30 mt-1'>
-            Current role: <span className='text-white/60'>{ROLE_LABELS[user.role_slug]}</span>
+        <div className='bg-white rounded-xl p-4'>
+          <div className='text-[10px] text-muted/70 font-mono mb-1'>Target user</div>
+          <div className='text-ink font-semibold'>{user.display_name}</div>
+          <div className='text-muted/70 text-[12px] font-mono'>{user.email}</div>
+          <div className='text-[11px] text-muted/50 mt-1'>
+            Current role: <span className='text-muted'>{ROLE_LABELS[user.role_slug]}</span>
           </div>
         </div>
 
@@ -249,13 +249,13 @@ function UserDetailPanel({
   const isDeactivated = user.status === 'deactivated'
 
   return (
-    <tr className='bg-[#0d1117]/80'>
+    <tr className='bg-white/80'>
       <td colSpan={8} className='px-5 py-4'>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-5'>
 
           {/* Account details */}
           <div>
-            <div className='text-[9px] font-bold text-white/30 uppercase tracking-widest mb-3'>Account details</div>
+            <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-3'>Account details</div>
             <div className='space-y-2'>
               {[
                 ['User ID',         user.id.slice(0, 12) + '…'],
@@ -268,8 +268,8 @@ function UserDetailPanel({
                 ['Created',         new Date(user.created_at).toLocaleDateString('en-MU')],
               ].map(([l, v]) => (
                 <div key={l} className='flex justify-between text-[11px]'>
-                  <span className='text-white/30'>{l}</span>
-                  <span className={`font-mono text-white/60 ${l === 'Failed logins' && user.failed_login_count > 0 ? 'text-amber-400' : ''}`}>{v}</span>
+                  <span className='text-muted/50'>{l}</span>
+                  <span className={`font-mono text-muted ${l === 'Failed logins' && user.failed_login_count > 0 ? 'text-amber-400' : ''}`}>{v}</span>
                 </div>
               ))}
             </div>
@@ -277,31 +277,31 @@ function UserDetailPanel({
 
           {/* Lock/suspend details */}
           <div>
-            <div className='text-[9px] font-bold text-white/30 uppercase tracking-widest mb-3'>Status details</div>
+            <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-3'>Status details</div>
             {user.locked_at && (
               <div className='bg-amber-900/20 border border-amber-900 rounded-lg p-3 mb-3 text-[11px]'>
                 <div className='text-amber-400 font-bold mb-1'>Locked</div>
-                <div className='text-white/45'>{user.locked_reason ?? '—'}</div>
-                <div className='text-white/30 mt-1'>{new Date(user.locked_at).toLocaleString('en-MU')}</div>
+                <div className='text-muted/70'>{user.locked_reason ?? '—'}</div>
+                <div className='text-muted/50 mt-1'>{new Date(user.locked_at).toLocaleString('en-MU')}</div>
               </div>
             )}
             {user.suspended_at && (
               <div className='bg-red-900/20 border border-red-900 rounded-lg p-3 text-[11px]'>
                 <div className='text-red-400 font-bold mb-1'>Suspended</div>
-                <div className='text-white/45'>{user.suspension_reason ?? '—'}</div>
-                <div className='text-white/30 mt-1'>{new Date(user.suspended_at).toLocaleString('en-MU')}</div>
+                <div className='text-muted/70'>{user.suspension_reason ?? '—'}</div>
+                <div className='text-muted/50 mt-1'>{new Date(user.suspended_at).toLocaleString('en-MU')}</div>
               </div>
             )}
             {!user.locked_at && !user.suspended_at && (
-              <p className='text-[11px] text-white/30 italic'>No active restrictions</p>
+              <p className='text-[11px] text-muted/50 italic'>No active restrictions</p>
             )}
           </div>
 
           {/* Action rail */}
           <div>
-            <div className='text-[9px] font-bold text-white/30 uppercase tracking-widest mb-3'>Actions (dual-control)</div>
+            <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-3'>Actions (dual-control)</div>
             {isSelf && (
-              <p className='text-[11px] text-white/30 italic mb-3'>Cannot perform actions on your own account</p>
+              <p className='text-[11px] text-muted/50 italic mb-3'>Cannot perform actions on your own account</p>
             )}
             <div className='space-y-2'>
               {isLocked && !isSelf && (
@@ -324,13 +324,13 @@ function UserDetailPanel({
               )}
               {!isDeactivated && !isSelf && (
                 <button onClick={() => onAction('force_logout', user.id)}
-                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-white/60 bg-[#1a2236] border border-[#374151] px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
+                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-muted bg-cream/50 border border-ink/[0.15] px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
                   <LogOut className='w-3.5 h-3.5' aria-hidden />Force logout all sessions
                 </button>
               )}
               {!isDeactivated && !isSelf && (
                 <button onClick={() => onAction('role_change', user.id)}
-                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-white/60 bg-[#1a2236] border border-[#374151] px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
+                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-muted bg-cream/50 border border-ink/[0.15] px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
                   <Shield className='w-3.5 h-3.5' aria-hidden />Change role
                 </button>
               )}
@@ -468,13 +468,13 @@ export default function AdminUsers() {
       <div className='flex flex-col lg:flex-row lg:items-center gap-3 my-5'>
         <AFilterPills options={STATUS_OPTS} value={statusFilter} onChange={setStatus} />
         <div className='relative lg:ml-auto'>
-          <Search className='w-3.5 h-3.5 text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2' aria-hidden />
+          <Search className='w-3.5 h-3.5 text-muted/50 absolute left-3.5 top-1/2 -translate-y-1/2' aria-hidden />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder='Search email or name…'
             aria-label='Search users'
-            className='bg-[#111827] border border-[#2d3748] rounded-xl pl-9 pr-4 py-2 text-[12px] text-white/75 outline-none focus:border-ficium font-mono w-60 transition-all'
+            className='bg-white border border-ink/[0.12] rounded-xl pl-9 pr-4 py-2 text-[12px] text-ink/80 outline-none focus:border-ficium font-mono w-60 transition-all'
           />
         </div>
       </div>
@@ -495,8 +495,8 @@ export default function AdminUsers() {
               <>
                 <ATr key={u.id} selected={isOpen} onClick={() => setExpanded(isOpen ? null : u.id)}>
                   <ATd>
-                    <div className='font-semibold text-white/90 text-[13px]'>{u.display_name}</div>
-                    <div className='text-[10px] text-white/30 font-mono'>{u.email}</div>
+                    <div className='font-semibold text-ink text-[13px]'>{u.display_name}</div>
+                    <div className='text-[10px] text-muted/50 font-mono'>{u.email}</div>
                     {isSelf && <span className='text-[9px] text-ficium font-bold'>YOU</span>}
                   </ATd>
                   <ATd>
@@ -510,20 +510,20 @@ export default function AdminUsers() {
                       {u.mfa_enabled ? '✓ ON' : '✗ OFF'}
                     </span>
                   </ATd>
-                  <ATd className='text-[11px] text-white/45 whitespace-nowrap'>
+                  <ATd className='text-[11px] text-muted/70 whitespace-nowrap'>
                     {u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('en-MU') : '—'}
                   </ATd>
                   <ATd>
-                    <span className={`text-[12px] font-bold ${u.failed_login_count > 0 ? 'text-amber-400' : 'text-white/30'}`}>
+                    <span className={`text-[12px] font-bold ${u.failed_login_count > 0 ? 'text-amber-400' : 'text-muted/50'}`}>
                       {u.failed_login_count}
                     </span>
                   </ATd>
-                  <ATd className='text-[11px] text-white/30 whitespace-nowrap'>
+                  <ATd className='text-[11px] text-muted/50 whitespace-nowrap'>
                     {new Date(u.created_at).toLocaleDateString('en-MU')}
                   </ATd>
                   <td className='px-5 py-3.5'>
                     <button aria-label={isOpen ? 'Collapse' : 'Expand'}
-                      className='text-white/30 hover:text-white/75 transition-colors'>
+                      className='text-muted/50 hover:text-ink/80 transition-colors'>
                       {isOpen ? <ChevronUp className='w-4 h-4' /> : <ChevronDown className='w-4 h-4' />}
                     </button>
                   </td>
