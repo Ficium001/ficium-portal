@@ -416,12 +416,12 @@ BEGIN
   INSERT INTO portal_admin.admin_audit_log (
     actor_id, actor_email, actor_role, actor_ip,
     action_category, event_label, resource_type, resource_id,
-    dual_control_id, payload, outcome, outcome_note
+    dual_control_id, outcome, outcome_note
   ) VALUES (
     v_admin.id, v_admin.email, v_admin.role_slug,
     COALESCE(v_session.ip_address, '0.0.0.0'::INET),
     action_category, 'Dual-control action submitted: ' || action_label,
-    resource_type, resource_id, v_action_id, payload,
+    resource_type, resource_id, v_action_id,
     'logged', 'Awaiting second admin approval'
   );
 
