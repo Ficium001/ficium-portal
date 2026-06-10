@@ -1,34 +1,25 @@
 /**
  * @component InstitutionPortalShell
  * @description
- *   Root layout for the institution portal. Wraps all protected pages.
- *   Renders the persistent sidebar, top bar, and a status bar strip.
- *
- *   Bank-grade additions vs v1:
- *     - SessionGuard: tracks idle time, warns at 4 min, forces sign-out
- *       at 5 min. Resets on any mousemove/keydown.
- *     - ConnectionIndicator: polls Supabase realtime ping; shows
- *       CONNECTED / RECONNECTING / OFFLINE in the status bar.
- *     - Status bar: always-visible strip showing session time remaining,
- *       role, institution ID, and connection state.
- *     - Keyboard shortcuts: G+D → Dashboard, G+M → Marketplace,
- *       G+B → Bids, G+A → Approvals (vim-style two-key navigation).
- *     - Sidebar collapse (Ctrl+B) for dense analyst workflow.
- *     - Pending-action badge auto-polls every 60 s.
+ *   Root layout for the institution portal.
+ *   Nav: left sidebar with icon + label, expandable sections.
+ *   Top bar: institution selector + notification bell + user avatar.
+ *   Nav items driven by group.module_permissions via MODULE_CATALOGUE.
+ *   Session guard, connection monitor, keyboard navigation preserved.
  *
  * @owner Ficium Engineering
- * @lastReviewed 2025-08
  */
 
 import {
   useEffect, useRef, useState, useCallback,
 } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Store, FileText, Clock,
   Webhook, Package, ScrollText, Settings,
-  LogOut, ChevronRight, Bell, PanelLeftClose, PanelLeftOpen,
-  Wifi, WifiOff, AlertTriangle, Shield,
+  LogOut, Bell, Wifi, WifiOff, AlertTriangle,
+  Shield, ChevronDown, ChevronRight, Menu, X,
+  Users,
 } from "lucide-react";
 import {
   useMyInstitution, useMyRole, usePendingActions,
@@ -37,278 +28,92 @@ import { useMyGroup } from "../../admin/hooks/useAdmin";
 import institutionSupabase from "../lib/institutionSupabase";
 import { INSTITUTION_MODULE_LIST, allowedModules } from "../../shared/lib/modules";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────
+const IDLE_WARN_MS   = 4 * 60 * 1000;
+const IDLE_LOGOUT_MS = 5 * 60 * 1000;
+const PING_MS        = 30 * 1000;
 
-/** Idle warning threshold (ms). */
-const IDLE_WARN_MS   = 4 * 60 * 1000;   // 4 minutes
-/** Forced sign-out threshold (ms). */
-const IDLE_LOGOUT_MS = 5 * 60 * 1000;   // 5 minutes
-/** Connection ping interval (ms). */
-const PING_MS        = 30 * 1000;        // 30 seconds
-
-const DEPLOY_LABELS: Record<string, string> = {
-  saas:    "SaaS",
-  paas:    "PaaS",
-  on_prem: "On-Prem",
+// ─── Icon resolver ───────────────────────────────────────────
+const ICON_MAP: Record<string, React.ElementType> = {
+  LayoutDashboard, Store, FileText, Clock, Package,
+  Webhook, ScrollText, Settings, Shield, Users,
 };
+function resolveIcon(key: string): React.ElementType {
+  return ICON_MAP[key] ?? LayoutDashboard;
+}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Ficium logo
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ─── Ficium F logo ───────────────────────────────────────────
 function FLogo({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-hidden
-    >
-      <path
-        d="M28 18 H72 C75 18 76 21 74 24 L62 38 H44 V52 H58 C61 52 62 55 60 58 L52 68 H44 V82 C44 85 41 86 38 84 L26 76 C24 75 24 73 24 71 V22 C24 19 26 18 28 18 Z"
-        fill="currentColor"
-      />
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none"
+      xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
+      <path d="M28 18 H72 C75 18 76 21 74 24 L62 38 H44 V52 H58 C61 52 62 55 60 58 L52 68 H44 V82 C44 85 41 86 38 84 L26 76 C24 75 24 73 24 71 V22 C24 19 26 18 28 18 Z"
+        fill="currentColor" />
     </svg>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// useSessionGuard — idle timeout with warn + force sign-out
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ─── Hooks ───────────────────────────────────────────────────
 function useSessionGuard(onSignOut: () => void) {
   const [idleWarning, setIdleWarning] = useState(false);
   const lastActivity = useRef(Date.now());
-
-  const reset = useCallback(() => {
-    lastActivity.current = Date.now();
-    setIdleWarning(false);
-  }, []);
-
+  const reset = useCallback(() => { lastActivity.current = Date.now(); setIdleWarning(false); }, []);
   useEffect(() => {
     const events = ["mousemove", "keydown", "pointerdown", "scroll"];
-    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
-
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
     const tick = setInterval(() => {
       const idle = Date.now() - lastActivity.current;
-      if (idle >= IDLE_LOGOUT_MS) {
-        onSignOut();
-      } else if (idle >= IDLE_WARN_MS) {
-        setIdleWarning(true);
-      } else {
-        setIdleWarning(false);
-      }
+      if (idle >= IDLE_LOGOUT_MS) onSignOut();
+      else if (idle >= IDLE_WARN_MS) setIdleWarning(true);
+      else setIdleWarning(false);
     }, 10_000);
-
-    return () => {
-      events.forEach((e) => window.removeEventListener(e, reset));
-      clearInterval(tick);
-    };
+    return () => { events.forEach(e => window.removeEventListener(e, reset)); clearInterval(tick); };
   }, [onSignOut, reset]);
-
   return { idleWarning, reset };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// useConnectionStatus — pings Supabase to detect network issues
-// ─────────────────────────────────────────────────────────────────────────────
-
 type ConnStatus = "connected" | "reconnecting" | "offline";
-
 function useConnectionStatus(): ConnStatus {
   const [status, setStatus] = useState<ConnStatus>("connected");
-
   useEffect(() => {
     let stale = false;
-
     const ping = async () => {
       try {
-        const { error } = await institutionSupabase
-          .from("institutions")
-          .select("id")
-          .limit(1)
-          .maybeSingle();
+        const { error } = await institutionSupabase.from("institutions").select("id").limit(1).maybeSingle();
         if (!stale) setStatus(error ? "reconnecting" : "connected");
-      } catch {
-        if (!stale) setStatus("offline");
-      }
+      } catch { if (!stale) setStatus("offline"); }
     };
-
     ping();
     const id = setInterval(ping, PING_MS);
     const onOnline  = () => { setStatus("reconnecting"); ping(); };
     const onOffline = () => setStatus("offline");
-    window.addEventListener("online",  onOnline);
+    window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
-
-    return () => {
-      stale = true;
-      clearInterval(id);
-      window.removeEventListener("online",  onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
+    return () => { stale = true; clearInterval(id); window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
   }, []);
-
   return status;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// useKeyboardNav — vim-style two-key navigation
-// ─────────────────────────────────────────────────────────────────────────────
-
-function useKeyboardNav(navigate: ReturnType<typeof useNavigate>) {
-  const gPressed = useRef(false);
-  const timer    = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Don't fire when typing in an input
-      if (["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) return;
-
-      if (e.key === "g" || e.key === "G") {
-        gPressed.current = true;
-        clearTimeout(timer.current);
-        timer.current = setTimeout(() => { gPressed.current = false; }, 800);
-        return;
-      }
-
-      if (gPressed.current) {
-        gPressed.current = false;
-        clearTimeout(timer.current);
-        const routes: Record<string, string> = {
-          d: "/dashboard",
-          m: "/marketplace",
-          b: "/bids",
-          a: "/approvals",
-          p: "/products",
-          w: "/webhooks",
-          l: "/audit",
-          s: "/settings",
-        };
-        const route = routes[e.key.toLowerCase()];
-        if (route) navigate(route);
-      }
-    };
-
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [navigate]);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ConnectionBar — fixed bottom strip
-// ─────────────────────────────────────────────────────────────────────────────
-
-function StatusBar({
-  role,
-  institutionId,
-  connStatus,
-  idleWarning,
-}: {
-  role:          string;
-  institutionId: string;
-  connStatus:    ConnStatus;
-  idleWarning:   boolean;
-}) {
-  const connColor = connStatus === "connected"    ? "text-emerald-600"
-                  : connStatus === "reconnecting" ? "text-amber-600"
-                  :                                 "text-red-600";
-  const ConnIcon  = connStatus === "connected"    ? Wifi
-                  :                                 WifiOff;
-
+// ─── Idle warning modal ──────────────────────────────────────
+function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; onSignOut: () => void }) {
   return (
-    <div
-      className="h-6 bg-ink/[0.015] border-t border-ink/[0.06] flex items-center px-4 gap-4 flex-shrink-0 text-[10px] font-mono text-muted"
-      role="status"
-      aria-live="polite"
-      aria-label="Session status bar"
-    >
-      {/* Connection */}
-      <span className={`flex items-center gap-1 font-semibold ${connColor}`}>
-        <ConnIcon className="w-3 h-3" aria-hidden />
-        {connStatus.toUpperCase()}
-      </span>
-
-      <span className="text-ink/20">·</span>
-
-      {/* Role */}
-      <span className="flex items-center gap-1">
-        <Shield className="w-3 h-3" aria-hidden />
-        {role.toUpperCase()}
-      </span>
-
-      <span className="text-ink/20">·</span>
-
-      {/* Institution ref */}
-      <span className="text-muted/60">
-        {institutionId.slice(0, 8)}
-      </span>
-
-      {/* Idle warning */}
-      {idleWarning && (
-        <>
-          <span className="text-ink/20">·</span>
-          <span className="flex items-center gap-1 text-amber-600 font-semibold animate-pulse">
-            <AlertTriangle className="w-3 h-3" aria-hidden />
-            SESSION EXPIRING — move mouse to continue
-          </span>
-        </>
-      )}
-
-      {/* Keyboard hint */}
-      <span className="ml-auto text-muted/40">
-        G+D Dashboard · G+M Marketplace · G+A Approvals
-      </span>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// IdleWarningBanner — modal-style warning before forced sign-out
-// ─────────────────────────────────────────────────────────────────────────────
-
-function IdleWarningBanner({
-  onDismiss,
-  onSignOut,
-}: {
-  onDismiss: () => void;
-  onSignOut: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 bg-ink/30 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
-      role="alertdialog"
-      aria-labelledby="idle-title"
-      aria-describedby="idle-desc"
-    >
+    <div className="fixed inset-0 bg-ink/30 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      role="alertdialog" aria-labelledby="idle-title">
       <div className="bg-white rounded-2xl border border-amber-200 shadow-2xl p-7 max-w-sm w-full text-center">
         <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-4">
           <Clock className="w-6 h-6 text-amber-600" aria-hidden />
         </div>
-        <h2 id="idle-title" className="font-display font-bold text-[18px] text-ink mb-2">
-          Session expiring
-        </h2>
-        <p id="idle-desc" className="text-[13px] text-muted mb-5">
-          You've been inactive for 4 minutes. You will be signed out in 1 minute
-          to protect your account.
+        <h2 id="idle-title" className="font-display font-bold text-[18px] text-ink mb-2">Session expiring</h2>
+        <p className="text-[13px] text-muted mb-5">
+          You've been inactive for 4 minutes. You'll be signed out in 1 minute.
         </p>
         <div className="flex gap-3">
-          <button
-            onClick={onDismiss}
-            className="flex-1 bg-ficium hover:bg-ficium-deep text-white font-bold py-2.5 rounded-xl transition-colors text-[13px]"
-            autoFocus
-          >
+          <button onClick={onDismiss} autoFocus
+            className="flex-1 bg-ficium hover:bg-ficium-deep text-white font-bold py-2.5 rounded-xl transition-colors text-[13px]">
             Continue session
           </button>
-          <button
-            onClick={onSignOut}
-            className="flex-1 border border-ink/[0.12] text-muted font-semibold py-2.5 rounded-xl hover:bg-ink/[0.03] transition-colors text-[13px]"
-          >
+          <button onClick={onSignOut}
+            className="flex-1 border border-ink/[0.12] text-muted font-semibold py-2.5 rounded-xl hover:bg-ink/[0.03] transition-colors text-[13px]">
             Sign out
           </button>
         </div>
@@ -317,216 +122,248 @@ function IdleWarningBanner({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sidebar
-// ─────────────────────────────────────────────────────────────────────────────
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  LayoutDashboard, Store, FileText, Clock, Package,
-  Webhook, ScrollText, Settings,
+// ─── Nav section config ───────────────────────────────────────
+interface NavSection {
+  key:   string;
+  label: string;
+  items: string[]; // module keys
 }
 
-function resolveIcon(iconKey: string): React.ElementType {
-  return ICON_MAP[iconKey] ?? LayoutDashboard
-}
+const NAV_SECTIONS: NavSection[] = [
+  { key: "main",       label: "",           items: ["inst:dashboard"] },
+  { key: "marketplace",label: "Market",     items: ["inst:marketplace", "inst:bids", "inst:bid_approval"] },
+  { key: "manage",     label: "Manage",     items: ["inst:products", "inst:webhooks"] },
+  { key: "compliance", label: "Compliance", items: ["inst:audit", "inst:settings"] },
+];
 
+// ─── Sidebar ─────────────────────────────────────────────────
 function Sidebar({
-  collapsed,
+  open,
   institution,
   role,
   pendingCount,
   modulePermissions,
   onSignOut,
+  onClose,
 }: {
-  collapsed:          boolean;
-  institution?:       { name: string; deployment_model: string; primary_contact_name?: string };
+  open:               boolean;
+  institution?:       { name: string; deployment_model?: string };
   role?:              { role: string };
   pendingCount:       number;
   modulePermissions:  string[];
   onSignOut:          () => void;
+  onClose:            () => void;
 }) {
-  const visibleModules = allowedModules(INSTITUTION_MODULE_LIST, modulePermissions);
+  const location         = useLocation();
+  const visibleModules   = allowedModules(INSTITUTION_MODULE_LIST, modulePermissions);
+  const visibleKeys      = new Set(visibleModules.map(m => m.key));
+  const moduleByKey      = Object.fromEntries(visibleModules.map(m => [m.key, m]));
 
   return (
-    <aside
-      className={[
-        "bg-white border-r border-ink/[0.07] flex flex-col flex-shrink-0 shadow-sm transition-all duration-200",
-        collapsed ? "w-14" : "w-60",
-      ].join(" ")}
-      aria-label="Portal navigation"
-    >
-      {/* Logo */}
-      <div className={`flex items-center gap-3 border-b border-ink/[0.07] ${collapsed ? "px-3 py-4 justify-center" : "px-5 py-5"}`}>
-        <FLogo size={24} className="text-ficium flex-shrink-0" />
-        {!collapsed && (
-          <div className="min-w-0">
-            <span className="font-display text-[15px] font-bold text-ink tracking-tight">Ficium</span>
-            <div className="text-[11px] font-semibold text-ficium truncate mt-0.5">
-              {institution?.name ?? "Institution"}
+    <>
+      {/* Mobile overlay */}
+      {open && (
+        <div className="fixed inset-0 bg-ink/40 z-30 lg:hidden" onClick={onClose} aria-hidden />
+      )}
+
+      <aside className={[
+        "fixed lg:static inset-y-0 left-0 z-40 lg:z-auto",
+        "w-64 bg-[#0f0e1a] flex flex-col flex-shrink-0",
+        "transition-transform duration-200",
+        open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+      ].join(" ")} aria-label="Portal navigation">
+
+        {/* Logo */}
+        <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-ficium flex items-center justify-center flex-shrink-0">
+              <FLogo size={18} className="text-white" />
+            </div>
+            <div>
+              <div className="font-display font-bold text-[15px] text-white tracking-tight">FICIUM</div>
+              <div className="text-[10px] font-semibold text-ficium/70 uppercase tracking-wider">Bank Portal</div>
             </div>
           </div>
-        )}
-      </div>
+          <button onClick={onClose} className="lg:hidden text-white/40 hover:text-white" aria-label="Close nav">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-      {/* Nav */}
-      <nav className="flex-1 py-3 overflow-y-auto" aria-label="Primary navigation">
-        {!collapsed && (
-          <p className="text-[9px] font-bold text-ink/25 uppercase tracking-[0.12em] px-5 mb-1">
-            Portal
-          </p>
-        )}
-        {visibleModules.map((item) => {
-          const Icon        = resolveIcon(item.iconKey)
-          const isApprovals = item.key === 'inst:bid_approval'
-          return (
-            <NavLink
-              key={item.key}
-              to={item.path}
-              end={item.path === "/dashboard"}
-              title={collapsed ? `${item.label} (G+${item.shortcut})` : undefined}
-              className={({ isActive }) =>
-                [
-                  "flex items-center gap-3 mx-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-all",
-                  collapsed ? "justify-center" : "",
-                  isActive
-                    ? "bg-ficium/10 text-ficium font-semibold"
-                    : "text-ink/50 hover:text-ink hover:bg-ink/[0.04]",
-                ].join(" ")
-              }
-              aria-label={item.label}
-            >
-              <Icon className="w-[15px] h-[15px] flex-shrink-0" aria-hidden />
-              {!collapsed && (
-                <>
-                  <span className="flex-1">{item.label}</span>
-                  {isApprovals && pendingCount > 0 ? (
-                    <span
-                      className="bg-ficium text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-                      aria-label={`${pendingCount} pending`}
+        {/* Nav sections */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3" aria-label="Primary navigation">
+          {NAV_SECTIONS.map(section => {
+            const sectionMods = section.items
+              .filter(k => visibleKeys.has(k))
+              .map(k => moduleByKey[k])
+              .filter(Boolean);
+            if (sectionMods.length === 0) return null;
+            return (
+              <div key={section.key} className="mb-4">
+                {section.label && (
+                  <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.15em] px-3 mb-1">
+                    {section.label}
+                  </p>
+                )}
+                {sectionMods.map(mod => {
+                  const Icon       = resolveIcon(mod.iconKey);
+                  const isApprovals= mod.key === "inst:bid_approval";
+                  const isActive   = location.pathname === mod.path ||
+                                     (mod.path !== "/dashboard" && location.pathname.startsWith(mod.path));
+                  return (
+                    <NavLink key={mod.key} to={mod.path}
+                      className={[
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all mb-0.5",
+                        isActive
+                          ? "bg-ficium text-white font-semibold"
+                          : "text-white/50 hover:text-white hover:bg-white/[0.06]",
+                      ].join(" ")}
+                      aria-label={mod.label}
+                      aria-current={isActive ? "page" : undefined}
                     >
-                      {pendingCount}
-                    </span>
-                  ) : null}
-                </>
-              )}
-              {collapsed && isApprovals && pendingCount > 0 ? (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-ficium rounded-full" aria-hidden />
-              ) : null}
-            </NavLink>
-          )
-        })}
-      </nav>
+                      <Icon className="w-4 h-4 flex-shrink-0" aria-hidden />
+                      <span className="flex-1">{mod.label}</span>
+                      {isApprovals && pendingCount > 0 && (
+                        <span className="bg-white text-ficium text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                          {pendingCount}
+                        </span>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </nav>
 
-      {/* User footer */}
-      <div className={`border-t border-ink/[0.07] ${collapsed ? "p-3" : "p-4"}`}>
-        {!collapsed && (
+        {/* User footer */}
+        <div className="border-t border-white/[0.06] p-4">
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8 h-8 rounded-full bg-ficium flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-ficium/30 border border-ficium/40 flex items-center justify-center flex-shrink-0">
               <span className="text-[12px] font-bold text-white">
-                {(institution?.primary_contact_name ?? institution?.name ?? "I")[0].toUpperCase()}
+                {(institution?.name ?? "I")[0].toUpperCase()}
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-semibold text-ink truncate">
-                {institution?.primary_contact_name ?? institution?.name ?? "User"}
+              <div className="text-[13px] font-semibold text-white truncate">
+                {institution?.name ?? "Institution"}
               </div>
-              <div className="text-[10px] text-muted capitalize">{role?.role ?? "member"}</div>
+              <div className="text-[10px] text-white/40 capitalize">
+                {role?.role ?? "member"}
+              </div>
             </div>
           </div>
-        )}
-        <button
-          onClick={onSignOut}
-          title="Sign out"
-          className={[
-            "flex items-center gap-2 text-[12px] text-muted hover:text-red-500 transition-colors",
-            collapsed ? "justify-center w-full" : "w-full",
-          ].join(" ")}
-          aria-label="Sign out"
-        >
-          <LogOut className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
-          {!collapsed && "Sign out"}
-        </button>
-      </div>
-    </aside>
+          <button onClick={onSignOut}
+            className="flex items-center gap-2 w-full text-[12px] text-white/30 hover:text-red-400 transition-colors"
+            aria-label="Sign out">
+            <LogOut className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
+            Sign out
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TopBar
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ─── Top bar ─────────────────────────────────────────────────
 function TopBar({
-  collapsed,
-  onToggleCollapse,
+  onMenuOpen,
   institution,
   pendingCount,
+  connStatus,
 }: {
-  collapsed:        boolean;
-  onToggleCollapse: () => void;
-  institution?:     { name: string; deployment_model: string; approved: boolean };
-  pendingCount:     number;
+  onMenuOpen:   () => void;
+  institution?: { name: string; approved?: boolean };
+  pendingCount: number;
+  connStatus:   ConnStatus;
 }) {
-  const deployLabel = DEPLOY_LABELS[institution?.deployment_model ?? "saas"] ?? "SaaS";
+  const connDot = connStatus === "connected"    ? "bg-emerald-500"
+                : connStatus === "reconnecting" ? "bg-amber-500"
+                :                                 "bg-red-500";
 
   return (
-    <header className="h-13 bg-white border-b border-ink/[0.07] flex items-center justify-between px-4 flex-shrink-0">
-      {/* Left: collapse + breadcrumb */}
+    <header className="h-14 bg-white border-b border-ink/[0.07] flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+      {/* Left */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={onToggleCollapse}
-          title={collapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="text-muted hover:text-ink transition-colors p-1.5 rounded-lg hover:bg-ink/[0.04]"
-        >
-          {collapsed
-            ? <PanelLeftOpen className="w-4 h-4" aria-hidden />
-            : <PanelLeftClose className="w-4 h-4" aria-hidden />
-          }
+        <button onClick={onMenuOpen}
+          className="lg:hidden p-2 rounded-lg hover:bg-ink/[0.05] text-muted hover:text-ink transition-colors"
+          aria-label="Open navigation">
+          <Menu className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-1.5 text-[13px] text-muted">
-          <FLogo size={13} className="text-ficium" />
-          <span>Ficium</span>
-          <ChevronRight className="w-3.5 h-3.5 text-ink/20" aria-hidden />
-          <span className="text-ink font-medium truncate max-w-[200px]">
-            {institution?.name ?? "Institution portal"}
+        {/* Institution selector — static for now, expandable later */}
+        <div className="flex items-center gap-2 bg-ink/[0.03] border border-ink/[0.08] rounded-xl px-3 py-2 cursor-pointer hover:bg-ink/[0.06] transition-colors">
+          <div className="w-5 h-5 rounded bg-ficium/10 flex items-center justify-center flex-shrink-0">
+            <span className="text-[10px] font-bold text-ficium">
+              {(institution?.name ?? "I")[0].toUpperCase()}
+            </span>
+          </div>
+          <span className="text-[13px] font-semibold text-ink max-w-[180px] truncate">
+            {institution?.name ?? "Institution"}
           </span>
-          <span className="text-[10px] bg-ficium/10 text-ficium font-semibold px-2 py-0.5 rounded-full ml-1">
-            {deployLabel}
-          </span>
+          <ChevronDown className="w-3.5 h-3.5 text-muted flex-shrink-0" aria-hidden />
         </div>
       </div>
 
-      {/* Right: status + bell */}
-      <div className="flex items-center gap-3">
-        {institution?.approved && (
-          <span className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" aria-hidden />
-            Live
-          </span>
-        )}
+      {/* Right */}
+      <div className="flex items-center gap-2">
+        {/* Connection dot */}
+        <div className="flex items-center gap-1.5 text-[11px] text-muted">
+          <span className={`w-1.5 h-1.5 rounded-full ${connDot}`} aria-hidden />
+          <span className="hidden sm:block capitalize">{connStatus}</span>
+        </div>
+
+        {/* Notifications */}
         <button
-          className="relative w-8 h-8 rounded-xl hover:bg-ink/[0.04] flex items-center justify-center transition-colors text-muted hover:text-ink"
-          aria-label={`Notifications${pendingCount > 0 ? ` — ${pendingCount} pending approvals` : ""}`}
-        >
+          className="relative w-9 h-9 rounded-xl hover:bg-ink/[0.05] flex items-center justify-center transition-colors text-muted hover:text-ink"
+          aria-label={`Notifications${pendingCount > 0 ? ` — ${pendingCount} pending` : ""}`}>
           <Bell className="w-4 h-4" aria-hidden />
           {pendingCount > 0 && (
-            <span
-              className="absolute top-1 right-1 bg-ficium text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center"
-              aria-hidden
-            >
-              {pendingCount > 9 ? "9+" : pendingCount}
-            </span>
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-ficium rounded-full" aria-hidden />
           )}
         </button>
+
+        {/* User avatar */}
+        <div className="w-9 h-9 rounded-xl bg-ficium flex items-center justify-center cursor-pointer hover:bg-ficium-deep transition-colors">
+          <span className="text-[13px] font-bold text-white">
+            {(institution?.name ?? "U")[0].toUpperCase()}
+          </span>
+        </div>
       </div>
     </header>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shell — root layout orchestrator
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Status bar ───────────────────────────────────────────────
+function StatusBar({
+  role, institutionId, connStatus, idleWarning,
+}: {
+  role: string; institutionId: string; connStatus: ConnStatus; idleWarning: boolean;
+}) {
+  return (
+    <div className="h-6 bg-ink/[0.015] border-t border-ink/[0.06] flex items-center px-4 gap-4 flex-shrink-0 text-[10px] font-mono text-muted"
+      role="status" aria-live="polite">
+      <span className={`flex items-center gap-1 font-semibold ${connStatus === "connected" ? "text-emerald-600" : connStatus === "reconnecting" ? "text-amber-600" : "text-red-600"}`}>
+        {connStatus === "connected" ? <Wifi className="w-3 h-3" aria-hidden /> : <WifiOff className="w-3 h-3" aria-hidden />}
+        {connStatus.toUpperCase()}
+      </span>
+      <span className="text-ink/20">·</span>
+      <span className="flex items-center gap-1"><Shield className="w-3 h-3" aria-hidden />{role.toUpperCase()}</span>
+      <span className="text-ink/20">·</span>
+      <span className="text-muted/60">{institutionId.slice(0, 8)}</span>
+      {idleWarning && (
+        <>
+          <span className="text-ink/20">·</span>
+          <span className="flex items-center gap-1 text-amber-600 font-semibold animate-pulse">
+            <AlertTriangle className="w-3 h-3" aria-hidden />
+            SESSION EXPIRING
+          </span>
+        </>
+      )}
+      <span className="ml-auto text-muted/40 hidden sm:block">G+D Dashboard · G+M Marketplace · G+A Approvals</span>
+    </div>
+  );
+}
 
+// ─── Shell ───────────────────────────────────────────────────
 export default function InstitutionPortalShell() {
   const navigate = useNavigate();
 
@@ -535,10 +372,9 @@ export default function InstitutionPortalShell() {
   const { data: pendingActions } = usePendingActions();
   const { data: myGroup }        = useMyGroup();
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Nav driven by group module_permissions — not institution.modules
-  const modulePermissions = myGroup?.module_permissions ?? []
+  const modulePermissions = myGroup?.module_permissions ?? [];
   const pendingCount      = pendingActions?.length ?? 0;
 
   const handleSignOut = useCallback(async () => {
@@ -546,70 +382,67 @@ export default function InstitutionPortalShell() {
     navigate("/login?signedout=1");
   }, [navigate]);
 
-  // Session guard
   const { idleWarning, reset: resetIdle } = useSessionGuard(handleSignOut);
-
-  // Connection status
   const connStatus = useConnectionStatus();
 
-  // Keyboard navigation
-  useKeyboardNav(navigate);
-
-  // Ctrl+B → toggle sidebar
+  // Keyboard nav
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "b") {
-        e.preventDefault();
-        setCollapsed((v) => !v);
+    const visibleModules = allowedModules(INSTITUTION_MODULE_LIST, modulePermissions);
+    const routes = Object.fromEntries(
+      visibleModules.filter(m => m.shortcut).map(m => [m.shortcut!.toLowerCase(), m.path])
+    );
+    const gRef = { pressed: false, timer: 0 as unknown as ReturnType<typeof setTimeout> };
+    const h = (e: KeyboardEvent) => {
+      if (["INPUT","TEXTAREA","SELECT"].includes((e.target as HTMLElement).tagName)) return;
+      if (e.key.toLowerCase() === "g") {
+        gRef.pressed = true; clearTimeout(gRef.timer);
+        gRef.timer = setTimeout(() => { gRef.pressed = false; }, 800); return;
+      }
+      if (gRef.pressed) {
+        gRef.pressed = false; clearTimeout(gRef.timer);
+        const r = routes[e.key.toLowerCase()]; if (r) navigate(r);
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [navigate, modulePermissions]);
+
+  // Close sidebar on nav
+  useEffect(() => { setSidebarOpen(false); }, [navigate]);
 
   return (
-    <div className="flex flex-col h-screen bg-cream text-ink font-body overflow-hidden">
-      {/* Idle warning overlay */}
-      {idleWarning && (
-        <IdleWarningBanner
-          onDismiss={resetIdle}
-          onSignOut={handleSignOut}
-        />
-      )}
+    <div className="flex flex-col h-screen bg-[#f5f4f8] text-ink font-body overflow-hidden">
+      {idleWarning && <IdleWarningBanner onDismiss={resetIdle} onSignOut={handleSignOut} />}
 
-      {/* Main layout */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          collapsed={collapsed}
+          open={sidebarOpen}
           institution={institution ?? undefined}
           role={role ?? undefined}
           pendingCount={pendingCount}
           modulePermissions={modulePermissions}
           onSignOut={handleSignOut}
+          onClose={() => setSidebarOpen(false)}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <TopBar
-            collapsed={collapsed}
-            onToggleCollapse={() => setCollapsed((v) => !v)}
+            onMenuOpen={() => setSidebarOpen(true)}
             institution={institution ?? undefined}
             pendingCount={pendingCount}
+            connStatus={connStatus}
           />
-
-          {/* Page content */}
-          <main className="flex-1 overflow-auto bg-cream" id="main-content">
+          <main className="flex-1 overflow-auto" id="main-content">
             <Outlet />
           </main>
+          <StatusBar
+            role={role?.role ?? "member"}
+            institutionId={institution?.id ?? ""}
+            connStatus={connStatus}
+            idleWarning={idleWarning}
+          />
         </div>
       </div>
-
-      {/* Always-visible status bar */}
-      <StatusBar
-        role={role?.role ?? "member"}
-        institutionId={institution?.id ?? ""}
-        connStatus={connStatus}
-        idleWarning={idleWarning}
-      />
     </div>
   );
 }
