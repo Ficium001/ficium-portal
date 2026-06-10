@@ -310,7 +310,7 @@ function TopBar({
         </button>
         <div className='flex items-center gap-2 bg-ink/[0.03] border border-ink/[0.08] rounded-xl px-3 py-2 cursor-pointer hover:bg-ink/[0.05] transition-colors'>
           <div className='w-5 h-5 rounded bg-ficium/10 flex items-center justify-center flex-shrink-0'>
-            <span className='text-[10px] font-bold text-ficium'>{platformName[0].toUpperCase()}</span>
+            <span className='text-[10px] font-bold text-ficium'>{(platformName || 'F')[0].toUpperCase()}</span>
           </div>
           <span className='text-[13px] font-semibold text-ink max-w-[180px] truncate'>{platformName}</span>
           <ChevronDown className='w-3.5 h-3.5 text-muted flex-shrink-0' aria-hidden />
@@ -329,7 +329,7 @@ function TopBar({
         </button>
         <div className='w-9 h-9 rounded-xl bg-ficium flex items-center justify-center cursor-pointer hover:bg-ficium-deep transition-colors'
           aria-label='Account menu'>
-          <span className='text-[13px] font-bold text-white'>{platformName[0].toUpperCase()}</span>
+          <span className='text-[13px] font-bold text-white'>{(platformName || 'F')[0].toUpperCase()}</span>
         </div>
       </div>
     </header>
@@ -427,7 +427,7 @@ export default function PortalShell() {
     return () => window.removeEventListener('keydown', h)
   }, [])
 
-  const isAdmin     = myGroup?.user_type === 'admin' || permissions.includes('*')
+  const isAdmin      = myGroup?.user_type === 'admin' || permissions.includes('*')
   const platformName = isAdmin ? 'Ficium Admin' : (userName || 'Institution')
 
   return (
