@@ -254,7 +254,7 @@ function Sidebar({
             <div className='flex items-center gap-2.5 mb-3'>
               <div className='w-8 h-8 rounded-full bg-ficium/30 border border-ficium/40 flex items-center justify-center flex-shrink-0'>
                 <span className='text-[12px] font-bold text-white'>
-                  {(userName ?? 'U')[0].toUpperCase()}
+                  {(userName || 'U')[0].toUpperCase()}
                 </span>
               </div>
               <div className='min-w-0 flex-1'>
