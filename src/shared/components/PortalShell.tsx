@@ -78,24 +78,25 @@ type ConnStatus = 'connected' | 'reconnecting' | 'offline'
 function useConnStatus(): ConnStatus {
   const [status, setStatus] = useState<ConnStatus>('connected')
   useEffect(() => {
-    if (!navigator.onLine) setStatus('offline')
-    const onOnline  = () => setStatus('connected')
-    const onOffline = () => setStatus('offline')
+    let stale = false
+    const check = async () => {
+      if (!navigator.onLine) { if (!stale) setStatus('offline'); return }
+      try {
+        const { error } = await supabase.auth.getSession()
+        if (!stale) setStatus(error ? 'reconnecting' : 'connected')
+      } catch { if (!stale) setStatus('offline') }
+    }
+    check()
+    const id = setInterval(check, 30_000)
+    const onOnline  = () => { if (!stale) setStatus('reconnecting'); check() }
+    const onOffline = () => { if (!stale) setStatus('offline') }
     window.addEventListener('online',  onOnline)
     window.addEventListener('offline', onOffline)
-
-    const channel = supabase.channel('__shell_ping__')
-    channel
-      .subscribe((s) => {
-        if (s === 'SUBSCRIBED')          setStatus('connected')
-        else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setStatus('reconnecting')
-        else if (s === 'CLOSED')         setStatus(navigator.onLine ? 'reconnecting' : 'offline')
-      })
-
     return () => {
+      stale = true
+      clearInterval(id)
       window.removeEventListener('online',  onOnline)
       window.removeEventListener('offline', onOffline)
-      supabase.removeChannel(channel)
     }
   }, [])
   return status
