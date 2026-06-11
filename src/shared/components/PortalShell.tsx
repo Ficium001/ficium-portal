@@ -27,6 +27,7 @@ import {
   ChevronDown, Menu, X, Users, GitMerge, Radio, MonitorDot,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { signOut as ficiumSignOut } from '../lib/ficiumAuth'
 import { useMyGroup } from '../../admin/hooks/useAdmin'
 import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '../lib/modules'
 
@@ -401,6 +402,7 @@ export default function PortalShell() {
   }, [])
 
   const handleSignOut = useCallback(async () => {
+    await ficiumSignOut()
     await supabase.auth.signOut()
     navigate('/login?signedout=1')
   }, [navigate])

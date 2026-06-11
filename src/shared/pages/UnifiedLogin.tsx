@@ -22,6 +22,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
 import { supabase } from '../../shared/lib/supabase'
+import { signIn as ficiumSignIn } from '../../shared/lib/ficiumAuth'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Logo
@@ -167,28 +168,48 @@ export default function UnifiedLogin() {
     setError(null)
     setLoading(true)
 
-    // Authenticate
-    const { data, error: authErr } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    })
+    // ── Step 1: Authenticate via ficium-auth ──────────────────
+    const { tokens, error: authErr } = await ficiumSignIn(email.trim().toLowerCase(), password)
 
-    if (authErr || !data.user) {
-      setError('Incorrect email or password.')
+    if (authErr || !tokens) {
+      setError(authErr ?? 'Incorrect email or password.')
       setLoading(false)
       return
     }
 
-    // Detect user type and route
+    // MFA required — redirect to MFA challenge (Phase 2)
+    if (tokens.mfa_required) {
+      setError('MFA verification required — coming soon.')
+      setLoading(false)
+      return
+    }
+
+    // ── Step 2: Set Supabase session using the RS256 JWT ──────
+    // ficium-auth issues RS256 JWTs trusted by Supabase RLS via
+    // the registered public key. We set it as the session token
+    // so all subsequent Supabase queries run as the authenticated user.
+    const { error: sessionErr } = await supabase.auth.setSession({
+      access_token:  tokens.access_token,
+      refresh_token: tokens.access_token, // ficium-auth manages refresh via httpOnly cookie
+    })
+
+    if (sessionErr) {
+      setError('Session initialisation failed. Please try again.')
+      setLoading(false)
+      return
+    }
+
+    // ── Step 3: Detect user type and route ────────────────────
     setDetecting(true)
-    const userType = await detectUserType(data.user.id)
+    const payload = JSON.parse(atob(tokens.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    const userId  = payload.sub as string
+    const userType = await detectUserType(userId)
 
     if (userType === 'admin') {
       navigate('/dashboard', { replace: true })
     } else if (userType === 'institution') {
       navigate(from ?? '/dashboard', { replace: true })
     } else {
-      // Authenticated but not provisioned on any portal
       await supabase.auth.signOut()
       setError('Your account has not been provisioned for portal access. Contact your administrator.')
       setDetecting(false)
