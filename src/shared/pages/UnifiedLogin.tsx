@@ -177,40 +177,18 @@ export default function UnifiedLogin() {
       return
     }
 
-    // MFA required — redirect to MFA challenge (Phase 2)
-    if (tokens.mfa_required) {
-      setError('MFA verification required — coming soon.')
-      setLoading(false)
-      return
-    }
-
-    // ── Step 2: Set Supabase session using the RS256 JWT ──────
-    // ficium-auth issues RS256 JWTs trusted by Supabase RLS via
-    // the registered public key. We set it as the session token
-    // so all subsequent Supabase queries run as the authenticated user.
-    const { error: sessionErr } = await supabase.auth.setSession({
-      access_token:  tokens.access_token,
-      refresh_token: tokens.access_token, // ficium-auth manages refresh via httpOnly cookie
-    })
-
-    if (sessionErr) {
-      setError('Session initialisation failed. Please try again.')
-      setLoading(false)
-      return
-    }
-
-    // ── Step 3: Detect user type and route ────────────────────
-    setDetecting(true)
+    // ── Step 2: Detect user type from JWT claims ──────────────
+    // ficium-auth JWT contains role claim — no Supabase session needed
     const payload = JSON.parse(atob(tokens.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    const userId  = payload.sub as string
-    const userType = await detectUserType(userId)
+    const role    = payload.role as string
 
-    if (userType === 'admin') {
+    // ── Step 3: Route based on role ───────────────────────────
+    setDetecting(true)
+    if (role === 'super_admin' || role === 'admin') {
       navigate('/dashboard', { replace: true })
-    } else if (userType === 'institution') {
+    } else if (payload.institution_id) {
       navigate(from ?? '/dashboard', { replace: true })
     } else {
-      await supabase.auth.signOut()
       setError('Your account has not been provisioned for portal access. Contact your administrator.')
       setDetecting(false)
       setLoading(false)
