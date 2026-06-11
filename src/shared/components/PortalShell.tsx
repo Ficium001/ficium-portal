@@ -33,7 +33,6 @@ import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '../lib/modu
 // ─── Constants ───────────────────────────────────────────────
 const IDLE_WARN_MS   = 4 * 60 * 1000
 const IDLE_LOGOUT_MS = 5 * 60 * 1000
-const PING_MS        = 30 * 1000
 
 // ─── Icon resolver ───────────────────────────────────────────
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -79,23 +78,25 @@ type ConnStatus = 'connected' | 'reconnecting' | 'offline'
 function useConnStatus(): ConnStatus {
   const [status, setStatus] = useState<ConnStatus>('connected')
   useEffect(() => {
-    let stale = false
-    const base = import.meta.env.VITE_SUPABASE_URL as string | undefined
-    const ping = async () => {
-      if (!navigator.onLine) { if (!stale) setStatus('offline'); return }
-      if (!base) { if (!stale) setStatus('connected'); return }
-      try {
-        const res = await fetch(`${base}/auth/v1/health`, { method: 'GET', cache: 'no-store' })
-        if (!stale) setStatus(res.ok ? 'connected' : 'reconnecting')
-      } catch { if (!stale) setStatus('offline') }
-    }
-    ping()
-    const id = setInterval(ping, PING_MS)
-    const onOnline  = () => { setStatus('reconnecting'); ping() }
+    if (!navigator.onLine) setStatus('offline')
+    const onOnline  = () => setStatus('connected')
     const onOffline = () => setStatus('offline')
-    window.addEventListener('online', onOnline)
+    window.addEventListener('online',  onOnline)
     window.addEventListener('offline', onOffline)
-    return () => { stale = true; clearInterval(id); window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline) }
+
+    const channel = supabase.channel('__shell_ping__')
+    channel
+      .subscribe((s) => {
+        if (s === 'SUBSCRIBED')          setStatus('connected')
+        else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setStatus('reconnecting')
+        else if (s === 'CLOSED')         setStatus(navigator.onLine ? 'reconnecting' : 'offline')
+      })
+
+    return () => {
+      window.removeEventListener('online',  onOnline)
+      window.removeEventListener('offline', onOffline)
+      supabase.removeChannel(channel)
+    }
   }, [])
   return status
 }
