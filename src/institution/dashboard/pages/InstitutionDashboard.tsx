@@ -18,13 +18,12 @@ import { Link } from "react-router-dom";
 import {
   TrendingUp, TrendingDown, ArrowRight,
   FileText, Gavel, Shield, BarChart2,
-  CheckCircle, Clock, Store,
+  CheckCircle, Store,
 } from "lucide-react";
 import {
   useMyInstitution, useMyBids, usePendingActions, useMarketplace,
 } from "../../hooks/useInstitution";
 import { useMyGroup } from "../../../admin/hooks/useAdmin";
-import { allowedModules, INSTITUTION_MODULE_LIST } from "../../../shared/lib/modules";
 
 // ─── Helpers ─────────────────────────────────────────────────
 

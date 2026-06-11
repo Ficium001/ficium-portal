@@ -158,7 +158,7 @@ function Sidebar({
   const visibleKeys    = new Set(visibleModules.map(m => m.key))
 
   const isAdmin = group?.user_type === 'admin' || permissions.includes('*')
-  const platformName = isAdmin ? 'Ficium Admin' : (userName ?? 'Institution')
+  void isAdmin
 
   return (
     <>
@@ -480,7 +480,7 @@ export default function PortalShell() {
   const [collapsed,    setCollapsed]    = useState(false)
   const [megaOpen,     setMegaOpen]     = useState(false)
   const [userName,     setUserName]     = useState('')
-  const [pendingCount, setPendingCount] = useState(0)
+  const [pendingCount, _setPendingCount] = useState(0)
 
   // Fetch user display name
   useEffect(() => {

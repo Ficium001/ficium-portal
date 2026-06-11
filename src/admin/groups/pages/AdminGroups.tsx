@@ -22,7 +22,7 @@ import {
   Webhook, ScrollText, Settings, GitMerge, Radio, MonitorDot, X,
   CheckSquare, Square,
 } from 'lucide-react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import adminDb from '../../lib/adminSupabase'
 import {
   MODULE_CATALOGUE, INSTITUTION_MODULE_LIST, ADMIN_MODULE_LIST,
@@ -31,7 +31,7 @@ import {
 import type { UserGroup, CreateGroupPayload } from '../../../shared/lib/groups'
 import {
   ASectionHeader, ABtn, AAlert, AModal, AFormField, aInputCls,
-  AStatusBadge, ASkeletonRow, AEmptyState,
+  ASkeletonRow, AEmptyState,
 } from '../../components/primitives'
 import { useAdminMe, useCreateAdminGroup, useUpdateGroupModules } from '../../hooks/useAdmin'
 
@@ -195,17 +195,17 @@ function ModuleSecurityPanel({
   return (
     <div>
       {group.is_system && isWildcard && (
-        <AAlert variant='info' className='mb-4'>
+        <AAlert variant='info'>
           Super Admin has access to all modules — this cannot be modified.
         </AAlert>
       )}
       {group.is_system && !isWildcard && (
-        <AAlert variant='info' className='mb-4'>
+        <AAlert variant='info'>
           System group — module permissions are read-only. Clone this group to customise.
         </AAlert>
       )}
       {toastId && (
-        <AAlert variant='success' className='mb-4'>
+        <AAlert variant='success'>
           Module changes submitted for dual-control approval. Action ID: {toastId.slice(0, 8)}
         </AAlert>
       )}
@@ -218,7 +218,7 @@ function ModuleSecurityPanel({
           <AAlert variant='warning'>
             Saving module changes enters the dual-control queue. A second admin must approve.
           </AAlert>
-          <AFormField label='Reason for change' required>
+          <AFormField label='Reason for change'>
             <input
               value={reason}
               onChange={e => setReason(e.target.value)}
@@ -384,7 +384,6 @@ function CreateGroupModal({
   const [form,   setForm]   = useState<CreateGroupPayload>(EMPTY)
   const [toastId, setToast] = useState<string | null>(null)
 
-  const allKeys = MODULE_CATALOGUE.map(m => m.key)
   const selected = new Set(form.module_permissions)
 
   const toggle = (key: string) =>
@@ -415,7 +414,7 @@ function CreateGroupModal({
         }
 
         <div className='grid grid-cols-2 gap-3'>
-          <AFormField label='Group name' required>
+          <AFormField label='Group name'>
             <input value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
               placeholder='Bank Officer' className={aInputCls} />
           </AFormField>
@@ -554,7 +553,7 @@ export default function AdminGroups() {
           <ASectionHeader
             title='Groups'
             subtitle={`${groups.length} groups · ${adminCount} admin · ${instCount} institution`}
-            action={canCreate ? (
+            actions={canCreate ? (
               <ABtn variant='primary' size='sm' icon={Plus} onClick={() => setCreating(true)}>
                 New group
               </ABtn>
