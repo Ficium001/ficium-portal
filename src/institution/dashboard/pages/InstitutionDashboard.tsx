@@ -19,6 +19,7 @@ import {
   TrendingUp, TrendingDown, ArrowRight,
   FileText, Gavel, Shield, BarChart2,
   CheckCircle, Clock, Store,
+  Package, Webhook, ScrollText, Settings,
 } from "lucide-react";
 import {
   useMyInstitution, useMyBids, usePendingActions, useMarketplace,
@@ -219,6 +220,85 @@ function SectionCard({ title, action, children }: {
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-ink/[0.06] rounded-lg ${className}`} />;
+}
+
+// ─── Module launcher ──────────────────────────────────────────
+
+const MODULE_META: Record<string, {
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  description: string;
+}> = {
+  "inst:marketplace":  { icon: Store,      color: "text-ficium",      bg: "bg-ficium/[0.08]",      description: "Browse client financing requests" },
+  "inst:bids":         { icon: Gavel,      color: "text-emerald-600", bg: "bg-emerald-50",          description: "View and manage submitted bids" },
+  "inst:bid_approval": { icon: Clock,      color: "text-amber-600",   bg: "bg-amber-50",            description: "Approve or reject bids as checker" },
+  "inst:products":     { icon: Package,    color: "text-blue-600",    bg: "bg-blue-50",             description: "Product catalogue and rate config" },
+  "inst:webhooks":     { icon: Webhook,    color: "text-purple-600",  bg: "bg-purple-50",           description: "Outbound webhook endpoints" },
+  "inst:audit":        { icon: ScrollText, color: "text-muted",       bg: "bg-ink/[0.06]",          description: "Read-only institution activity log" },
+  "inst:settings":     { icon: Settings,   color: "text-muted",       bg: "bg-ink/[0.06]",          description: "Institution profile and config" },
+};
+
+const SECTION_ORDER: { label: string; keys: string[] }[] = [
+  { label: "Marketplace", keys: ["inst:marketplace", "inst:bids", "inst:bid_approval"] },
+  { label: "Manage",      keys: ["inst:products", "inst:webhooks", "inst:settings"] },
+  { label: "Operations",  keys: ["inst:audit"] },
+];
+
+function ModuleLauncher({ pendingCount }: { pendingCount: number }) {
+  const { data: myGroup } = useMyGroup();
+  const permissions = myGroup?.module_permissions ?? [];
+  const allowed = allowedModules(INSTITUTION_MODULE_LIST, permissions);
+  const allowedKeys = new Set(allowed.map(m => m.key));
+  const byKey = Object.fromEntries(allowed.map(m => [m.key, m]));
+
+  const visibleSections = SECTION_ORDER
+    .map(s => ({ ...s, modules: s.keys.filter(k => allowedKeys.has(k)).map(k => byKey[k]) }))
+    .filter(s => s.modules.length > 0);
+
+  if (visibleSections.length === 0) return null;
+
+  return (
+    <div className="mb-6 bg-white rounded-2xl border border-ink/[0.07] overflow-hidden">
+      <div className="grid divide-x divide-ink/[0.07]" style={{ gridTemplateColumns: `repeat(${visibleSections.length}, 1fr)` }}>
+        {visibleSections.map((section, si) => (
+          <div key={section.label} className={si > 0 ? "" : ""}>
+            <div className="px-5 pt-4 pb-2 border-b border-ink/[0.06]">
+              <p className="text-[10px] font-bold text-muted uppercase tracking-[0.1em]">{section.label}</p>
+            </div>
+            <div className="p-3 grid gap-1">
+              {section.modules.map(mod => {
+                const meta = MODULE_META[mod.key];
+                if (!meta) return null;
+                const Icon = meta.icon;
+                const badge = (mod.key === "inst:bid_approval") ? pendingCount : 0;
+                return (
+                  <Link
+                    key={mod.key}
+                    to={mod.path}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-ink/[0.03] transition-colors group"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${meta.bg}`}>
+                      <Icon className={`w-4 h-4 ${meta.color}`} aria-hidden />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-semibold text-ink group-hover:text-ficium transition-colors">{mod.label}</div>
+                      <div className="text-[11px] text-muted truncate">{meta.description}</div>
+                    </div>
+                    {badge > 0 && (
+                      <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">
+                        {badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ─── KPI row ─────────────────────────────────────────────────
@@ -453,6 +533,7 @@ function BottomRow() {
 
 export default function InstitutionDashboard() {
   const { data: institution } = useMyInstitution();
+  const { data: pending = [] } = usePendingActions();
   const now = new Date().toLocaleDateString("en-MU", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
@@ -465,6 +546,7 @@ export default function InstitutionDashboard() {
         <p className="text-[13px] text-muted mt-0.5">Here's what's happening with your bank today · {now}</p>
       </div>
 
+      <ModuleLauncher pendingCount={pending.length} />
       <KpiRow />
       <ChartsRow />
       <BottomRow />
