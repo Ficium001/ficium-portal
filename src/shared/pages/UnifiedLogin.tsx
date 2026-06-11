@@ -22,7 +22,6 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
 import { supabase } from '../../shared/lib/supabase'
-import { signIn as ficiumSignIn } from '../../shared/lib/ficiumAuth'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Logo
@@ -168,26 +167,26 @@ export default function UnifiedLogin() {
     setError(null)
     setLoading(true)
 
-    // ── Step 1: Authenticate via ficium-auth ──────────────────
-    const { tokens, error: authErr } = await ficiumSignIn(email.trim().toLowerCase(), password)
+    const { data, error: authErr } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    })
 
-    if (authErr || !tokens) {
-      setError(authErr ?? 'Incorrect email or password.')
+    if (authErr || !data.user) {
+      setError('Incorrect email or password.')
       setLoading(false)
       return
     }
 
-    // ── Step 2: Detect user type from JWT claims ──────────────
-    const payload  = JSON.parse(atob(tokens.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    const userRole = (payload.user_role ?? payload.role) as string
-
-    // ── Step 3: Route based on role ───────────────────────────
     setDetecting(true)
-    if (userRole === 'super_admin' || userRole === 'admin') {
+    const userType = await detectUserType(data.user.id)
+
+    if (userType === 'admin') {
       navigate('/dashboard', { replace: true })
-    } else if (payload.institution_id) {
+    } else if (userType === 'institution') {
       navigate(from ?? '/dashboard', { replace: true })
     } else {
+      await supabase.auth.signOut()
       setError('Your account has not been provisioned for portal access. Contact your administrator.')
       setDetecting(false)
       setLoading(false)

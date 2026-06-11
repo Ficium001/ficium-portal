@@ -1,18 +1,8 @@
-/**
- * @component PortalRoute
- * @description
- *   Route guard — checks ficium-auth session (sessionStorage token).
- *   Decodes JWT claims for role/institution without a network call.
- *   Falls back to /login if no valid token found.
- *
- * @owner Ficium Engineering
- */
-
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { hasSession, getTokenPayload, getValidAccessToken } from '../lib/ficiumAuth'
+import { supabase } from '../lib/supabase'
 
-type State = 'loading' | 'ok' | 'unauthed'
+type State = 'loading' | 'ok' | 'unauthed' | 'no_access' | 'suspended' | 'pending'
 
 function Spinner() {
   return (
@@ -28,35 +18,72 @@ function Spinner() {
 export default function PortalRoute() {
   const location = useLocation()
   const [state, setState] = useState<State>('loading')
+  const [suspendReason, setSuspendReason] = useState('')
 
   useEffect(() => {
     let cancelled = false
     async function check() {
-      // Quick check — token in sessionStorage
-      if (!hasSession()) {
-        if (!cancelled) setState('unauthed')
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { if (!cancelled) setState('unauthed'); return }
+
+      const { data: userType } = await supabase
+        .rpc('detect_portal_user_type', { p_auth_user_id: session.user.id })
+
+      if (userType === 'admin') {
+        if (!cancelled) setState('ok')
         return
       }
-      // Validate/refresh token
-      const token = await getValidAccessToken()
-      if (!token) {
-        if (!cancelled) setState('unauthed')
+
+      if (userType === 'institution') {
+        const { data: member } = await supabase
+          .schema('institution')
+          .from('institution_members')
+          .select('institution_id')
+          .eq('auth_user_id', session.user.id)
+          .eq('active', true)
+          .maybeSingle()
+
+        if (!member) { if (!cancelled) setState('no_access'); return }
+
+        const { data: inst } = await supabase
+          .schema('institution')
+          .from('institutions')
+          .select('approved, suspended_at, suspension_reason')
+          .eq('id', member.institution_id)
+          .maybeSingle()
+
+        if (!inst) { if (!cancelled) setState('no_access'); return }
+        if (inst.suspended_at) {
+          if (!cancelled) { setSuspendReason(inst.suspension_reason ?? ''); setState('suspended') }
+          return
+        }
+        if (!inst.approved) { if (!cancelled) setState('pending'); return }
+        if (!cancelled) setState('ok')
         return
       }
-      // Decode claims
-      const payload = getTokenPayload()
-      if (!payload || !payload.sub) {
-        if (!cancelled) setState('unauthed')
-        return
-      }
-      if (!cancelled) setState('ok')
+
+      if (!cancelled) setState('no_access')
     }
     check()
     return () => { cancelled = true }
   }, [location.pathname])
 
-  if (state === 'loading')  return <Spinner />
-  if (state === 'unauthed') return <Navigate to='/login' state={{ from: location }} replace />
+  if (state === 'loading')   return <Spinner />
+  if (state === 'unauthed')  return <Navigate to='/login' state={{ from: location }} replace />
+  if (state === 'pending')   return <Navigate to='/pending' replace />
+  if (state === 'no_access') return <Navigate to='/login' replace />
+
+  if (state === 'suspended') return (
+    <div className='min-h-screen bg-[#f5f4f8] flex items-center justify-center p-6'>
+      <div className='bg-white border border-red-200 rounded-2xl p-8 max-w-sm text-center shadow-card'>
+        <div className='text-4xl mb-4'>⊘</div>
+        <h2 className='font-display font-bold text-[18px] text-red-600 mb-2'>Institution suspended</h2>
+        <p className='text-[13px] text-muted'>
+          {suspendReason || 'Your institution has been suspended. Contact support@ficium.mu'}
+        </p>
+      </div>
+    </div>
+  )
 
   return <Outlet />
 }
