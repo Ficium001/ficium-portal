@@ -286,26 +286,128 @@ function Sidebar({
   )
 }
 
+// ─── Mega menu ────────────────────────────────────────────────
+
+const MEGA_SECTIONS = [
+  { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
+  { label: 'Manage',      keys: ['inst:products', 'inst:webhooks', 'inst:settings'] },
+  { label: 'Operations',  keys: ['inst:audit'] },
+  { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:dual_control'] },
+  { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
+]
+
+function MegaMenu({
+  open, onClose, visibleModules, pendingCount,
+}: {
+  open:           boolean
+  onClose:        () => void
+  visibleModules: PortalModule[]
+  pendingCount:   number
+}) {
+  const visibleKeys = new Set(visibleModules.map(m => m.key))
+  const byKey       = Object.fromEntries(visibleModules.map(m => [m.key, m]))
+
+  const sections = MEGA_SECTIONS
+    .map(s => ({ ...s, modules: s.keys.filter(k => visibleKeys.has(k)).map(k => byKey[k]) }))
+    .filter(s => s.modules.length > 0)
+
+  if (!open) return null
+
+  return (
+    <>
+      <div
+        className='fixed inset-0 z-40'
+        onClick={onClose}
+        aria-hidden
+      />
+      <div
+        className='absolute top-14 left-0 z-50 bg-white border border-ink/[0.09] rounded-b-2xl shadow-xl overflow-hidden'
+        style={{ minWidth: 720, maxWidth: '95vw' }}
+        role='dialog'
+        aria-label='Module navigation'
+      >
+        <div
+          className='grid divide-x divide-ink/[0.07]'
+          style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
+        >
+          {sections.map(section => (
+            <div key={section.label}>
+              <div className='px-4 pt-4 pb-2 border-b border-ink/[0.06]'>
+                <p className='text-[10px] font-bold text-muted uppercase tracking-[0.1em]'>
+                  {section.label}
+                </p>
+              </div>
+              <div className='p-2'>
+                {section.modules.map(mod => {
+                  const Icon  = resolveIcon(mod.iconKey)
+                  const badge = mod.key === 'inst:bid_approval' || mod.key === 'admin:dual_control'
+                    ? pendingCount : 0
+                  return (
+                    <NavLink
+                      key={mod.key}
+                      to={mod.path}
+                      onClick={onClose}
+                      className={({ isActive }) => [
+                        'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors group',
+                        isActive ? 'bg-ficium/[0.07]' : 'hover:bg-ink/[0.03]',
+                      ].join(' ')}
+                    >
+                      <div className='w-8 h-8 rounded-lg bg-ink/[0.05] flex items-center justify-center flex-shrink-0 group-hover:bg-ficium/[0.08] transition-colors'>
+                        <Icon className='w-4 h-4 text-muted group-hover:text-ficium transition-colors' aria-hidden />
+                      </div>
+                      <div className='min-w-0 flex-1'>
+                        <div className='text-[13px] font-semibold text-ink group-hover:text-ficium transition-colors leading-tight'>
+                          {mod.label}
+                        </div>
+                        <div className='text-[11px] text-muted truncate leading-tight mt-0.5'>
+                          {mod.description}
+                        </div>
+                      </div>
+                      {badge > 0 && (
+                        <span className='bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0'>
+                          {badge}
+                        </span>
+                      )}
+                    </NavLink>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Top bar ─────────────────────────────────────────────────
 function TopBar({
-  onMenuOpen, platformName, pendingCount, connStatus, collapsed,
+  onMenuToggle, platformName, pendingCount, connStatus, megaOpen,
 }: {
-  onMenuOpen:    () => void
+  onMenuToggle:  () => void
   platformName:  string
   pendingCount:  number
   connStatus:    ConnStatus
-  collapsed:     boolean
+  megaOpen:      boolean
 }) {
   const dotColor = connStatus === 'connected'    ? 'bg-emerald-500'
                  : connStatus === 'reconnecting' ? 'bg-amber-500'
                  :                                 'bg-red-500'
 
   return (
-    <header className='h-14 bg-white border-b border-ink/[0.07] flex items-center justify-between px-4 lg:px-6 flex-shrink-0'>
+    <header className='relative h-14 bg-white border-b border-ink/[0.07] flex items-center justify-between px-4 lg:px-6 flex-shrink-0'>
       <div className='flex items-center gap-3'>
-        <button onClick={onMenuOpen}
-          className='lg:hidden p-2 rounded-lg hover:bg-ink/[0.05] text-muted hover:text-ink transition-colors'
-          aria-label='Open navigation'>
+        <button
+          onClick={onMenuToggle}
+          className={[
+            'p-2 rounded-lg transition-colors',
+            megaOpen
+              ? 'bg-ficium/[0.08] text-ficium'
+              : 'hover:bg-ink/[0.05] text-muted hover:text-ink',
+          ].join(' ')}
+          aria-label='Toggle navigation menu'
+          aria-expanded={megaOpen}
+        >
           <Menu className='w-5 h-5' aria-hidden />
         </button>
         <div className='flex items-center gap-2 bg-ink/[0.03] border border-ink/[0.08] rounded-xl px-3 py-2 cursor-pointer hover:bg-ink/[0.05] transition-colors'>
@@ -376,6 +478,7 @@ export default function PortalShell() {
 
   const [sidebarOpen,  setSidebarOpen]  = useState(false)
   const [collapsed,    setCollapsed]    = useState(false)
+  const [megaOpen,     setMegaOpen]     = useState(false)
   const [userName,     setUserName]     = useState('')
   const [pendingCount, setPendingCount] = useState(0)
 
@@ -447,13 +550,21 @@ export default function PortalShell() {
         />
 
         <div className='flex-1 flex flex-col overflow-hidden min-w-0'>
-          <TopBar
-            onMenuOpen={() => setSidebarOpen(true)}
-            platformName={platformName}
-            pendingCount={pendingCount}
-            connStatus={connStatus}
-            collapsed={collapsed}
-          />
+          <div className='relative'>
+            <TopBar
+              onMenuToggle={() => setMegaOpen(v => !v)}
+              platformName={platformName}
+              pendingCount={pendingCount}
+              connStatus={connStatus}
+              megaOpen={megaOpen}
+            />
+            <MegaMenu
+              open={megaOpen}
+              onClose={() => setMegaOpen(false)}
+              visibleModules={visibleModules}
+              pendingCount={pendingCount}
+            />
+          </div>
           <main className='flex-1 overflow-auto' id='main-content'>
             <Outlet />
           </main>
