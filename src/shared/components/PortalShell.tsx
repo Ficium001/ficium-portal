@@ -80,10 +80,13 @@ function useConnStatus(): ConnStatus {
   const [status, setStatus] = useState<ConnStatus>('connected')
   useEffect(() => {
     let stale = false
+    const base = import.meta.env.VITE_SUPABASE_URL as string | undefined
     const ping = async () => {
+      if (!navigator.onLine) { if (!stale) setStatus('offline'); return }
+      if (!base) { if (!stale) setStatus('connected'); return }
       try {
-        const { error } = await supabase.from('auth').select('*').limit(0).maybeSingle()
-        if (!stale) setStatus(error ? 'reconnecting' : 'connected')
+        const res = await fetch(`${base}/auth/v1/health`, { method: 'GET', cache: 'no-store' })
+        if (!stale) setStatus(res.ok ? 'connected' : 'reconnecting')
       } catch { if (!stale) setStatus('offline') }
     }
     ping()
@@ -138,12 +141,15 @@ const MEGA_SECTIONS = [
 ]
 
 function MegaMenu({
-  open, onClose, visibleModules, pendingCount,
+  open, onClose, visibleModules, pendingCount, groupLoading, groupError, onRetry,
 }: {
   open:           boolean
   onClose:        () => void
   visibleModules: PortalModule[]
   pendingCount:   number
+  groupLoading:   boolean
+  groupError:     boolean
+  onRetry:        () => void
 }) {
   // Esc to close
   useEffect(() => {
@@ -173,6 +179,8 @@ function MegaMenu({
     })
     .filter(s => s.modules.length > 0)
 
+  const empty = sections.length === 0
+
   return (
     <>
       <div className='fixed inset-0 bg-ink/20 z-40' onClick={onClose} aria-hidden />
@@ -181,6 +189,34 @@ function MegaMenu({
         role='dialog'
         aria-label='Module navigation'
       >
+        {empty ? (
+          <div className='flex flex-col items-center justify-center py-12 gap-3 px-6 text-center'>
+            {groupLoading ? (
+              <>
+                <div className='w-7 h-7 rounded-full border-2 border-ficium border-t-transparent animate-spin' aria-hidden />
+                <p className='text-[13px] text-muted'>Loading your modules…</p>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className='w-7 h-7 text-amber-500' aria-hidden />
+                <p className='text-[13px] font-semibold text-ink'>
+                  {groupError ? "Couldn't load your module permissions" : 'No modules assigned to your account'}
+                </p>
+                <p className='text-[12px] text-muted max-w-sm'>
+                  {groupError
+                    ? 'The permissions service did not respond. Check your connection and try again.'
+                    : 'Ask your administrator to assign you to a group with module access.'}
+                </p>
+                {groupError && (
+                  <button onClick={onRetry}
+                    className='mt-1 bg-ficium hover:bg-ficium-deep text-white text-[12px] font-bold px-4 py-2 rounded-xl transition-colors'>
+                    Retry
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
         <div
           className='grid divide-x divide-ink/[0.07] min-w-[720px]'
           style={{ gridTemplateColumns: `repeat(${sections.length}, minmax(0, 1fr))` }}
@@ -230,6 +266,7 @@ function MegaMenu({
             </div>
           ))}
         </div>
+        )}
       </div>
     </>
   )
@@ -348,7 +385,7 @@ function StatusBar({ groupLabel, connStatus, idleWarning }: {
 // ─── Shell ───────────────────────────────────────────────────
 export default function PortalShell() {
   const navigate = useNavigate()
-  const { data: myGroup } = useMyGroup()
+  const { data: myGroup, isLoading: groupLoading, isError: groupError, refetch: refetchGroup } = useMyGroup()
 
   const [megaOpen,     setMegaOpen]     = useState(false)
   const [userName,     setUserName]     = useState('')
@@ -417,6 +454,9 @@ export default function PortalShell() {
           onClose={() => setMegaOpen(false)}
           visibleModules={visibleModules}
           pendingCount={pendingCount}
+          groupLoading={groupLoading}
+          groupError={groupError}
+          onRetry={() => refetchGroup()}
         />
       </div>
 
