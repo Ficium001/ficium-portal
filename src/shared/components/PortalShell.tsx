@@ -1,17 +1,16 @@
 /**
  * @component PortalShell
  * @description
- *   Unified portal shell. One nav, one shell, all user types.
+ *   Unified portal shell. No persistent sidebar — all navigation
+ *   lives in a mega-menu opened by the hamburger in the top bar.
  *   Nav items driven entirely by group.module_permissions.
- *   Admin modules and institution modules live in the same sidebar.
  *
  *   Features:
- *     - Dark sidebar with grouped nav sections
- *     - Top bar: institution/platform name + bell + avatar
+ *     - Top bar: hamburger + logo + institution/platform name + bell + avatar + sign out
+ *     - Mega-menu module launcher (hamburger toggle, Esc to close)
  *     - Session guard (4 min warn, 5 min logout)
  *     - Connection monitor
  *     - Vim-style keyboard nav (G+key)
- *     - Collapsible sidebar (Ctrl+B)
  *     - Status bar
  *
  * @owner Ficium Engineering
@@ -20,18 +19,16 @@
 import {
   useEffect, useRef, useState, useCallback,
 } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
 import {
   LayoutDashboard, Store, FileText, Clock,
   Webhook, Package, ScrollText, Settings,
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   ChevronDown, Menu, X, Users, GitMerge, Radio, MonitorDot,
-  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useMyGroup } from '../../admin/hooks/useAdmin'
 import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '../lib/modules'
-import type { UserGroup } from '../lib/groups'
 
 // ─── Constants ───────────────────────────────────────────────
 const IDLE_WARN_MS   = 4 * 60 * 1000
@@ -100,17 +97,6 @@ function useConnStatus(): ConnStatus {
   return status
 }
 
-// ─── Nav section config ───────────────────────────────────────
-// Sections group modules visually. Order matters.
-const NAV_SECTIONS = [
-  { key: 'main',       label: '',            moduleKeys: ['inst:dashboard', 'admin:dashboard'] },
-  { key: 'market',     label: 'Marketplace', moduleKeys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
-  { key: 'manage',     label: 'Manage',      moduleKeys: ['inst:products', 'inst:webhooks', 'inst:settings'] },
-  { key: 'admin',      label: 'Admin',       moduleKeys: ['admin:users', 'admin:groups', 'admin:dual_control'] },
-  { key: 'ops',        label: 'Operations',  moduleKeys: ['admin:sessions', 'inst:audit', 'admin:audit'] },
-  { key: 'system',     label: 'System',      moduleKeys: ['admin:system'] },
-]
-
 // ─── Idle warning ─────────────────────────────────────────────
 function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; onSignOut: () => void }) {
   return (
@@ -139,156 +125,11 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
   )
 }
 
-// ─── Sidebar ─────────────────────────────────────────────────
-function Sidebar({
-  open, collapsed, group, userName, pendingCount, onSignOut, onClose, onToggleCollapse,
-}: {
-  open:             boolean
-  collapsed:        boolean
-  group?:           UserGroup
-  userName?:        string
-  pendingCount:     number
-  onSignOut:        () => void
-  onClose:          () => void
-  onToggleCollapse: () => void
-}) {
-  const permissions    = group?.module_permissions ?? []
-  const visibleModules = allowedModules(MODULE_CATALOGUE, permissions)
-  const byKey          = Object.fromEntries(visibleModules.map(m => [m.key, m]))
-  const visibleKeys    = new Set(visibleModules.map(m => m.key))
-
-  const isAdmin = group?.user_type === 'admin' || permissions.includes('*')
-  void isAdmin
-
-  return (
-    <>
-      {open && <div className='fixed inset-0 bg-ink/40 z-30 lg:hidden' onClick={onClose} aria-hidden />}
-
-      <aside className={[
-        'fixed lg:static inset-y-0 left-0 z-40 lg:z-auto',
-        'bg-[#0f0e1a] flex flex-col flex-shrink-0',
-        'transition-all duration-200',
-        open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-        collapsed ? 'w-[60px]' : 'w-64',
-      ].join(' ')} aria-label='Portal navigation'>
-
-        {/* Logo */}
-        <div className={`flex items-center border-b border-white/[0.06] flex-shrink-0 ${collapsed ? 'px-3 py-4 justify-center' : 'px-5 py-5 gap-3 justify-between'}`}>
-          <div className='flex items-center gap-3 min-w-0'>
-            <div className='w-9 h-9 rounded-xl bg-ficium flex items-center justify-center flex-shrink-0'>
-              <FLogo size={18} className='text-white' />
-            </div>
-            {!collapsed && (
-              <div className='min-w-0'>
-                <div className='font-display font-bold text-[14px] text-white tracking-tight truncate'>FICIUM</div>
-                <div className='text-[9px] font-bold text-ficium/60 uppercase tracking-wider truncate'>
-                  {isAdmin ? 'Internal Portal' : 'Bank Portal'}
-                </div>
-              </div>
-            )}
-          </div>
-          {!collapsed && (
-            <button onClick={onClose} className='lg:hidden text-white/40 hover:text-white flex-shrink-0' aria-label='Close nav'>
-              <X className='w-4 h-4' />
-            </button>
-          )}
-        </div>
-
-        {/* Nav */}
-        <nav className='flex-1 overflow-y-auto py-3 px-2' aria-label='Primary navigation'>
-          {NAV_SECTIONS.map(section => {
-            const sectionMods = section.moduleKeys
-              .filter(k => visibleKeys.has(k))
-              .map(k => byKey[k])
-              .filter(Boolean) as PortalModule[]
-            if (sectionMods.length === 0) return null
-            return (
-              <div key={section.key} className='mb-3'>
-                {section.label && !collapsed && (
-                  <p className='text-[9px] font-bold text-white/20 uppercase tracking-[0.15em] px-3 mb-1'>
-                    {section.label}
-                  </p>
-                )}
-                {sectionMods.map(mod => {
-                  const Icon         = resolveIcon(mod.iconKey)
-                  const isDualCtrl   = mod.key === 'admin:dual_control'
-                  const isApprovals  = mod.key === 'inst:bid_approval'
-                  const badge        = (isDualCtrl || isApprovals) ? pendingCount : 0
-                  return (
-                    <NavLink key={mod.key} to={mod.path}
-                      title={collapsed ? `${mod.label} (G+${mod.shortcut})` : undefined}
-                      className={({ isActive }) => [
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all mb-0.5',
-                        collapsed ? 'justify-center' : '',
-                        isActive
-                          ? 'bg-ficium text-white font-semibold'
-                          : 'text-white/50 hover:text-white hover:bg-white/[0.06]',
-                      ].join(' ')}
-                      aria-label={mod.label}
-                    >
-                      <Icon className='w-4 h-4 flex-shrink-0' aria-hidden />
-                      {!collapsed && (
-                        <>
-                          <span className='flex-1'>{mod.label}</span>
-                          {badge > 0 && (
-                            <span className='bg-white text-ficium text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center'>
-                              {badge > 99 ? '99+' : badge}
-                            </span>
-                          )}
-                        </>
-                      )}
-                      {collapsed && badge > 0 && (
-                        <span className='absolute top-1 right-1 w-2 h-2 bg-ficium rounded-full' aria-hidden />
-                      )}
-                    </NavLink>
-                  )
-                })}
-              </div>
-            )
-          })}
-        </nav>
-
-        {/* Footer */}
-        <div className={`border-t border-white/[0.06] flex-shrink-0 ${collapsed ? 'p-3' : 'p-4'}`}>
-          {!collapsed && (
-            <div className='flex items-center gap-2.5 mb-3'>
-              <div className='w-8 h-8 rounded-full bg-ficium/30 border border-ficium/40 flex items-center justify-center flex-shrink-0'>
-                <span className='text-[12px] font-bold text-white'>
-                  {(userName || 'U')[0].toUpperCase()}
-                </span>
-              </div>
-              <div className='min-w-0 flex-1'>
-                <div className='text-[13px] font-semibold text-white truncate'>{userName ?? 'User'}</div>
-                <div className='text-[10px] text-white/40'>{group?.label ?? 'Member'}</div>
-              </div>
-            </div>
-          )}
-          <div className={`flex ${collapsed ? 'flex-col gap-2 items-center' : 'items-center justify-between'}`}>
-            <button onClick={onToggleCollapse}
-              className='text-white/30 hover:text-white transition-colors p-1'
-              title={collapsed ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-              {collapsed
-                ? <PanelLeftOpen className='w-3.5 h-3.5' aria-hidden />
-                : <PanelLeftClose className='w-3.5 h-3.5' aria-hidden />
-              }
-            </button>
-            <button onClick={onSignOut}
-              className='flex items-center gap-2 text-[12px] text-white/30 hover:text-red-400 transition-colors'
-              aria-label='Sign out'>
-              <LogOut className='w-3.5 h-3.5' aria-hidden />
-              {!collapsed && 'Sign out'}
-            </button>
-          </div>
-        </div>
-      </aside>
-    </>
-  )
-}
-
 // ─── Mega menu ────────────────────────────────────────────────
-
+// Section layout for the launcher. 'Home' deduped by path so
+// wildcard users don't see Dashboard twice.
 const MEGA_SECTIONS = [
+  { label: 'Home',        keys: ['inst:dashboard', 'admin:dashboard'] },
   { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
   { label: 'Manage',      keys: ['inst:products', 'inst:webhooks', 'inst:settings'] },
   { label: 'Operations',  keys: ['inst:audit'] },
@@ -304,31 +145,45 @@ function MegaMenu({
   visibleModules: PortalModule[]
   pendingCount:   number
 }) {
+  // Esc to close
+  useEffect(() => {
+    if (!open) return
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [open, onClose])
+
+  if (!open) return null
+
   const visibleKeys = new Set(visibleModules.map(m => m.key))
   const byKey       = Object.fromEntries(visibleModules.map(m => [m.key, m]))
 
   const sections = MEGA_SECTIONS
-    .map(s => ({ ...s, modules: s.keys.filter(k => visibleKeys.has(k)).map(k => byKey[k]) }))
+    .map(s => {
+      const mods: PortalModule[] = []
+      const seenPaths = new Set<string>()
+      for (const k of s.keys) {
+        if (!visibleKeys.has(k)) continue
+        const mod = byKey[k]
+        if (seenPaths.has(mod.path)) continue
+        seenPaths.add(mod.path)
+        mods.push(mod)
+      }
+      return { ...s, modules: mods }
+    })
     .filter(s => s.modules.length > 0)
-
-  if (!open) return null
 
   return (
     <>
+      <div className='fixed inset-0 bg-ink/20 z-40' onClick={onClose} aria-hidden />
       <div
-        className='fixed inset-0 z-40'
-        onClick={onClose}
-        aria-hidden
-      />
-      <div
-        className='absolute top-14 left-0 z-50 bg-white border border-ink/[0.09] rounded-b-2xl shadow-xl overflow-hidden'
-        style={{ minWidth: 720, maxWidth: '95vw' }}
+        className='absolute top-full left-0 right-0 z-50 bg-white border-b border-ink/[0.09] shadow-xl overflow-x-auto'
         role='dialog'
         aria-label='Module navigation'
       >
         <div
-          className='grid divide-x divide-ink/[0.07]'
-          style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
+          className='grid divide-x divide-ink/[0.07] min-w-[720px]'
+          style={{ gridTemplateColumns: `repeat(${sections.length}, minmax(0, 1fr))` }}
         >
           {sections.map(section => (
             <div key={section.label}>
@@ -340,7 +195,7 @@ function MegaMenu({
               <div className='p-2'>
                 {section.modules.map(mod => {
                   const Icon  = resolveIcon(mod.iconKey)
-                  const badge = mod.key === 'inst:bid_approval' || mod.key === 'admin:dual_control'
+                  const badge = (mod.key === 'inst:bid_approval' || mod.key === 'admin:dual_control')
                     ? pendingCount : 0
                   return (
                     <NavLink
@@ -382,57 +237,76 @@ function MegaMenu({
 
 // ─── Top bar ─────────────────────────────────────────────────
 function TopBar({
-  onMenuToggle, platformName, pendingCount, connStatus, megaOpen,
+  onMenuToggle, megaOpen, platformName, subtitle, userName, pendingCount, connStatus, onSignOut,
 }: {
   onMenuToggle:  () => void
+  megaOpen:      boolean
   platformName:  string
+  subtitle:      string
+  userName:      string
   pendingCount:  number
   connStatus:    ConnStatus
-  megaOpen:      boolean
+  onSignOut:     () => void
 }) {
   const dotColor = connStatus === 'connected'    ? 'bg-emerald-500'
                  : connStatus === 'reconnecting' ? 'bg-amber-500'
                  :                                 'bg-red-500'
 
   return (
-    <header className='relative h-14 bg-white border-b border-ink/[0.07] flex items-center justify-between px-4 lg:px-6 flex-shrink-0'>
+    <header className='h-14 bg-[#0f0e1a] flex items-center justify-between px-4 lg:px-5 flex-shrink-0'>
       <div className='flex items-center gap-3'>
         <button
           onClick={onMenuToggle}
           className={[
             'p-2 rounded-lg transition-colors',
             megaOpen
-              ? 'bg-ficium/[0.08] text-ficium'
-              : 'hover:bg-ink/[0.05] text-muted hover:text-ink',
+              ? 'bg-ficium text-white'
+              : 'text-white/60 hover:text-white hover:bg-white/[0.08]',
           ].join(' ')}
           aria-label='Toggle navigation menu'
           aria-expanded={megaOpen}
         >
-          <Menu className='w-5 h-5' aria-hidden />
+          {megaOpen ? <X className='w-5 h-5' aria-hidden /> : <Menu className='w-5 h-5' aria-hidden />}
         </button>
-        <div className='flex items-center gap-2 bg-ink/[0.03] border border-ink/[0.08] rounded-xl px-3 py-2 cursor-pointer hover:bg-ink/[0.05] transition-colors'>
-          <div className='w-5 h-5 rounded bg-ficium/10 flex items-center justify-center flex-shrink-0'>
-            <span className='text-[10px] font-bold text-ficium'>{(platformName || 'F')[0].toUpperCase()}</span>
+
+        <Link to='/dashboard' className='flex items-center gap-2.5 group' aria-label='Go to dashboard'>
+          <div className='w-8 h-8 rounded-lg bg-ficium flex items-center justify-center flex-shrink-0'>
+            <FLogo size={16} className='text-white' />
           </div>
-          <span className='text-[13px] font-semibold text-ink max-w-[180px] truncate'>{platformName}</span>
-          <ChevronDown className='w-3.5 h-3.5 text-muted flex-shrink-0' aria-hidden />
+          <div className='hidden sm:block'>
+            <div className='font-display font-bold text-[13px] text-white tracking-tight leading-none'>FICIUM</div>
+            <div className='text-[9px] font-bold text-ficium uppercase tracking-wider leading-none mt-1'>
+              {subtitle}
+            </div>
+          </div>
+        </Link>
+
+        <div className='hidden md:flex items-center gap-2 bg-white/[0.06] border border-white/[0.08] rounded-xl px-3 py-1.5 ml-2'>
+          <span className='text-[12px] font-semibold text-white/80 max-w-[200px] truncate'>{platformName}</span>
+          <ChevronDown className='w-3.5 h-3.5 text-white/40 flex-shrink-0' aria-hidden />
         </div>
       </div>
 
       <div className='flex items-center gap-2'>
-        <div className='flex items-center gap-1.5 text-[11px] text-muted'>
+        <div className='hidden sm:flex items-center gap-1.5 text-[11px] text-white/40'>
           <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} aria-hidden />
-          <span className='hidden sm:block capitalize'>{connStatus}</span>
+          <span className='capitalize'>{connStatus}</span>
         </div>
-        <button className='relative w-9 h-9 rounded-xl hover:bg-ink/[0.05] flex items-center justify-center transition-colors text-muted hover:text-ink'
+        <button className='relative w-9 h-9 rounded-xl hover:bg-white/[0.08] flex items-center justify-center transition-colors text-white/50 hover:text-white'
           aria-label={`Notifications${pendingCount > 0 ? ` — ${pendingCount} pending` : ''}`}>
           <Bell className='w-4 h-4' aria-hidden />
           {pendingCount > 0 && <span className='absolute top-1.5 right-1.5 w-2 h-2 bg-ficium rounded-full' aria-hidden />}
         </button>
-        <div className='w-9 h-9 rounded-xl bg-ficium flex items-center justify-center cursor-pointer hover:bg-ficium-deep transition-colors'
-          aria-label='Account menu'>
-          <span className='text-[13px] font-bold text-white'>{(platformName || 'F')[0].toUpperCase()}</span>
+        <div className='w-8 h-8 rounded-full bg-ficium flex items-center justify-center flex-shrink-0'
+          aria-hidden>
+          <span className='text-[12px] font-bold text-white'>{(userName || 'U')[0].toUpperCase()}</span>
         </div>
+        <button onClick={onSignOut}
+          className='flex items-center gap-1.5 text-[12px] text-white/40 hover:text-red-400 transition-colors p-2'
+          aria-label='Sign out'>
+          <LogOut className='w-4 h-4' aria-hidden />
+          <span className='hidden lg:block'>Sign out</span>
+        </button>
       </div>
     </header>
   )
@@ -476,11 +350,9 @@ export default function PortalShell() {
   const navigate = useNavigate()
   const { data: myGroup } = useMyGroup()
 
-  const [sidebarOpen,  setSidebarOpen]  = useState(false)
-  const [collapsed,    setCollapsed]    = useState(false)
   const [megaOpen,     setMegaOpen]     = useState(false)
   const [userName,     setUserName]     = useState('')
-  const [pendingCount, _setPendingCount] = useState(0)
+  const [pendingCount] = useState(0)
 
   // Fetch user display name
   useEffect(() => {
@@ -521,60 +393,42 @@ export default function PortalShell() {
     return () => window.removeEventListener('keydown', h)
   }, [navigate, visibleModules])
 
-  // Ctrl+B collapse
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') { e.preventDefault(); setCollapsed(v => !v) }
-    }
-    window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
-  }, [])
-
   const isAdmin      = myGroup?.user_type === 'admin' || permissions.includes('*')
   const platformName = isAdmin ? 'Ficium Admin' : (userName || 'Institution')
+  const subtitle     = isAdmin ? 'Internal Portal' : 'Bank Portal'
 
   return (
     <div className='flex flex-col h-screen bg-[#f5f4f8] text-ink font-body overflow-hidden'>
       {idleWarning && <IdleWarningBanner onDismiss={resetIdle} onSignOut={handleSignOut} />}
 
-      <div className='flex flex-1 overflow-hidden'>
-        <Sidebar
-          open={sidebarOpen}
-          collapsed={collapsed}
-          group={myGroup ?? undefined}
+      <div className='relative flex-shrink-0 z-50'>
+        <TopBar
+          onMenuToggle={() => setMegaOpen(v => !v)}
+          megaOpen={megaOpen}
+          platformName={platformName}
+          subtitle={subtitle}
           userName={userName}
           pendingCount={pendingCount}
+          connStatus={connStatus}
           onSignOut={handleSignOut}
-          onClose={() => setSidebarOpen(false)}
-          onToggleCollapse={() => setCollapsed(v => !v)}
         />
-
-        <div className='flex-1 flex flex-col overflow-hidden min-w-0'>
-          <div className='relative'>
-            <TopBar
-              onMenuToggle={() => setMegaOpen(v => !v)}
-              platformName={platformName}
-              pendingCount={pendingCount}
-              connStatus={connStatus}
-              megaOpen={megaOpen}
-            />
-            <MegaMenu
-              open={megaOpen}
-              onClose={() => setMegaOpen(false)}
-              visibleModules={visibleModules}
-              pendingCount={pendingCount}
-            />
-          </div>
-          <main className='flex-1 overflow-auto' id='main-content'>
-            <Outlet />
-          </main>
-          <StatusBar
-            groupLabel={myGroup?.label ?? 'Member'}
-            connStatus={connStatus}
-            idleWarning={idleWarning}
-          />
-        </div>
+        <MegaMenu
+          open={megaOpen}
+          onClose={() => setMegaOpen(false)}
+          visibleModules={visibleModules}
+          pendingCount={pendingCount}
+        />
       </div>
+
+      <main className='flex-1 overflow-auto' id='main-content'>
+        <Outlet />
+      </main>
+
+      <StatusBar
+        groupLabel={myGroup?.label ?? 'Member'}
+        connStatus={connStatus}
+        idleWarning={idleWarning}
+      />
     </div>
   )
 }
