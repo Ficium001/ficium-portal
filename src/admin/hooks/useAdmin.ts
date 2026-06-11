@@ -416,11 +416,31 @@ export function useMyGroup() {
   return useQuery({
     queryKey: ['admin', 'my-group'],
     queryFn:  async () => {
-      const { data, error } = await adminDb.rpc('get_my_group')
-      if (error) throw error
-      return data
+      // Read group from ficium-auth JWT claims — no DB call needed
+      // This avoids Supabase auth.uid() mismatch on free plan
+      const { getTokenPayload } = await import('../../shared/lib/ficiumAuth')
+      const payload = getTokenPayload()
+      if (!payload) throw new Error('No session')
+
+      const userRole = (payload.user_role ?? payload.role) as string
+      const isAdmin  = userRole === 'super_admin' || userRole === 'admin'
+
+      // Synthesise a UserGroup object from JWT claims
+      return {
+        id:                 'jwt-derived',
+        label:              isAdmin ? 'Super Admin' : 'Institution User',
+        user_type:          isAdmin ? 'admin' : 'institution',
+        module_permissions: isAdmin ? ['*'] : [
+          'inst:dashboard', 'inst:marketplace', 'inst:bids',
+          'inst:bid_approval', 'inst:products', 'inst:webhooks',
+          'inst:settings', 'inst:audit',
+        ],
+        is_system:          true,
+        created_at:         new Date().toISOString(),
+      }
     },
     staleTime: 5 * 60_000,
+    retry:     false,
   })
 }
 
