@@ -178,13 +178,12 @@ export default function UnifiedLogin() {
     }
 
     // ── Step 2: Detect user type from JWT claims ──────────────
-    // ficium-auth JWT contains role claim — no Supabase session needed
-    const payload = JSON.parse(atob(tokens.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    const role    = payload.role as string
+    const payload  = JSON.parse(atob(tokens.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    const userRole = (payload.user_role ?? payload.role) as string
 
     // ── Step 3: Route based on role ───────────────────────────
     setDetecting(true)
-    if (role === 'super_admin' || role === 'admin') {
+    if (userRole === 'super_admin' || userRole === 'admin') {
       navigate('/dashboard', { replace: true })
     } else if (payload.institution_id) {
       navigate(from ?? '/dashboard', { replace: true })
