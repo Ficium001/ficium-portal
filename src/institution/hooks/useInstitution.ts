@@ -66,7 +66,6 @@ export function useMyRole() {
         .from('institution_members')
         .select('*')
         .eq('auth_user_id', user.id)
-        .eq('active', true)
         .single()
 
       if (error) throw error
