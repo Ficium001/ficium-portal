@@ -377,7 +377,7 @@ export default function InstitutionApprovals() {
           if (action?.action_category === "user.create") {
             try {
               await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/clever-task`,
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/provision-institution-user`,
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
