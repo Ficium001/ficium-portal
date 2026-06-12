@@ -55,7 +55,19 @@ const DEPLOY_OPTIONS = [
   { value: "on_prem", label: "On-premises — your data centre",        desc: "Full data sovereignty. Highest control." },
 ];
 
-const COUNTRIES = ["Mauritius","Réunion","Madagascar","Seychelles","Comoros","India","South Africa","France","United Kingdom","United States","Other"];
+const COUNTRIES = [
+  { code: "MUS", label: "Mauritius"      },
+  { code: "REU", label: "Réunion"        },
+  { code: "MDG", label: "Madagascar"     },
+  { code: "SYC", label: "Seychelles"     },
+  { code: "COM", label: "Comoros"        },
+  { code: "IND", label: "India"          },
+  { code: "ZAF", label: "South Africa"   },
+  { code: "FRA", label: "France"         },
+  { code: "GBR", label: "United Kingdom" },
+  { code: "USA", label: "United States"  },
+  { code: "OTH", label: "Other"          },
+];
 
 const inputCls = (err?: boolean) => [
   "w-full rounded-xl border px-4 py-3.5 text-[16px] outline-none transition-all bg-white text-ink placeholder:text-ink/30",
@@ -70,7 +82,7 @@ export default function RegisterInstitution() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Step 1 form
-  const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), mode: "onTouched", defaultValues: { country: "Mauritius" } });
+  const form1 = useForm<Step1>({ resolver: zodResolver(step1Schema), mode: "onTouched", defaultValues: { country: "MUS" } });
   // Step 2 form
   const form2 = useForm<Step2>({ resolver: zodResolver(step2Schema), mode: "onTouched" });
   // Step 3 form
@@ -147,7 +159,7 @@ export default function RegisterInstitution() {
             </Field>
             <Field label="Country" htmlFor="country" error={form1.formState.errors.country?.message}>
               <select id="country" {...form1.register("country")} className={inputCls(!!form1.formState.errors.country)}>
-                {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
           </div>
