@@ -60,37 +60,45 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // 1. Invite the user — sends a set-password email
-    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-      email,
-      {
-        data: {
-          first_name: first_name ?? "",
-          last_name:  last_name  ?? "",
-          institution_id,
-          onboarding: "institution_member",
-        },
-        // Redirect to the portal login after they set their password
-        redirectTo: "https://ficium-portal.vercel.app/login",
+    // 1. Check if user already exists in auth.users
+    let authUserId: string;
+    const { data: existingUsers } = await admin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find((u: { email?: string }) => u.email === email);
+
+    if (existingUser) {
+      // User already exists — just wire up the institution_members row
+      authUserId = existingUser.id;
+    } else {
+      // Invite the user — sends a set-password email
+      const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
+        email,
+        {
+          data: {
+            first_name: first_name ?? "",
+            last_name:  last_name  ?? "",
+            institution_id,
+            onboarding: "institution_member",
+          },
+          redirectTo: "https://ficium-portal.vercel.app/login",
+        }
+      );
+
+      if (inviteError) {
+        await admin
+          .schema("institution")
+          .from("pending_actions")
+          .update({
+            execution_status: "failed",
+            execution_error:  inviteError.message,
+            executed_at:      new Date().toISOString(),
+          })
+          .eq("id", action_id);
+
+        return Response.json({ ok: false, error: inviteError.message }, { headers: corsHeaders });
       }
-    );
 
-    if (inviteError) {
-      // Mark the pending action as failed
-      await admin
-        .from("pending_actions")
-        .update({
-          execution_status: "failed",
-          execution_error:  inviteError.message,
-          executed_at:      new Date().toISOString(),
-        })
-        .eq("id", action_id)
-        .schema("institution");
-
-      return Response.json({ ok: false, error: inviteError.message }, { headers: corsHeaders });
+      authUserId = inviteData.user.id;
     }
-
-    const authUserId = inviteData.user.id;
 
     // 2. Insert institution_members row
     const { error: memberError } = await admin
