@@ -28,7 +28,7 @@
 
 import { useMemo, useState } from "react";
 import {
-  Plus, Users, Clock, Shield, ChevronDown, X,
+  Plus, Users, Clock, Shield,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import institutionSupabase from "../../lib/institutionSupabase";
@@ -350,9 +350,9 @@ export default function InstitutionUsers() {
       />
 
       {flash && (
-        <InlineAlert variant="success" onDismiss={() => setFlash(null)} className="mb-4">
+        <div className="mb-4"><InlineAlert variant="success" onDismiss={() => setFlash(null)}>
           {flash}
-        </InlineAlert>
+        </InlineAlert></div>
       )}
 
       <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
@@ -388,7 +388,8 @@ export default function InstitutionUsers() {
         ) : (
           <DataTable headers={["Member", "Group", "Role", "Since", ""]} caption="Institution team">
             {members.map((m) => {
-              const group      = m.custom_group_id ? groupMap.get(m.custom_group_id) : null;
+              const mu = m as InstitutionUser & { custom_group_id?: string; member_role?: string };
+              const group      = mu.custom_group_id ? groupMap.get(mu.custom_group_id) : null;
               const pendingCat = pendingByMember.get(m.id);
               return (
                 <DataRow key={m.id}>
@@ -423,7 +424,7 @@ export default function InstitutionUsers() {
                     )}
                   </Td>
                   <Td>
-                    <RoleBadge role={m.member_role ?? m.role ?? "viewer"} />
+                    <RoleBadge role={mu.member_role ?? m.role ?? "viewer"} />
                   </Td>
                   <Td className="text-muted text-[12px]">
                     {new Date(m.created_at).toLocaleDateString("en-MU", {
