@@ -168,20 +168,19 @@ GRANT EXECUTE ON FUNCTION institution.get_my_modules() TO authenticated;
 -- The Edge Function (provision-institution-user) reports provisioning results
 -- back into these columns after auth.admin user creation.
 
-UPDATE institution.pending_actions
-  SET category = 'user.create'
-  WHERE category = 'user.invite';
+UPDATE public.pending_actions
+  SET action_category = 'user.create'
+  WHERE action_category = 'user.invite';
 
-ALTER TABLE institution.pending_actions
+-- execution_status column (executed_at + execution_error already exist per type definition)
+ALTER TABLE public.pending_actions
   ADD COLUMN IF NOT EXISTS execution_status TEXT
     CHECK (execution_status IN ('pending','executing','executed','failed'))
-    DEFAULT 'pending',
-  ADD COLUMN IF NOT EXISTS execution_error TEXT,
-  ADD COLUMN IF NOT EXISTS executed_at TIMESTAMPTZ;
+    DEFAULT 'pending';
 
--- TENANT RULE 3
+-- TENANT RULE 3: institution_id already present; ensure index leads with it
 CREATE INDEX IF NOT EXISTS idx_pending_actions_institution
-  ON institution.pending_actions (institution_id, status, category);
+  ON public.pending_actions (institution_id, action_status, action_category);
 
 -- =============================================================================
 -- Verification (run after migration):
