@@ -179,7 +179,7 @@ BEGIN
   SELECT g.* INTO v_group
   FROM portal_admin.user_groups g
   JOIN institution.institution_members m ON m.group_id = g.id
-  WHERE m.auth_user_id = auth.uid() AND m.active = TRUE
+  WHERE m.auth_user_id = auth.uid()
   LIMIT 1;
 
   IF FOUND THEN
