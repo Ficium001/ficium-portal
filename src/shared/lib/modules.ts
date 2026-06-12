@@ -98,6 +98,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'L',
   },
   {
+    key:         'inst:team',
+    label:       'Team',
+    description: 'Manage institution users and group assignments',
+    category:    'institution',
+    path:        '/team/users',
+    iconKey:     'Users',
+    shortcut:    'T',
+  },
+  {
     key:         'inst:settings',
     label:       'Settings',
     description: 'Institution profile and configuration',

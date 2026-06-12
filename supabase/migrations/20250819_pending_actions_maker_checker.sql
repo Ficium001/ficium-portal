@@ -335,3 +335,235 @@ GRANT EXECUTE ON FUNCTION institution.reject_action(UUID, TEXT) TO authenticated
 --    approve it in /approvals → group appears in the list.
 --    (Sole-admin self-approval applies while MCB has one admin.)
 -- =============================================================================
+
+-- =============================================================================
+-- Addendum: user.create executor (calls provision-institution-user Edge Fn)
+-- =============================================================================
+
+-- The executor for user.create cannot create auth.users directly from Postgres
+-- (service-role is required). Instead it calls the Edge Function via pg_net
+-- (available in Supabase by default).
+-- If pg_net is not enabled, run: CREATE EXTENSION IF NOT EXISTS pg_net;
+
+CREATE EXTENSION IF NOT EXISTS pg_net SCHEMA extensions;
+
+CREATE OR REPLACE FUNCTION institution._call_provision_user(p_action institution.pending_actions)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = institution, extensions
+AS $$
+DECLARE
+  v_url  TEXT;
+  v_body JSONB;
+BEGIN
+  v_url := current_setting('app.supabase_url', true)
+    || '/functions/v1/provision-institution-user';
+
+  v_body := jsonb_build_object(
+    'action_id',       p_action.id,
+    'institution_id',  p_action.institution_id,
+    'email',           p_action.payload->>'email',
+    'first_name',      p_action.payload->>'first_name',
+    'last_name',       p_action.payload->>'last_name',
+    'custom_group_id', p_action.payload->>'custom_group_id',
+    'member_role',     p_action.payload->>'member_role'
+  );
+
+  PERFORM extensions.http_post(
+    url     := v_url,
+    body    := v_body::TEXT,
+    headers := jsonb_build_object(
+      'Content-Type',  'application/json',
+      'Authorization', 'Bearer ' || current_setting('app.service_role_key', true)
+    )
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION institution._call_provision_user(institution.pending_actions) FROM PUBLIC;
+
+-- Register user.create in the executor dispatch
+CREATE OR REPLACE FUNCTION institution._execute_action(p_action institution.pending_actions)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = institution, portal_admin
+AS $$
+DECLARE
+  v_group_id UUID;
+  v_members  INT;
+BEGIN
+  CASE p_action.action_category
+
+    WHEN 'group.create' THEN
+      IF (p_action.payload->>'slug') !~ '^[a-z0-9_]{2,40}$' THEN
+        RAISE EXCEPTION 'Invalid group slug';
+      END IF;
+      INSERT INTO institution.groups
+        (institution_id, slug, label, description, module_permissions, created_by)
+      VALUES (
+        p_action.institution_id,
+        p_action.payload->>'slug',
+        COALESCE(p_action.payload->>'label', p_action.payload->>'slug'),
+        COALESCE(p_action.payload->>'description', ''),
+        COALESCE(
+          ARRAY(SELECT jsonb_array_elements_text(p_action.payload->'module_permissions')),
+          '{}'::TEXT[]
+        ),
+        p_action.maker_id
+      );
+
+    WHEN 'group.update_modules' THEN
+      UPDATE institution.groups
+      SET module_permissions =
+            ARRAY(SELECT jsonb_array_elements_text(p_action.payload->'module_permissions'))
+      WHERE id = (p_action.payload->>'group_id')::UUID
+        AND institution_id = p_action.institution_id;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'Group not found in this institution';
+      END IF;
+
+    WHEN 'group.delete' THEN
+      v_group_id := (p_action.payload->>'group_id')::UUID;
+      SELECT count(*) INTO v_members
+      FROM institution.institution_members
+      WHERE custom_group_id = v_group_id;
+      IF v_members > 0 THEN
+        RAISE EXCEPTION 'Group has % member(s) — reassign them first', v_members;
+      END IF;
+      DELETE FROM institution.groups
+      WHERE id = v_group_id
+        AND institution_id = p_action.institution_id;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'Group not found in this institution';
+      END IF;
+
+    WHEN 'user.create' THEN
+      -- Validate payload
+      IF (p_action.payload->>'email') IS NULL THEN
+        RAISE EXCEPTION 'user.create requires email in payload';
+      END IF;
+      IF (p_action.payload->>'custom_group_id') IS NULL THEN
+        RAISE EXCEPTION 'user.create requires custom_group_id in payload';
+      END IF;
+      -- Verify group belongs to this institution (tenant guard)
+      IF NOT EXISTS (
+        SELECT 1 FROM institution.groups
+        WHERE id = (p_action.payload->>'custom_group_id')::UUID
+          AND institution_id = p_action.institution_id
+      ) THEN
+        RAISE EXCEPTION 'Group not found in this institution';
+      END IF;
+      -- Delegate to Edge Function (needs service-role for auth.admin)
+      PERFORM institution._call_provision_user(p_action);
+
+    ELSE
+      RAISE EXCEPTION 'No executor for category %', p_action.action_category;
+  END CASE;
+END;
+$$;
+
+-- =============================================================================
+-- Addendum: user.assign_group executor
+-- Updates custom_group_id + member_role on institution_members directly.
+-- No Edge Function needed — pure SQL with tenant guard.
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION institution._execute_action(p_action institution.pending_actions)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = institution, portal_admin
+AS $$
+DECLARE
+  v_group_id UUID;
+  v_members  INT;
+BEGIN
+  CASE p_action.action_category
+
+    WHEN 'group.create' THEN
+      IF (p_action.payload->>'slug') !~ '^[a-z0-9_]{2,40}$' THEN
+        RAISE EXCEPTION 'Invalid group slug';
+      END IF;
+      INSERT INTO institution.groups
+        (institution_id, slug, label, description, module_permissions, created_by)
+      VALUES (
+        p_action.institution_id,
+        p_action.payload->>'slug',
+        COALESCE(p_action.payload->>'label', p_action.payload->>'slug'),
+        COALESCE(p_action.payload->>'description', ''),
+        COALESCE(
+          ARRAY(SELECT jsonb_array_elements_text(p_action.payload->'module_permissions')),
+          '{}'::TEXT[]
+        ),
+        p_action.maker_id
+      );
+
+    WHEN 'group.update_modules' THEN
+      UPDATE institution.groups
+      SET module_permissions =
+            ARRAY(SELECT jsonb_array_elements_text(p_action.payload->'module_permissions'))
+      WHERE id = (p_action.payload->>'group_id')::UUID
+        AND institution_id = p_action.institution_id;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'Group not found in this institution';
+      END IF;
+
+    WHEN 'group.delete' THEN
+      v_group_id := (p_action.payload->>'group_id')::UUID;
+      SELECT count(*) INTO v_members
+      FROM institution.institution_members
+      WHERE custom_group_id = v_group_id;
+      IF v_members > 0 THEN
+        RAISE EXCEPTION 'Group has % member(s) — reassign them first', v_members;
+      END IF;
+      DELETE FROM institution.groups
+      WHERE id = v_group_id
+        AND institution_id = p_action.institution_id;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'Group not found in this institution';
+      END IF;
+
+    WHEN 'user.create' THEN
+      IF (p_action.payload->>'email') IS NULL THEN
+        RAISE EXCEPTION 'user.create requires email in payload';
+      END IF;
+      IF (p_action.payload->>'custom_group_id') IS NULL THEN
+        RAISE EXCEPTION 'user.create requires custom_group_id in payload';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM institution.groups
+        WHERE id = (p_action.payload->>'custom_group_id')::UUID
+          AND institution_id = p_action.institution_id
+      ) THEN
+        RAISE EXCEPTION 'Group not found in this institution';
+      END IF;
+      PERFORM institution._call_provision_user(p_action);
+
+    WHEN 'user.assign_group' THEN
+      -- Tenant guard: member must belong to this institution
+      IF NOT EXISTS (
+        SELECT 1 FROM institution.institution_members
+        WHERE id = (p_action.payload->>'member_id')::UUID
+          AND institution_id = p_action.institution_id
+      ) THEN
+        RAISE EXCEPTION 'Member not found in this institution';
+      END IF;
+      -- Tenant guard: group must belong to this institution
+      IF NOT EXISTS (
+        SELECT 1 FROM institution.groups
+        WHERE id = (p_action.payload->>'custom_group_id')::UUID
+          AND institution_id = p_action.institution_id
+      ) THEN
+        RAISE EXCEPTION 'Group not found in this institution';
+      END IF;
+      UPDATE institution.institution_members
+      SET
+        custom_group_id = (p_action.payload->>'custom_group_id')::UUID,
+        member_role     = COALESCE(p_action.payload->>'member_role', member_role)
+      WHERE id              = (p_action.payload->>'member_id')::UUID
+        AND institution_id  = p_action.institution_id;
+
+    ELSE
+      RAISE EXCEPTION 'No executor for category %', p_action.action_category;
+  END CASE;
+END;
+$$;

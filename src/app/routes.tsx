@@ -41,6 +41,7 @@ const InstitutionProducts    = lazy(() => import('../institution/products/pages/
 const InstitutionWebhooks    = lazy(() => import('../institution/webhooks/pages/InstitutionWebhooks'))
 const InstitutionAudit       = lazy(() => import('../institution/audit/pages/InstitutionAudit'))
 const InstitutionSettings    = lazy(() => import('../institution/settings/pages/InstitutionSettings'))
+const InstitutionUsers       = lazy(() => import('../institution/team/pages/InstitutionUsers'))
 
 // ─── Admin pages ──────────────────────────────────────────────
 const AdminUsers       = lazy(() => import('../admin/users/pages/AdminUsers'))
@@ -144,6 +145,7 @@ export const router = createBrowserRouter([
           { path: '/webhooks',     element: <S><InstitutionWebhooks /></S>    },
           { path: '/audit',        element: <S><InstitutionAudit /></S>       },
           { path: '/settings',     element: <S><InstitutionSettings /></S>    },
+          { path: '/team/users',   element: <S><InstitutionUsers /></S>      },
 
           // Admin pages
           { path: '/users',        element: <S><AdminUsers /></S>       },
