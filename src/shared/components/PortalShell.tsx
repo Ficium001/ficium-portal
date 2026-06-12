@@ -20,6 +20,7 @@ import {
   useEffect, useRef, useState, useCallback,
 } from 'react'
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   LayoutDashboard, Store, FileText, Clock,
   Webhook, Package, ScrollText, Settings,
@@ -400,10 +401,13 @@ export default function PortalShell() {
     })
   }, [])
 
+  const qc = useQueryClient()
+
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut()
+    qc.clear()
     navigate('/login?signedout=1')
-  }, [navigate])
+  }, [navigate, qc])
 
   const { idleWarning, reset: resetIdle } = useSessionGuard(handleSignOut)
   const connStatus = useConnStatus()
