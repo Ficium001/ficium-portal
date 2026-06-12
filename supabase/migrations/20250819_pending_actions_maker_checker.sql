@@ -340,52 +340,13 @@ GRANT EXECUTE ON FUNCTION institution.reject_action(UUID, TEXT) TO authenticated
 -- =============================================================================
 
 -- =============================================================================
--- Addendum: user.create executor (calls provision-institution-user Edge Fn)
+-- Addendum: user.create executor
+-- NOTE: user.create is handled client-side after approval (the Edge Function
+-- is called from the frontend onSuccess of approve_action, not from Postgres,
+-- because auth.admin requires service-role which can't be passed through
+-- Postgres config without superuser). The executor here only validates the
+-- payload and marks the action ready — the Edge Function does the real work.
 -- =============================================================================
-
--- The executor for user.create cannot create auth.users directly from Postgres
--- (service-role is required). Instead it calls the Edge Function via pg_net
--- (available in Supabase by default).
--- If pg_net is not enabled, run: CREATE EXTENSION IF NOT EXISTS pg_net;
-
-CREATE EXTENSION IF NOT EXISTS pg_net SCHEMA extensions;
-
-CREATE OR REPLACE FUNCTION institution._call_provision_user(p_action institution.pending_actions)
-RETURNS VOID
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = institution, extensions
-AS $$
-DECLARE
-  v_url  TEXT;
-  v_body JSONB;
-BEGIN
-  v_url := current_setting('app.supabase_url', true)
-    || '/functions/v1/provision-institution-user';
-
-  v_body := jsonb_build_object(
-    'action_id',       p_action.id,
-    'institution_id',  p_action.institution_id,
-    'email',           p_action.payload->>'email',
-    'first_name',      p_action.payload->>'first_name',
-    'last_name',       p_action.payload->>'last_name',
-    'custom_group_id', p_action.payload->>'custom_group_id',
-    'member_role',     p_action.payload->>'member_role'
-  );
-
-  PERFORM extensions.http_post(
-    url     := v_url,
-    body    := v_body::TEXT,
-    headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.service_role_key', true)
-    )
-  );
-END;
-$$;
-
-REVOKE ALL ON FUNCTION institution._call_provision_user(institution.pending_actions) FROM PUBLIC;
-
--- Register user.create in the executor dispatch
 CREATE OR REPLACE FUNCTION institution._execute_action(p_action institution.pending_actions)
 RETURNS VOID
 LANGUAGE plpgsql SECURITY DEFINER
@@ -457,7 +418,7 @@ BEGIN
         RAISE EXCEPTION 'Group not found in this institution';
       END IF;
       -- Delegate to Edge Function (needs service-role for auth.admin)
-      PERFORM institution._call_provision_user(p_action);
+      -- Provisioning delegated to Edge Function called from frontend.
 
     ELSE
       RAISE EXCEPTION 'No executor for category %', p_action.action_category;
@@ -539,7 +500,9 @@ BEGIN
       ) THEN
         RAISE EXCEPTION 'Group not found in this institution';
       END IF;
-      PERFORM institution._call_provision_user(p_action);
+      -- Actual provisioning is handled by the provision-institution-user
+      -- Edge Function, called from the frontend after approve_action succeeds.
+      -- The executor marks execution_status='executed' via approve_action flow.
 
     WHEN 'user.assign_group' THEN
       -- Tenant guard: member must belong to this institution
