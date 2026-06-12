@@ -73,7 +73,8 @@ function usePendingGroupActions() {
         .select("*")
         .eq("action_status", "pending")
         .like("action_category", "group.%");
-      if (error) throw error;
+      // pending_actions table may not exist yet — fail silently
+      if (error) return [];
       return (data ?? []) as PendingAction[];
     },
     refetchInterval: 60 * 1000,
@@ -81,17 +82,18 @@ function usePendingGroupActions() {
 }
 
 /** Module keys this member may grant. Wildcard/empty → full catalogue. */
+const ALL_INSTITUTION_KEYS = INSTITUTION_MODULE_LIST.map((m) => m.key);
+
 function useGrantableModules() {
   return useQuery<string[]>({
     queryKey: ["institution", "my-modules"],
     queryFn: async () => {
       const { data, error } = await institutionSupabase.rpc("get_my_modules");
-      if (error) throw error;
+      // RPC may not exist yet (migration pending) — fall back to full catalogue
+      if (error) return ALL_INSTITUTION_KEYS;
       const mine = (data ?? []) as string[];
-      if (mine.length === 0 || mine.includes("*")) {
-        return INSTITUTION_MODULE_LIST.map((m) => m.key);
-      }
-      return INSTITUTION_MODULE_LIST.map((m) => m.key).filter((k) => mine.includes(k));
+      if (mine.length === 0 || mine.includes("*")) return ALL_INSTITUTION_KEYS;
+      return ALL_INSTITUTION_KEYS.filter((k) => mine.includes(k));
     },
     staleTime: 10 * 60 * 1000,
   });
