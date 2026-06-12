@@ -164,24 +164,23 @@ $$;
 REVOKE ALL ON FUNCTION institution.get_my_modules() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION institution.get_my_modules() TO authenticated;
 
--- ─── 4. pending_actions: user.invite → user.create + execution tracking ─────
--- The Edge Function (provision-institution-user) reports provisioning results
--- back into these columns after auth.admin user creation.
-
-UPDATE public.pending_actions
-  SET action_category = 'user.create'
-  WHERE action_category = 'user.invite';
-
--- execution_status column (executed_at + execution_error already exist per type definition)
-ALTER TABLE public.pending_actions
-  ADD COLUMN IF NOT EXISTS execution_status TEXT
-    CHECK (execution_status IN ('pending','executing','executed','failed'))
-    DEFAULT 'pending';
-
--- TENANT RULE 3: institution_id already present; ensure index leads with it
-CREATE INDEX IF NOT EXISTS idx_pending_actions_institution
-  ON public.pending_actions (institution_id, action_status, action_category);
-
+-- ─── 4. pending_actions: NOTE ─────────────────────────────────────────────
+-- pending_actions table was created directly in Supabase (not in migrations).
+-- The user.invite → user.create rename + execution_status column addition
+-- should be run as a one-off after confirming the table's schema:
+--
+--   SELECT column_name, data_type
+--   FROM information_schema.columns
+--   WHERE table_name = 'pending_actions'
+--   ORDER BY ordinal_position;
+--
+-- Then run separately:
+--   UPDATE <schema>.pending_actions SET action_category = 'user.create'
+--     WHERE action_category = 'user.invite';
+--   ALTER TABLE <schema>.pending_actions
+--     ADD COLUMN IF NOT EXISTS execution_status TEXT
+--       CHECK (execution_status IN ('pending','executing','executed','failed'))
+--       DEFAULT 'pending';
 -- =============================================================================
 -- Verification (run after migration):
 --
