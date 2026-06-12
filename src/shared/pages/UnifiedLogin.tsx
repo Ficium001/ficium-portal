@@ -151,19 +151,31 @@ export default function UnifiedLogin() {
       : 'border-ink/[0.12] focus:border-ficium focus:ring-2 focus:ring-ficium/20',
   ].join(' ')
 
-  // Handle invite links — token arrives in the URL hash
+  // Handle invite links — Supabase v2 auto-consumes the hash token via
+  // detectSessionInUrl, then fires onAuthStateChange with event='SIGNED_IN'
+  // and a session where user.email_confirmed_at is null (invite not yet
+  // accepted). We catch it here to show the set-password form instead of
+  // redirecting to the dashboard.
   useEffect(() => {
+    // Also catch the case where the hash is still present (some browsers)
     const hash = window.location.hash
-    if (!hash.includes('type=invite')) return
-    const p = new URLSearchParams(hash.replace('#', ''))
-    const at = p.get('access_token')
-    const rt = p.get('refresh_token')
-    if (at && rt) {
-      supabase.auth.setSession({ access_token: at, refresh_token: rt }).then(() => {
-        window.history.replaceState(null, '', window.location.pathname)
-        setShowSetPassword(true)
-      })
+    if (hash.includes('type=invite')) {
+      window.history.replaceState(null, '', window.location.pathname)
+      setShowSetPassword(true)
+      return
     }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // If the user has no password set yet (fresh invite), show set-password
+        const meta = session.user.user_metadata ?? {}
+        const isInvite = meta.onboarding === 'institution_member' && !session.user.email_confirmed_at
+        if (isInvite) {
+          setShowSetPassword(true)
+        }
+      }
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
   // If already signed in, detect and redirect
