@@ -45,6 +45,7 @@ const InstitutionSettings    = lazy(() => import('../institution/settings/pages/
 // ─── Admin pages ──────────────────────────────────────────────
 const AdminUsers       = lazy(() => import('../admin/users/pages/AdminUsers'))
 const AdminGroups      = lazy(() => import('../admin/groups/pages/AdminGroups'))
+const AdminInstitutions = lazy(() => import('../admin/institutions/pages/AdminInstitutions'))
 const AdminDualControl = lazy(() => import('../admin/dual-control/pages/AdminDualControl'))
 const AdminSessions    = lazy(() => import('../admin/sessions/pages/AdminSessions'))
 const AdminAudit       = lazy(() => import('../admin/audit/pages/AdminAudit'))
@@ -147,6 +148,7 @@ export const router = createBrowserRouter([
           // Admin pages
           { path: '/users',        element: <S><AdminUsers /></S>       },
           { path: '/groups',       element: <S><AdminGroups /></S>      },
+          { path: '/institutions', element: <S><AdminInstitutions /></S> },
           { path: '/dual-control', element: <S><AdminDualControl /></S> },
           { path: '/sessions',     element: <S><AdminSessions /></S>    },
           { path: '/admin-audit',  element: <S><AdminAudit /></S>       },

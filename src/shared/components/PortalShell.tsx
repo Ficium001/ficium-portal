@@ -24,7 +24,7 @@ import {
   LayoutDashboard, Store, FileText, Clock,
   Webhook, Package, ScrollText, Settings,
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
-  ChevronDown, Menu, X, Users, GitMerge, Radio, MonitorDot,
+  ChevronDown, Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useMyGroup } from '../../admin/hooks/useAdmin'
@@ -38,7 +38,7 @@ const IDLE_LOGOUT_MS = 5 * 60 * 1000
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Store, FileText, Clock, Package,
   Webhook, ScrollText, Settings, Shield, Users,
-  GitMerge, Radio, MonitorDot,
+  GitMerge, Radio, MonitorDot, Building2,
 }
 function resolveIcon(key: string): React.ElementType {
   return ICON_MAP[key] ?? LayoutDashboard
@@ -138,7 +138,7 @@ const MEGA_SECTIONS = [
   { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
   { label: 'Manage',      keys: ['inst:products', 'inst:webhooks', 'inst:settings'] },
   { label: 'Operations',  keys: ['inst:audit'] },
-  { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:dual_control'] },
+  { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
   { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
 ]
 

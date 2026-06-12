@@ -274,6 +274,40 @@ export const ROLE_PERMISSIONS: Record<AdminRoleSlug, string[]> = {
   custom:          [],
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Institutions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface Institution {
+  id:                    string
+  name:                  string
+  legal_name:            string
+  institution_type:      string
+  country:               string
+  reg_number:            string | null
+  regulator:             string | null
+  deployment_model:      string
+  modules:               string[]
+  onboarding_stage:      string
+  compliance_status:     string
+  approved:              boolean
+  primary_contact_name:  string
+  primary_contact_email: string
+  primary_contact_phone: string | null
+  created_at:            string
+}
+
+export interface ApproveInstitutionPayload {
+  institution_id:   string
+  institution_name: string
+}
+
+export interface SuspendInstitutionPayload {
+  institution_id:    string
+  institution_name:  string
+  suspension_reason: string
+}
+
 export const ROLE_LABELS: Record<AdminRoleSlug, string> = {
   super_admin:     'Super Admin',
   institution_mgr: 'Institution Manager',

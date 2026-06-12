@@ -15,10 +15,11 @@ import { supabase } from '../../shared/lib/supabase'
 import adminDb from '../lib/adminSupabase'
 import type {
   AdminUser, AdminRole, AdminSession, DualControlAction,
-  AdminAuditEntry, SystemMetric,
+  AdminAuditEntry, SystemMetric, Institution,
   CreateAdminUserPayload, SuspendAdminUserPayload,
   ResetPasswordPayload, UnlockUserPayload, ForceLogoutPayload,
   UpdateAdminRolePayload, CreateRolePayload,
+  ApproveInstitutionPayload, SuspendInstitutionPayload,
 } from '../types/admin'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -453,5 +454,55 @@ export function useUpdateGroupModules() {
         payload,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'groups'] }),
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Institutions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function useInstitutions() {
+  return useQuery<Institution[]>({
+    queryKey: ['admin', 'institutions'],
+    queryFn:  async () => {
+      const { data, error } = await adminDb.rpc('get_institutions')
+      if (error) throw new Error(error.message)
+      return (data as Institution[]) ?? []
+    },
+    staleTime: 30_000,
+  })
+}
+
+export function useApproveInstitution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: ApproveInstitutionPayload) =>
+      submitDualControl({
+        action_category: 'institution.approve',
+        action_label:    `Approve institution: ${payload.institution_name}`,
+        risk:            'high',
+        resource_type:   'institution',
+        resource_id:     payload.institution_id,
+        resource_label:  payload.institution_name,
+        payload,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.dualControl }),
+  })
+}
+
+export function useSuspendInstitution() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: SuspendInstitutionPayload) =>
+      submitDualControl({
+        action_category: 'institution.suspend',
+        action_label:    `Suspend institution: ${payload.institution_name}`,
+        risk:            'critical',
+        resource_type:   'institution',
+        resource_id:     payload.institution_id,
+        resource_label:  payload.institution_name,
+        payload,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.dualControl }),
   })
 }

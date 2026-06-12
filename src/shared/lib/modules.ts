@@ -139,6 +139,15 @@ const ADMIN_MODULES: PortalModule[] = [
     shortcut:    'G',
   },
   {
+    key:         'admin:institutions',
+    label:       'Institutions',
+    description: 'Review and approve institution applications',
+    category:    'admin',
+    path:        '/institutions',
+    iconKey:     'Building2',
+    shortcut:    'I',
+  },
+  {
     key:         'admin:dual_control',
     label:       'Dual Control',
     description: 'Four-eyes approval queue for high-risk actions',
