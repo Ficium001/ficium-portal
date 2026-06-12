@@ -13,7 +13,7 @@ import { Button, Field } from "../../../shared/ui";
 const step1Schema = z.object({
   institutionName:  z.string().trim().min(2, "Institution name required").max(150),
   legalName:        z.string().trim().min(2, "Legal name required").max(150),
-  institutionType:  z.enum(["bank","fintech","micro_credit","insurance","investment_firm","other"], { message: "Select a type" }),
+  institutionType:  z.enum(["commercial_bank","fintech","micro_credit","leasing","insurance","cooperative","other"], { message: "Select a type" }),
   regNumber:        z.string().trim().max(40).optional().or(z.literal("")),
   regulatoryBody:   z.string().trim().max(100).optional().or(z.literal("")),
   country:          z.string().min(2, "Country required"),
@@ -40,11 +40,12 @@ type Step2 = z.infer<typeof step2Schema>;
 type Step3 = z.infer<typeof step3Schema>;
 
 const INST_TYPES = [
-  { value: "bank",            label: "Commercial bank"    },
+  { value: "commercial_bank", label: "Commercial bank"    },
   { value: "fintech",         label: "Fintech"            },
   { value: "micro_credit",    label: "Micro-credit"       },
+  { value: "leasing",         label: "Leasing"            },
   { value: "insurance",       label: "Insurance"          },
-  { value: "investment_firm", label: "Investment firm"    },
+  { value: "cooperative",     label: "Cooperative"        },
   { value: "other",           label: "Other"              },
 ];
 
