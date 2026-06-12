@@ -151,6 +151,21 @@ export default function UnifiedLogin() {
       : 'border-ink/[0.12] focus:border-ficium focus:ring-2 focus:ring-ficium/20',
   ].join(' ')
 
+  // Handle invite links — token arrives in the URL hash
+  useEffect(() => {
+    const hash = window.location.hash
+    if (!hash.includes('type=invite')) return
+    const p = new URLSearchParams(hash.replace('#', ''))
+    const at = p.get('access_token')
+    const rt = p.get('refresh_token')
+    if (at && rt) {
+      supabase.auth.setSession({ access_token: at, refresh_token: rt }).then(() => {
+        window.history.replaceState(null, '', window.location.pathname)
+        setShowSetPassword(true)
+      })
+    }
+  }, [])
+
   // If already signed in, detect and redirect
   useEffect(() => {
     // Don't auto-redirect if user explicitly signed out
