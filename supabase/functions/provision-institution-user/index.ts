@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
           onboarding: "institution_member",
         },
         // Redirect to the portal login after they set their password
-        redirectTo: `${Deno.env.get("PORTAL_URL") ?? "https://ficium-portal.vercel.app"}/login`,
+        redirectTo: "https://ficium-portal.vercel.app/login",
       }
     );
 
