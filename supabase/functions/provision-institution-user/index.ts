@@ -44,7 +44,19 @@ Deno.serve(async (req) => {
     // Service-role client — can create auth users
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      (() => {
+      // New Supabase: SUPABASE_SECRET_KEYS is a JSON dict {"<ref>": "<key>"}
+      const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
+      if (secretKeys) {
+        try {
+          const parsed = JSON.parse(secretKeys);
+          const key = Object.values(parsed)[0] as string;
+          if (key) return key;
+        } catch { /* fall through */ }
+      }
+      // Legacy fallback
+      return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    })(),
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
