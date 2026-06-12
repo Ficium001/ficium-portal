@@ -29,6 +29,7 @@ import {
 import {
   useMyInstitution, useMyRole, useInstitutionUsers, useProducts,
 } from "../../hooks/useInstitution";
+import { useMyGroup } from "../../../admin/hooks/useAdmin";
 import institutionSupabase from "../../lib/institutionSupabase";
 import type { Institution } from "../../types/institution";
 import {
@@ -522,8 +523,13 @@ export default function InstitutionSettings() {
   const [tab,            setTab] = useState<Tab>("profile");
   const { data: institution }    = useMyInstitution();
   const { data: role }           = useMyRole();
+  const { data: myGroup }        = useMyGroup();
 
-  const isAdmin = role?.role === "admin" || !!role?.is_primary_admin;
+  // Resolve admin from the group already working in the shell (useMyRole
+  // may return undefined if institution_members query fails)
+  const isAdmin =
+    role?.role === "admin" || !!role?.is_primary_admin ||
+    !!(myGroup?.label?.toLowerCase().includes("admin"));
 
   return (
     <main className="p-6 lg:p-8 max-w-[900px] mx-auto">
