@@ -421,7 +421,7 @@ export function useMyGroup() {
       if (error) throw error
       return data
     },
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
   })
 }
 
