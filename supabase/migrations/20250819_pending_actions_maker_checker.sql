@@ -61,11 +61,13 @@ ALTER TABLE institution.pending_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE institution.pending_actions FORCE ROW LEVEL SECURITY;
 
 -- Read: any member of the same institution (the approvals page lists these)
+DROP POLICY IF EXISTS pending_actions_select ON institution.pending_actions;
 CREATE POLICY pending_actions_select ON institution.pending_actions
   FOR SELECT TO authenticated
   USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
 
 -- Insert: only as yourself, only into your own institution (via RPC)
+DROP POLICY IF EXISTS pending_actions_insert ON institution.pending_actions;
 CREATE POLICY pending_actions_insert ON institution.pending_actions
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -74,6 +76,7 @@ CREATE POLICY pending_actions_insert ON institution.pending_actions
   );
 
 -- Update (approve/reject): only institution admins of the same institution
+DROP POLICY IF EXISTS pending_actions_update ON institution.pending_actions;
 CREATE POLICY pending_actions_update ON institution.pending_actions
   FOR UPDATE TO authenticated
   USING (
