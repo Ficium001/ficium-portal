@@ -40,6 +40,7 @@ import institutionSupabase  from "../../lib/institutionSupabase";
 import {
   InlineAlert, Btn, FormField, inputCls,
 } from "../../components/primitives";
+import FiciumLogo from "../../../shared/ui/FiciumLogo";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -679,10 +680,7 @@ export default function InstitutionOnboarding() {
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <svg width="28" height="28" viewBox="0 0 100 100" fill="none" className="text-ficium" aria-hidden>
-            <path d="M28 18 H72 C75 18 76 21 74 24 L62 38 H44 V52 H58 C61 52 62 55 60 58 L52 68 H44 V82 C44 85 41 86 38 84 L26 76 C24 75 24 73 24 71 V22 C24 19 26 18 28 18 Z" fill="currentColor" />
-          </svg>
-          <span className="font-display text-[18px] font-bold text-ink">Ficium</span>
+          <FiciumLogo size={28} withWordmark wordmarkClassName="text-[18px] text-ink" />
         </div>
 
         <StepIndicator current={step} />

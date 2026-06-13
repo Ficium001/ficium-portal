@@ -7,6 +7,7 @@ import { z } from "zod";
 import { ArrowRight, Eye, EyeOff, Building2, Shield, Zap, Lock } from "lucide-react";
 import { signIn } from "../../../shared/lib/auth";
 import { Button, Field } from "../../../shared/ui";
+import FiciumLogo from "../../../shared/ui/FiciumLogo";
 
 const schema = z.object({
   email:      z.string().trim().toLowerCase().email("Enter a valid email address"),
@@ -78,7 +79,7 @@ export default function InstitutionLogin() {
 
         <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
           <Link to="/" className="flex items-center gap-2.5 no-underline mb-auto">
-            <FLogo size={28} className="text-white" />
+            <FiciumLogo size={30} />
             <span className="font-display text-xl font-bold text-white">Ficium</span>
           </Link>
 
@@ -125,7 +126,7 @@ export default function InstitutionLogin() {
           {/* Mobile top nav */}
           <div className="flex lg:hidden items-center justify-between px-5 py-5">
             <Link to="/" className="flex items-center gap-2 no-underline">
-              <FLogo size={22} className="text-white" />
+              <FiciumLogo size={24} />
               <span className="font-display text-base font-bold text-white">Ficium</span>
             </Link>
             <Link to="/register/institution" className="text-sm text-white/60 font-semibold no-underline">Register →</Link>
@@ -262,10 +263,3 @@ export default function InstitutionLogin() {
   );
 }
 
-function FLogo({ size = 24, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <path d="M28 18 H72 C75 18 76 21 74 24 L62 38 H44 V52 H58 C61 52 62 55 60 58 L52 68 H44 V82 C44 85 41 86 38 84 L26 76 C24 75 24 73 24 71 V22 C24 19 26 18 28 18 Z" fill="currentColor" />
-    </svg>
-  );
-}
