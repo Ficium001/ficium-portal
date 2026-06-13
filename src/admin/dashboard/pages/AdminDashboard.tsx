@@ -1,30 +1,47 @@
 /**
  * @page AdminDashboard
- * @route /admin/dashboard
+ * @route /dashboard (admin users)
  * @access protected — all admin roles
  * @description
- *   System health KPIs, urgent dual-control queue, recent audit activity,
- *   active sessions panel. All panels are independent — one slow query
- *   does not block the rest of the page.
+ *   2026 revamp. Storytelling layout on the shared dashboard kit:
+ *     1. Hero — greeting, platform status, count-up KPIs (useSystemMetrics)
+ *     2. "Waiting on you" — dual-control queue as action cards
+ *     3. "Today's pulse" — audit-activity chart + live audit feed
+ *     4. "Platform health" — metric minis
+ *     5. "Who's on right now" + one-best-action dark callout
+ *
+ *   All panels independent: one slow query never blocks the page.
+ *   Every number on this page is real (react-query hooks) — no mock data.
  *
  * @owner Ficium Engineering
- * @lastReviewed 2025-08
  */
 
-import { Link } from 'react-router-dom'
-import { GitMerge, ScrollText, Radio, AlertTriangle, ArrowRight } from 'lucide-react'
-import { useAdminMe, useSystemMetrics, useDualControlActions, useAdminAudit, useAdminSessions } from '../../hooks/useAdmin'
+import { useMemo } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import {
-  ASectionHeader, AKpiCard, ALiveBadge, ASkeletonCard, ASkeletonRow,
-  ADataTable, ATr, ATd, AStatusBadge, RiskBadge,
-} from '../../components/primitives'
+  GitMerge, Lock, ShieldCheck, Activity,
+} from 'lucide-react'
+import {
+  useAdminMe, useSystemMetrics, useDualControlActions, useAdminAudit, useAdminSessions,
+} from '../../hooks/useAdmin'
+import {
+  Hero, HeroButton, GradText, type HeroStat,
+  Reveal, SectionHead, Panel, PanelHead, HoverCard, CardIcon,
+  StatMini, Feed, FeedItem, DarkCallout, Tag,
+  LineChart, type ChartPoint, SkeletonBlock,
+} from '../../../shared/ui/dashboard'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────
+
+function greeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
+}
 
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-MU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return new Date(iso).toLocaleTimeString('en-MU', { hour: '2-digit', minute: '2-digit' })
 }
 
 function fmtAgo(iso: string) {
@@ -34,228 +51,346 @@ function fmtAgo(iso: string) {
   return `${Math.floor(s / 3600)}h ago`
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MetricsRow — system health KPIs
-// ─────────────────────────────────────────────────────────────────────────────
+function expiresIn(iso: string) {
+  const ms = new Date(iso).getTime() - Date.now()
+  if (ms <= 0) return 'Expired'
+  const h = Math.floor(ms / 3_600_000)
+  const m = Math.floor((ms % 3_600_000) / 60_000)
+  return `${h}h ${m}m`
+}
 
-function MetricsRow() {
-  const { data: metrics = [], isLoading } = useSystemMetrics()
-  if (isLoading) {
-    return (
-      <div className='grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6'>
-        {Array.from({ length: 6 }).map((_, i) => <ASkeletonCard key={i} />)}
-      </div>
-    )
-  }
+const metricNum = (v: string | number): number =>
+  typeof v === 'number' ? v : parseFloat(String(v).replace(/[^\d.]/g, '')) || 0
+
+// ─── Sections ─────────────────────────────────────────────────
+
+function AdminHero() {
+  const navigate = useNavigate()
+  const { data: me }            = useAdminMe()
+  const { data: metrics = [] }  = useSystemMetrics()
+  const { data: pending = [] }  = useDualControlActions('pending')
+
+  const byKey = Object.fromEntries(metrics.map(m => [m.key, m]))
+  const anyTrouble = metrics.some(m => m.status !== 'ok')
+
+  const stats: HeroStat[] = [
+    { label: 'Admin users',     value: metricNum(byKey.total_admins?.value ?? 0) },
+    { label: 'Active sessions', value: metricNum(byKey.active_sessions?.value ?? 0) },
+    { label: 'Pending dual-control', value: pending.length },
+    { label: 'Audit failure rate', value: metricNum(byKey.audit_fail_rate?.value ?? 0), suffix: '%' },
+  ]
+
+  const firstName = (me?.email ?? 'there').split('@')[0].split('.')[0]
+  const niceName  = firstName.charAt(0).toUpperCase() + firstName.slice(1)
+  const dateLabel = new Date()
+    .toLocaleDateString('en-MU', { weekday: 'short', day: 'numeric', month: 'short' })
+    .toUpperCase()
+
   return (
-    <div className='grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6'>
-      {metrics.map(m => (
-        <AKpiCard
-          key={m.key}
-          label={m.label}
-          value={m.value}
-          status={m.status as 'ok' | 'warn' | 'critical'}
-        />
-      ))}
-    </div>
+    <Hero
+      eyebrow={`${anyTrouble ? 'ATTENTION NEEDED' : 'ALL SYSTEMS OPERATIONAL'} · ${dateLabel}`}
+      live={!anyTrouble}
+      headline={
+        pending.length > 0 ? (
+          <>
+            {greeting()}, {niceName}.<br />
+            <GradText>{pending.length} action{pending.length > 1 ? 's' : ''}</GradText> need{pending.length === 1 ? 's' : ''} your sign-off.
+          </>
+        ) : (
+          <>
+            {greeting()}, {niceName}.<br />
+            Your platform is <GradText>running itself.</GradText>
+          </>
+        )
+      }
+      subline={
+        pending.length > 0
+          ? 'The dual-control queue is waiting on a checker. Everything else is healthy.'
+          : 'Dual-control queue is clear and all systems are operational.'
+      }
+      actions={
+        <>
+          <HeroButton onClick={() => navigate('/admin/dual-control')}>Review queue</HeroButton>
+          <HeroButton variant='ghost' onClick={() => navigate('/admin/audit')}>Audit log</HeroButton>
+        </>
+      }
+      stats={stats}
+    />
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UrgentDualControl — top pending actions
-// ─────────────────────────────────────────────────────────────────────────────
-
-function UrgentDualControl() {
+function WaitingOnYou() {
   const { data: pending = [], isLoading } = useDualControlActions('pending')
-  const urgent = pending.filter(a =>
-    new Date(a.expires_at).getTime() - Date.now() < 2 * 3_600_000
-  )
+  const top = pending
+    .slice()
+    .sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime())
+    .slice(0, 3)
 
   return (
-    <div className='bg-white rounded-xl border border-ink/[0.08] overflow-hidden mb-5'>
-      <div className='flex items-center justify-between px-5 py-4 border-b border-ink/[0.08]'>
-        <h2 className='font-black text-[14px] text-ink flex items-center gap-2'>
-          <GitMerge className='w-4 h-4 text-ficium' aria-hidden />
-          Dual-control queue
-          {pending.length > 0 && (
-            <span className='bg-ficium text-ink text-[9px] font-black px-2 py-0.5 rounded-full'>
-              {pending.length}
-            </span>
-          )}
-        </h2>
-        <Link to='/admin/dual-control'
-          className='flex items-center gap-1 text-[11px] text-ficium font-bold hover:underline'>
-          View all <ArrowRight className='w-3 h-3' aria-hidden />
-        </Link>
-      </div>
-
-      {urgent.length > 0 && (
-        <div className='px-5 py-3 bg-amber-900/20 border-b border-amber-900'>
-          <p className='text-[11px] text-amber-400 font-bold flex items-center gap-2'>
-            <AlertTriangle className='w-3.5 h-3.5' aria-hidden />
-            {urgent.length} action{urgent.length > 1 ? 's' : ''} expiring within 2 hours — action required
-          </p>
-        </div>
-      )}
-
+    <Reveal as='section' className='mt-12'>
+      <SectionHead
+        title='Waiting on you'
+        subtitle={
+          pending.length === 0
+            ? 'Dual-control queue is clear'
+            : `${pending.length} pending action${pending.length > 1 ? 's' : ''} need a checker`
+        }
+        to='/admin/dual-control'
+      />
       {isLoading ? (
-        <ADataTable headers={['Action', 'Risk', 'Maker', 'Resource', 'Expires']} caption='Loading…'>
-          {Array.from({ length: 3 }).map((_, i) => <ASkeletonRow key={i} cols={5} />)}
-        </ADataTable>
-      ) : pending.length === 0 ? (
-        <p className='text-[12px] text-muted/50 text-center py-10 font-mono'>Queue clear — no pending actions</p>
+        <div className='grid sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+          {[...Array(3)].map((_, i) => <SkeletonBlock key={i} className='h-44' />)}
+        </div>
+      ) : top.length === 0 ? (
+        <Panel className='text-center py-10'>
+          <ShieldCheck className='w-8 h-8 text-good mx-auto mb-2' aria-hidden />
+          <p className='text-[13.5px] text-muted'>Nothing needs your sign-off right now.</p>
+        </Panel>
       ) : (
-        <ADataTable headers={['Action', 'Risk', 'Maker', 'Resource', 'Expires']} caption='Pending dual-control actions'>
-          {pending.slice(0, 5).map(a => {
-            const expiresMs = new Date(a.expires_at).getTime() - Date.now()
-            const expiresH  = Math.floor(expiresMs / 3_600_000)
-            const expiresM  = Math.floor((expiresMs % 3_600_000) / 60_000)
-            const isUrgent  = expiresMs < 2 * 3_600_000
+        <div className='grid sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+          {top.map(a => {
+            const urgent = new Date(a.expires_at).getTime() - Date.now() < 2 * 3_600_000
             return (
-              <ATr key={a.id}>
-                <ATd>
-                  <span className='font-mono text-ficium-bright text-[11px]'>{a.action_label}</span>
-                </ATd>
-                <ATd><RiskBadge risk={a.risk} /></ATd>
-                <ATd className='text-[11px] font-mono'>{a.maker_email}</ATd>
-                <ATd className='text-[11px]'>{a.resource_label ?? a.resource_type}</ATd>
-                <ATd className={isUrgent ? 'text-amber-400 font-bold text-[11px]' : 'text-[11px]'}>
-                  {expiresMs <= 0 ? 'Expired' : `${expiresH}h ${expiresM}m`}
-                </ATd>
-              </ATr>
+              <HoverCard key={a.id}>
+                <div className='flex items-center gap-3 mb-3.5'>
+                  <CardIcon>
+                    <GitMerge className='w-5 h-5 text-ficium' aria-hidden />
+                  </CardIcon>
+                  <div className='min-w-0'>
+                    <h3 className='text-[15.5px] font-semibold text-ink truncate'>{a.action_label}</h3>
+                    <div className='text-[12.5px] text-muted mt-0.5 truncate'>
+                      {a.resource_label ?? a.resource_type}
+                    </div>
+                  </div>
+                </div>
+                <div className='text-[13px] text-muted leading-relaxed mb-4'>
+                  Requested by <b className='text-ink font-semibold'>{a.maker_email}</b>
+                </div>
+                <div className='flex items-center gap-2 mb-4 flex-wrap'>
+                  <Tag tone={a.risk === 'high' || a.risk === 'critical' ? 'red' : a.risk === 'medium' ? 'amber' : 'blue'}>
+                    {a.risk} risk
+                  </Tag>
+                  <Tag tone={urgent ? 'red' : 'grey'}>expires {expiresIn(a.expires_at)}</Tag>
+                </div>
+                <Link
+                  to='/admin/dual-control'
+                  className='inline-block bg-ink hover:bg-ficium text-white text-[13px] font-semibold px-4 py-2 rounded-[11px] transition-colors'
+                >
+                  Review
+                </Link>
+              </HoverCard>
             )
           })}
-        </ADataTable>
-      )}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RecentAudit
-// ─────────────────────────────────────────────────────────────────────────────
-
-function RecentAudit() {
-  const { data: entries = [], isLoading } = useAdminAudit(10)
-  return (
-    <div className='bg-white rounded-xl border border-ink/[0.08] overflow-hidden'>
-      <div className='flex items-center justify-between px-5 py-4 border-b border-ink/[0.08]'>
-        <h2 className='font-black text-[14px] text-ink flex items-center gap-2'>
-          <ScrollText className='w-4 h-4 text-ficium' aria-hidden />
-          Recent audit events
-        </h2>
-        <Link to='/admin/audit'
-          className='flex items-center gap-1 text-[11px] text-ficium font-bold hover:underline'>
-          Full log <ArrowRight className='w-3 h-3' aria-hidden />
-        </Link>
-      </div>
-      {isLoading ? (
-        <ADataTable headers={['Time', 'Event', 'Actor', 'Outcome']} caption='Loading…'>
-          {Array.from({ length: 5 }).map((_, i) => <ASkeletonRow key={i} cols={4} />)}
-        </ADataTable>
-      ) : (
-        <ADataTable headers={['Time', 'Event', 'Actor', 'Outcome']} caption='Recent admin audit log'>
-          {entries.map(e => (
-            <ATr key={e.id}>
-              <ATd className='text-[10px] font-mono text-muted/70 whitespace-nowrap'>
-                {fmtTime(e.created_at)}
-              </ATd>
-              <ATd>
-                <div className='font-mono text-[11px] text-ink/80'>{e.event_label}</div>
-                <div className='text-[10px] text-muted/50'>{e.action_category}</div>
-              </ATd>
-              <ATd className='text-[11px] text-muted font-mono'>{e.actor_email ?? 'system'}</ATd>
-              <ATd><AStatusBadge status={e.outcome} /></ATd>
-            </ATr>
-          ))}
-        </ADataTable>
-      )}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ActiveSessionsSummary — right sidebar panel
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ActiveSessionsSummary() {
-  const { data: sessions = [], isLoading } = useAdminSessions(true)
-  return (
-    <div className='bg-white rounded-xl border border-ink/[0.08] overflow-hidden h-full'>
-      <div className='flex items-center justify-between px-5 py-4 border-b border-ink/[0.08]'>
-        <h2 className='font-black text-[14px] text-ink flex items-center gap-2'>
-          <Radio className='w-4 h-4 text-emerald-400' aria-hidden />
-          Active sessions
-        </h2>
-        <ALiveBadge />
-      </div>
-      {isLoading ? (
-        <div className='p-5 space-y-3'>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className='flex gap-3 items-center animate-pulse'>
-              <div className='w-6 h-6 bg-cream/50 rounded-full' />
-              <div className='flex-1 h-3 bg-cream/50 rounded' />
-            </div>
-          ))}
         </div>
-      ) : sessions.length === 0 ? (
-        <p className='text-[12px] text-muted/50 text-center py-10 font-mono'>No active sessions</p>
-      ) : (
-        <ul className='divide-y divide-ink/[0.07]'>
-          {sessions.slice(0, 8).map(s => (
-            <li key={s.id} className='flex items-center gap-3 px-5 py-3'>
-              <span className='w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0 animate-pulse' aria-hidden />
-              <div className='flex-1 min-w-0'>
-                <div className='text-[12px] font-semibold text-ink/80 truncate'>
-                  {s.admin_email ?? s.admin_user_id.slice(0, 12)}
-                </div>
-                <div className='text-[10px] text-muted/50 font-mono'>
-                  {s.ip_address} · {fmtAgo(s.last_active_at)}
-                </div>
-              </div>
-              <span className='text-[9px] font-mono text-muted/30 flex-shrink-0'>
-                {s.admin_role?.slice(0, 6) ?? '—'}
+      )}
+    </Reveal>
+  )
+}
+
+function PulseAndFeed() {
+  const { data: entries = [], isLoading } = useAdminAudit(100)
+
+  // Audit events per day, last 7 days
+  const chartData: ChartPoint[] = useMemo(() => {
+    const days: Record<string, number> = {}
+    const now = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i)
+      days[d.toLocaleDateString('en-MU', { month: 'short', day: 'numeric' })] = 0
+    }
+    entries.forEach(e => {
+      const label = new Date(e.created_at).toLocaleDateString('en-MU', { month: 'short', day: 'numeric' })
+      if (label in days) days[label]++
+    })
+    return Object.entries(days).map(([label, value]) => ({ label, value }))
+  }, [entries])
+
+  const todayCount = chartData.at(-1)?.value ?? 0
+  const recent = entries.slice(0, 5)
+
+  return (
+    <Reveal as='section' className='mt-12'>
+      <SectionHead title="Today's pulse" subtitle='Admin activity across the platform' to='/admin/audit' toLabel='Full log' />
+      <div className='grid lg:grid-cols-[1.6fr_1fr] gap-4'>
+        <Panel>
+          <PanelHead
+            title='Audit events'
+            subtitle={
+              <span>
+                <b className='text-ink text-[22px] font-display tracking-display'>{todayCount}</b>
+                <span className='ml-2 text-good font-semibold'>today</span>
               </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {sessions.length > 8 && (
-        <div className='px-5 py-3 border-t border-ink/[0.08]'>
-          <Link to='/admin/sessions' className='text-[11px] text-ficium font-bold hover:underline'>
-            +{sessions.length - 8} more →
-          </Link>
-        </div>
-      )}
-    </div>
+            }
+          />
+          {isLoading
+            ? <SkeletonBlock className='h-52 mt-5' />
+            : <LineChart data={chartData} unit='events' ariaLabel='Audit events, last 7 days' />}
+        </Panel>
+        <Panel>
+          <PanelHead title='Just happened' subtitle='Live audit trail' />
+          {isLoading ? (
+            <SkeletonBlock className='h-52 mt-5' />
+          ) : recent.length === 0 ? (
+            <p className='text-[13px] text-muted text-center py-10'>No recent events.</p>
+          ) : (
+            <Feed>
+              {recent.map((e, i) => (
+                <FeedItem
+                  key={e.id}
+                  tone={
+                    e.outcome === 'success' ? 'good'
+                    : e.outcome === 'failed' || e.outcome === 'blocked' ? 'bad'
+                    : 'blue'
+                  }
+                  title={e.event_label}
+                  detail={`${e.actor_email ?? 'system'} · ${e.action_category}`}
+                  time={fmtTime(e.created_at)}
+                  last={i === recent.length - 1}
+                />
+              ))}
+            </Feed>
+          )}
+        </Panel>
+      </div>
+    </Reveal>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────────────────────
+function PlatformHealth() {
+  const { data: metrics = [], isLoading } = useSystemMetrics()
+  const allOk = metrics.every(m => m.status === 'ok')
+
+  return (
+    <Reveal as='section' className='mt-12'>
+      <SectionHead
+        title={allOk ? 'Everything is healthy' : 'Platform health'}
+        subtitle={allOk ? 'All systems operational' : 'Some metrics need attention'}
+      />
+      {isLoading ? (
+        <div className='grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5'>
+          {[...Array(6)].map((_, i) => <SkeletonBlock key={i} className='h-20' />)}
+        </div>
+      ) : (
+        <div className='grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5'>
+          {metrics.map(m => (
+            <StatMini
+              key={m.key}
+              icon={
+                m.status === 'ok'
+                  ? <Activity className='w-[18px] h-[18px] text-good' aria-hidden />
+                  : <Lock className='w-[18px] h-[18px] text-warn' aria-hidden />
+              }
+              tone={m.status === 'ok' ? 'green' : 'violet'}
+              label={m.label}
+              value={String(m.value)}
+            />
+          ))}
+        </div>
+      )}
+    </Reveal>
+  )
+}
+
+function SessionsAndCallout() {
+  const navigate = useNavigate()
+  const { data: sessions = [], isLoading } = useAdminSessions(true)
+  const { data: pending = [] }             = useDualControlActions('pending')
+  const { data: metrics = [] }             = useSystemMetrics()
+
+  const locked = metricNum(
+    metrics.find(m => m.key === 'locked_accounts')?.value ?? 0,
+  )
+
+  // One best action: most urgent thing on the platform right now.
+  const callout = pending.length > 0
+    ? {
+        title: `${pending.length} action${pending.length > 1 ? 's' : ''} waiting in dual-control.`,
+        body: 'The soonest one expires ' +
+          (pending.length ? `in ${expiresIn(
+            pending.slice().sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime())[0].expires_at,
+          )}` : 'soon') +
+          '. A quick review keeps makers unblocked and the platform moving.',
+        cta: 'Review queue',
+        to: '/admin/dual-control',
+      }
+    : locked > 0
+    ? {
+        title: `${locked} account${locked > 1 ? 's are' : ' is'} locked.`,
+        body: 'Locked admins can\'t work. Unlocking takes a minute from the users page.',
+        cta: 'Open users',
+        to: '/admin/users',
+      }
+    : {
+        title: 'All clear.',
+        body: 'No pending approvals, no locked accounts, systems healthy. A good moment to review the audit trail or tidy up groups.',
+        cta: 'Browse audit log',
+        to: '/admin/audit',
+      }
+
+  return (
+    <Reveal as='section' className='mt-12'>
+      <div className='grid lg:grid-cols-2 gap-4'>
+        <Panel>
+          <PanelHead
+            title="Who's on right now"
+            subtitle={`${sessions.length} active session${sessions.length === 1 ? '' : 's'}`}
+            action={
+              <Link to='/admin/sessions' className='text-[13px] font-semibold text-ficium hover:underline'>
+                All sessions
+              </Link>
+            }
+          />
+          {isLoading ? (
+            <SkeletonBlock className='h-48 mt-4' />
+          ) : sessions.length === 0 ? (
+            <p className='text-[13px] text-muted text-center py-10'>No active sessions.</p>
+          ) : (
+            <div className='mt-2 flex flex-col'>
+              {sessions.slice(0, 5).map(s => {
+                const name = s.admin_email ?? s.admin_user_id.slice(0, 12)
+                return (
+                  <div key={s.id} className='flex items-center gap-3 px-1.5 py-3 rounded-xl hover:bg-[#F7F7FB] transition-colors'>
+                    <div
+                      className='w-9 h-9 rounded-full grid place-items-center flex-shrink-0 text-[12px] font-bold text-white'
+                      style={{ background: 'linear-gradient(135deg,#1E6CF5,#7C3AED)' }}
+                      aria-hidden
+                    >
+                      {name[0].toUpperCase()}
+                    </div>
+                    <div className='min-w-0 flex-1'>
+                      <div className='text-[13.5px] font-semibold text-ink truncate'>{name}</div>
+                      <div className='text-[11.5px] text-muted font-mono truncate'>
+                        {s.ip_address}{s.admin_role ? ` · ${s.admin_role}` : ''}
+                      </div>
+                    </div>
+                    <span className='text-[12px] text-muted flex-shrink-0'>{fmtAgo(s.last_active_at)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Panel>
+
+        <DarkCallout
+          title={callout.title}
+          body={callout.body}
+          action={<HeroButton onClick={() => navigate(callout.to)}>{callout.cta}</HeroButton>}
+        />
+      </div>
+    </Reveal>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-  const { data: me } = useAdminMe()
   return (
-    <main className='p-6 lg:p-8 max-w-[1440px] mx-auto'>
-      <ASectionHeader
-        title='Dashboard'
-        subtitle={`${me?.email ?? ''} · ${me?.role_slug ?? ''} · ${
-          new Date().toLocaleDateString('en-MU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-        }`}
-        badge={<ALiveBadge />}
-      />
-      <MetricsRow />
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-5'>
-        <div className='lg:col-span-2 space-y-5'>
-          <UrgentDualControl />
-          <RecentAudit />
-        </div>
-        <div className='lg:col-span-1'>
-          <ActiveSessionsSummary />
-        </div>
-      </div>
-    </main>
+    <div className='max-w-[1180px] mx-auto px-4 sm:px-6 pt-4 pb-20'>
+      <AdminHero />
+      <WaitingOnYou />
+      <PulseAndFeed />
+      <PlatformHealth />
+      <SessionsAndCallout />
+    </div>
   )
 }
