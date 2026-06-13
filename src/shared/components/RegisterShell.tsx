@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Shield, Zap, Globe } from "lucide-react";
+import FiciumLogo from "../ui/FiciumLogo";
 
 type Props = {
   back?: { label: string; to: string };
@@ -27,7 +28,7 @@ export function RegisterShell({ back, children }: Props) {
         <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 no-underline mb-auto">
-            <FLogo size={28} className="text-white" />
+            <FiciumLogo size={30} />
             <span className="font-display text-xl font-bold text-white">Ficium</span>
           </Link>
 
@@ -89,7 +90,7 @@ export function RegisterShell({ back, children }: Props) {
               </Link>
             ) : <div />}
             <Link to="/" className="flex items-center gap-2 no-underline">
-              <FLogo size={22} className="text-white" />
+              <FiciumLogo size={24} />
               <span className="font-display text-base font-bold text-white">Ficium</span>
             </Link>
           </div>
@@ -125,13 +126,5 @@ export function RegisterShell({ back, children }: Props) {
         </div>
       </div>
     </div>
-  );
-}
-
-function FLogo({ size = 24, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <path d="M28 18 H72 C75 18 76 21 74 24 L62 38 H44 V52 H58 C61 52 62 55 60 58 L52 68 H44 V82 C44 85 41 86 38 84 L26 76 C24 75 24 73 24 71 V22 C24 19 26 18 28 18 Z" fill="currentColor" />
-    </svg>
   );
 }

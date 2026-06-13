@@ -56,24 +56,25 @@ function Blade({ className, both = true }: { className: string; both?: boolean }
   const uid = useId().replace(/[:]/g, '')
   return (
     <svg
-      viewBox='0 0 100 100'
+      viewBox='0 0 310 153'
       className={`absolute opacity-50 blur-[2px] motion-safe:animate-drift will-change-transform pointer-events-none ${className}`}
       aria-hidden
     >
       <defs>
-        <linearGradient id={`hb-${uid}`} x1='0' y1='0' x2='1' y2='0'>
-          <stop offset='0' stopColor='#1E6CF5' />
-          <stop offset='1' stopColor='#0B3FD6' />
+        <linearGradient id={`hb-${uid}`} x1='85' y1='79' x2='266' y2='20' gradientUnits='userSpaceOnUse'>
+          <stop offset='0' stopColor='#3536DC' />
+          <stop offset='0.5' stopColor='#356EF4' />
+          <stop offset='1' stopColor='#4C90F6' />
         </linearGradient>
-        <linearGradient id={`hp-${uid}`} x1='0' y1='0' x2='1' y2='0'>
-          <stop offset='0' stopColor='#7C3AED' />
-          <stop offset='1' stopColor='#C026D3' />
+        <linearGradient id={`hp-${uid}`} x1='85' y1='141' x2='238' y2='91' gradientUnits='userSpaceOnUse'>
+          <stop offset='0' stopColor='#3A148F' />
+          <stop offset='1' stopColor='#8231EC' />
         </linearGradient>
       </defs>
       {both && (
-        <path d='M14 42 C20 18, 62 8, 90 14 C84 34, 44 48, 14 42 Z' fill={`url(#hb-${uid})`} />
+        <path d='M 121.78,31.83 Q 131,20 146,20 L 251,20 Q 266,20 257.28,32.21 L 244.72,49.79 Q 236,62 221.09,63.68 L 99.91,77.32 Q 85,79 94.22,67.17 Z' fill={`url(#hb-${uid})`} />
       )}
-      <path d='M86 58 C80 82, 38 92, 10 86 C16 66, 56 52, 86 58 Z' fill={`url(#hp-${uid})`} />
+      <path d='M 108.10,103.75 Q 116,91 131,91 L 223,91 Q 238,91 230.12,103.77 L 216.88,125.23 Q 209,138 194,138.36 L 100,140.64 Q 85,141 92.90,128.25 Z' fill={`url(#hp-${uid})`} />
     </svg>
   )
 }
