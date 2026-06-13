@@ -680,7 +680,7 @@ export default function InstitutionOnboarding() {
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <FiciumLogo size={28} withWordmark wordmarkClassName="text-[18px] text-ink" />
+          <FiciumLogo heightPx={20} withWordmark wordmarkClassName="text-[18px] text-ink" />
         </div>
 
         <StepIndicator current={step} />

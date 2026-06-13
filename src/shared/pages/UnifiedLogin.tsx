@@ -93,7 +93,7 @@ function LeftPanel() {
       <div className='relative z-10 flex flex-col h-full p-10 xl:p-14'>
         {/* Logo */}
         <div className='mb-auto'>
-          <FiciumLogo size={30} withWordmark wordmarkClassName='text-[20px] text-white' />
+          <FiciumLogo heightPx={22} withWordmark wordmarkClassName='text-[20px] text-white' />
         </div>
 
         {/* Headline */}
@@ -278,7 +278,7 @@ export default function UnifiedLogin() {
         <div className='flex-1 flex items-center justify-center p-8 bg-paper'>
           <div className='w-full max-w-[400px]'>
             <div className='flex items-center gap-3 mb-8'>
-              <div className='w-9 h-9 rounded-xl bg-white border border-line flex items-center justify-center'><FiciumLogo size={20} /></div>
+              <div className='w-9 h-9 rounded-xl bg-white border border-line flex items-center justify-center'><FiciumLogo heightPx={20} /></div>
               <span className='font-display font-bold text-[18px] text-ink'>Set your password</span>
             </div>
             <p className='text-[13px] text-muted mb-6'>Choose a secure password to access your institution portal.</p>
@@ -337,7 +337,7 @@ export default function UnifiedLogin() {
         <div className='w-full max-w-[400px]'>
           {/* Mobile logo */}
           <div className='flex items-center gap-2.5 mb-8 lg:hidden'>
-            <FiciumLogo size={26} withWordmark wordmarkClassName='text-[18px] text-ink' />
+            <FiciumLogo heightPx={20} withWordmark wordmarkClassName='text-[18px] text-ink' />
           </div>
 
           <div className='mb-8'>

@@ -79,7 +79,7 @@ export default function InstitutionLogin() {
 
         <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
           <Link to="/" className="flex items-center gap-2.5 no-underline mb-auto">
-            <FiciumLogo size={30} />
+            <FiciumLogo heightPx={24} />
             <span className="font-display text-xl font-bold text-white">Ficium</span>
           </Link>
 
@@ -126,7 +126,7 @@ export default function InstitutionLogin() {
           {/* Mobile top nav */}
           <div className="flex lg:hidden items-center justify-between px-5 py-5">
             <Link to="/" className="flex items-center gap-2 no-underline">
-              <FiciumLogo size={24} />
+              <FiciumLogo heightPx={20} />
               <span className="font-display text-base font-bold text-white">Ficium</span>
             </Link>
             <Link to="/register/institution" className="text-sm text-white/60 font-semibold no-underline">Register →</Link>

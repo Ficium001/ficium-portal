@@ -219,7 +219,7 @@ function Drawer({
       >
         {/* Head */}
         <div className='flex items-center gap-2.5 px-2.5 pb-5'>
-          <FiciumLogo size={30} />
+          <FiciumLogo heightPx={26} />
           <div>
             <div className='font-display font-bold tracking-display text-[19px] text-ink leading-none'>Ficium</div>
             <div className='text-[11px] font-medium text-muted mt-1 leading-none truncate max-w-[200px]'>{orgName}</div>
@@ -379,7 +379,7 @@ function TopBar({
 
       {/* Brand */}
       <Link to='/dashboard' className='flex items-center gap-2.5' aria-label='Go to dashboard'>
-        <FiciumLogo size={30} />
+        <FiciumLogo heightPx={26} />
         <div className='hidden sm:block'>
           <div className='font-display font-bold tracking-display text-[18px] text-ink leading-none'>Ficium</div>
           <div className='text-[9.5px] font-semibold text-muted uppercase tracking-[0.08em] leading-none mt-1'>

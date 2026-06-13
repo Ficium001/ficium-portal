@@ -26,12 +26,16 @@ const RATIO = VB_H / VB_W
 
 export function FiciumLogo({
   size = 28,
+  heightPx,
   withWordmark = false,
   wordmarkClassName = '',
   mono = false,
   className = '',
 }: {
+  /** Rendered width in px. Ignored if heightPx is set. */
   size?: number
+  /** Rendered height in px; width scales to the 310:153 ratio. Best for wordmark lockups. */
+  heightPx?: number
   withWordmark?: boolean
   wordmarkClassName?: string
   mono?: boolean
@@ -41,12 +45,15 @@ export function FiciumLogo({
   const blue = `fblue-${uid}`
   const purple = `fpurple-${uid}`
 
+  const width  = heightPx != null ? Math.round(heightPx / RATIO) : size
+  const height = heightPx != null ? heightPx : Math.round(size * RATIO)
+
   const mark = (
     <svg
       xmlns='http://www.w3.org/2000/svg'
       viewBox={`0 0 ${VB_W} ${VB_H}`}
-      width={size}
-      height={Math.round(size * RATIO)}
+      width={width}
+      height={height}
       role='img'
       aria-hidden
       className={className}
