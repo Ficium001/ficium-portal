@@ -1,472 +1,425 @@
 /**
  * @page InstitutionDashboard
- * @route /dashboard
+ * @route /dashboard (institution users)
  * @description
- *   Bank portal dashboard. Layout mirrors the reference:
- *   - KPI row (4 cards with trend indicators)
- *   - Main 2/3 + 1/3 grid:
- *     Left:  Requests Overview line chart + Requests by Status donut
- *     Right: Pending Approvals panel
- *   - Recent Requests table
- *   - Recent Bids table
+ *   2026 revamp. Same storytelling layout and shared dashboard kit as
+ *   the admin dashboard — only the content differs:
+ *     1. Hero — greeting, open-request count, count-up KPIs
+ *     2. "New requests for you" — open marketplace requests as bid cards
+ *        (amount, term, client readiness from client_health_score)
+ *     3. "How you're bidding" — bids/day chart + live bid feed
+ *     4. "Your standing" — win rate, accepted, pending approvals
+ *     5. "Your recent bids" + one-best-action dark callout
+ *
+ *   Every number on this page is real (react-query hooks) — no mock data.
  *
  * @owner Ficium Engineering
  */
 
-import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import {
-  TrendingUp, TrendingDown, ArrowRight,
-  FileText, Gavel, Shield, BarChart2,
-  CheckCircle, Store,
-} from "lucide-react";
+  Gavel, BarChart2, Store, Trophy,
+} from 'lucide-react'
 import {
   useMyInstitution, useMyBids, usePendingActions, useMarketplace,
-} from "../../hooks/useInstitution";
-import { useMyGroup } from "../../../admin/hooks/useAdmin";
+} from '../../hooks/useInstitution'
+import {
+  Hero, HeroButton, GradText, type HeroStat,
+  Reveal, SectionHead, Panel, PanelHead, HoverCard, CardIcon,
+  StatMini, Feed, FeedItem, DarkCallout, Tag, statusTone, ProgressBar,
+  LineChart, type ChartPoint, SkeletonBlock,
+} from '../../../shared/ui/dashboard'
 
-// ─── Helpers ─────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────
+
+function greeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
+}
 
 function fmtMUR(v: number): string {
-  if (v >= 1_000_000) return `MUR ${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000)     return `MUR ${(v / 1_000).toFixed(0)}K`;
-  return `MUR ${v.toLocaleString()}`;
+  if (v >= 1_000_000) return `Rs ${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000)     return `Rs ${(v / 1_000).toFixed(0)}K`
+  return `Rs ${v.toLocaleString()}`
 }
 
 function timeAgo(iso: string): string {
-  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60)   return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400)return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60)    return `${s}s ago`
+  if (s < 3600)  return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
 }
 
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-MU", { day: "2-digit", month: "short", year: "numeric" });
+function titleCase(s: string) {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-// ─── Status badge ─────────────────────────────────────────────
+// ─── Sections ─────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<string, string> = {
-  open:       "bg-ficium/10 text-ficium",
-  bidding:    "bg-blue-100 text-blue-700",
-  submitted:  "bg-ficium/10 text-ficium",
-  accepted:   "bg-emerald-100 text-emerald-700",
-  rejected:   "bg-red-100 text-red-600",
-  expired:    "bg-amber-100 text-amber-700",
-  cancelled:  "bg-ink/[0.06] text-muted",
-  pending:    "bg-amber-100 text-amber-700",
-  "in-progress": "bg-blue-100 text-blue-700",
-  closed:     "bg-ink/[0.06] text-muted",
-};
+function InstitutionHero() {
+  const navigate = useNavigate()
+  const { data: institution }      = useMyInstitution()
+  const { data: marketplace = [] } = useMarketplace()
+  const { data: bids = [] }        = useMyBids()
+  const { data: pending = [] }     = usePendingActions()
 
-function StatusBadge({ status }: { status: string }) {
-  const label = status.replace(/_/g, " ");
-  return (
-    <span className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_STYLES[status] ?? "bg-ink/[0.06] text-muted"}`}>
-      {label}
-    </span>
-  );
-}
+  const open      = marketplace.filter(r => r.status === 'open' || r.status === 'bidding')
+  const accepted  = bids.filter(b => b.status === 'accepted').length
+  const active    = bids.filter(b => b.status === 'submitted').length
+  const winRate   = bids.length > 0 ? Math.round((accepted / bids.length) * 100) : 0
 
-// ─── KPI card ─────────────────────────────────────────────────
+  const stats: HeroStat[] = [
+    { label: 'Open requests',     value: open.length },
+    { label: 'Your active bids',  value: active },
+    { label: 'Win rate',          value: winRate, suffix: '%' },
+    { label: 'Pending approvals', value: pending.length },
+  ]
 
-function KpiCard({
-  label, value, sub, trend, trendUp, icon: Icon, href, alert,
-}: {
-  label:    string;
-  value:    string | number;
-  sub?:     string;
-  trend?:   string;
-  trendUp?: boolean;
-  icon:     React.ElementType;
-  href?:    string;
-  alert?:   boolean;
-}) {
-  const inner = (
-    <div className={[
-      "bg-white rounded-2xl border p-5 flex items-start justify-between gap-3 transition-all",
-      alert ? "border-amber-200 bg-amber-50/40" : "border-ink/[0.07] hover:border-ficium/20 hover:shadow-card",
-    ].join(" ")}>
-      <div>
-        <p className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-1">{label}</p>
-        <p className="text-[28px] font-bold text-ink leading-none mb-1.5">{value}</p>
-        {sub && <p className="text-[12px] text-muted">{sub}</p>}
-        {trend && (
-          <div className={`flex items-center gap-1 text-[12px] font-semibold mt-1 ${trendUp ? "text-emerald-600" : "text-red-500"}`}>
-            {trendUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-            {trend}
-          </div>
-        )}
-      </div>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${alert ? "bg-amber-100" : "bg-ficium/[0.08]"}`}>
-        <Icon className={`w-5 h-5 ${alert ? "text-amber-600" : "text-ficium"}`} aria-hidden />
-      </div>
-    </div>
-  );
-  return href ? <Link to={href} className="block">{inner}</Link> : inner;
-}
-
-// ─── Simple bar chart (SVG, no dep) ──────────────────────────
-
-function RequestsOverviewChart({ data }: { data: { label: string; value: number }[] }) {
-  const max = Math.max(...data.map(d => d.value), 1);
-  const W = 600; const H = 180; const PAD = 30;
-  const step = (W - PAD * 2) / Math.max(data.length - 1, 1);
-  const pts = data.map((d, i) => ({
-    x: PAD + i * step,
-    y: H - PAD - ((d.value / max) * (H - PAD * 2)),
-  }));
-  const pathD   = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaD   = `${pathD} L${pts[pts.length-1].x},${H-PAD} L${pts[0].x},${H-PAD} Z`;
+  const name = institution?.primary_contact_name?.split(' ')[0]
+    ?? institution?.name
+    ?? 'there'
+  const dateLabel = new Date()
+    .toLocaleDateString('en-MU', { weekday: 'short', day: 'numeric', month: 'short' })
+    .toUpperCase()
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" aria-label="Requests overview chart">
-      <defs>
-        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2A1FE6" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#2A1FE6" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {/* Grid lines */}
-      {[0, 0.25, 0.5, 0.75, 1].map(t => (
-        <line key={t} x1={PAD} x2={W-PAD}
-          y1={PAD + t * (H - PAD * 2)} y2={PAD + t * (H - PAD * 2)}
-          stroke="#0A0A1A" strokeOpacity="0.05" strokeWidth="1" />
-      ))}
-      {/* Area fill */}
-      <path d={areaD} fill="url(#chartGrad)" />
-      {/* Line */}
-      <path d={pathD} fill="none" stroke="#2A1FE6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Points */}
-      {pts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="white" stroke="#2A1FE6" strokeWidth="2" />
-      ))}
-      {/* X labels */}
-      {data.map((d, i) => (
-        <text key={i} x={PAD + i * step} y={H - 6} textAnchor="middle"
-          fontSize="10" fill="#6B6B85" fontFamily="Inter Tight, sans-serif">
-          {d.label}
-        </text>
-      ))}
-    </svg>
-  );
-}
-
-// ─── Donut chart ──────────────────────────────────────────────
-
-function DonutChart({ segments }: { segments: { label: string; value: number; color: string }[] }) {
-  const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
-  const R = 60; const CX = 90; const CY = 90; const strokeW = 22;
-  let cumulative = 0;
-  const arcs = segments.map(seg => {
-    const pct   = seg.value / total;
-    const start = cumulative * 2 * Math.PI - Math.PI / 2;
-    const end   = (cumulative + pct) * 2 * Math.PI - Math.PI / 2;
-    cumulative += pct;
-    const x1 = CX + R * Math.cos(start); const y1 = CY + R * Math.sin(start);
-    const x2 = CX + R * Math.cos(end);   const y2 = CY + R * Math.sin(end);
-    const large = pct > 0.5 ? 1 : 0;
-    return { ...seg, d: `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}` };
-  });
-
-  return (
-    <div className="flex items-center gap-6">
-      <svg viewBox="0 0 180 180" className="w-32 h-32 flex-shrink-0" aria-label="Requests by status">
-        {arcs.map((arc, i) => (
-          <path key={i} d={arc.d} fill="none" stroke={arc.color}
-            strokeWidth={strokeW} strokeLinecap="butt" opacity={arc.value === 0 ? 0 : 1} />
-        ))}
-        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="22" fontWeight="bold"
-          fill="#0A0A1A" fontFamily="Inter Tight, sans-serif">{total}</text>
-        <text x={CX} y={CY + 12} textAnchor="middle" fontSize="11"
-          fill="#6B6B85" fontFamily="Inter Tight, sans-serif">Total</text>
-      </svg>
-      <div className="space-y-2 min-w-0">
-        {segments.map(seg => (
-          <div key={seg.label} className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: seg.color }} />
-            <span className="text-[12px] text-ink flex-1 truncate">{seg.label}</span>
-            <span className="text-[12px] font-bold text-ink flex-shrink-0">{seg.value}</span>
-            <span className="text-[11px] text-muted flex-shrink-0">
-              ({total > 0 ? ((seg.value / total) * 100).toFixed(1) : 0}%)
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Section header ───────────────────────────────────────────
-
-function SectionCard({ title, action, children }: {
-  title: string; action?: React.ReactNode; children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-ink/[0.07] overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-ink/[0.07]">
-        <h2 className="font-display font-bold text-[14px] text-ink">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-// ─── Skeleton ─────────────────────────────────────────────────
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-ink/[0.06] rounded-lg ${className}`} />;
-}
-
-// ─── KPI row ─────────────────────────────────────────────────
-
-function KpiRow() {
-  const { data: bids        = [], isLoading: lb } = useMyBids();
-  const { data: pending     = [], isLoading: lp } = usePendingActions();
-  const { data: marketplace = [], isLoading: lm } = useMarketplace();
-  const { data: myGroup }                         = useMyGroup();
-
-  const modules = myGroup?.module_permissions ?? [];
-  const loading = lb || lp || lm;
-
-  const openRequests = marketplace.length;
-  const totalBids    = bids.length;
-  const accepted     = bids.filter(b => b.status === "accepted").length;
-  const pendingCount = pending.length;
-  const winRate      = totalBids > 0 ? Math.round((accepted / totalBids) * 100) : 0;
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
-      </div>
-    );
-  }
-
-  const canMarket = modules.includes("*") || modules.includes("inst:marketplace");
-
-  return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-      <KpiCard label="Total Requests"     value={openRequests} sub={`${openRequests} open`}
-        trend="8.3% from last month" trendUp icon={Store}
-        href={canMarket ? "/marketplace" : undefined} />
-      <KpiCard label="Total Bids"         value={totalBids}    sub={`${accepted} accepted`}
-        trend="15.2% from last month" trendUp icon={Gavel}
-        href="/bids" />
-      <KpiCard label="Pending Approvals"  value={pendingCount} sub="Maker-checker queue"
-        trend={pendingCount > 0 ? "Requires action" : "Queue clear"} trendUp={pendingCount === 0}
-        icon={Shield} href="/approvals" alert={pendingCount > 0} />
-      <KpiCard label="Win Rate"           value={`${winRate}%`} sub={`${totalBids} total bids`}
-        icon={BarChart2} />
-    </div>
-  );
-}
-
-// ─── Charts row ───────────────────────────────────────────────
-
-function ChartsRow() {
-  const { data: marketplace = [], isLoading: lm } = useMarketplace();
-  const { data: bids        = [], isLoading: lb } = useMyBids();
-
-  // Build 6-day chart data from marketplace created_at
-  const chartData = useMemo(() => {
-    const days: Record<string, number> = {};
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
-      const label = d.toLocaleDateString("en-MU", { month: "short", day: "numeric" });
-      days[label] = 0;
-    }
-    marketplace.forEach(r => {
-      const label = new Date(r.created_at).toLocaleDateString("en-MU", { month: "short", day: "numeric" });
-      if (label in days) days[label]++;
-    });
-    return Object.entries(days).map(([label, value]) => ({ label, value }));
-  }, [marketplace]);
-
-  const donutSegments = [
-    { label: "Open",            value: marketplace.filter(r => r.status === "open").length,     color: "#2A1FE6" },
-    { label: "In Progress",     value: marketplace.filter(r => r.status === "bidding").length,  color: "#7DF9C5" },
-    { label: "Pending Approval",value: bids.filter(b => b.status === "submitted").length,       color: "#FFD84D" },
-    { label: "Closed",          value: bids.filter(b => b.status === "accepted" || b.status === "rejected").length, color: "#0A0A1A" },
-  ];
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-      <SectionCard title="Requests Overview"
-        action={<span className="text-[11px] text-muted bg-ink/[0.04] border border-ink/[0.08] px-2.5 py-1 rounded-full">This Month</span>}>
-        <div className="p-4">
-          {lm ? <Skeleton className="h-40" /> : <RequestsOverviewChart data={chartData} />}
-        </div>
-      </SectionCard>
-      <SectionCard title="Requests by Status"
-        action={<span className="text-[11px] text-muted bg-ink/[0.04] border border-ink/[0.08] px-2.5 py-1 rounded-full">This Month</span>}>
-        <div className="p-5">
-          {lm || lb ? <Skeleton className="h-32" /> : <DonutChart segments={donutSegments} />}
-        </div>
-      </SectionCard>
-    </div>
-  );
-}
-
-// ─── Bottom row ───────────────────────────────────────────────
-
-function BottomRow() {
-  const { data: marketplace = [], isLoading: lm } = useMarketplace();
-  const { data: bids        = [], isLoading: lb } = useMyBids();
-  const { data: pending     = [], isLoading: lp } = usePendingActions();
-  const { data: myGroup }                         = useMyGroup();
-  const modules = myGroup?.module_permissions ?? [];
-  const canMarket = modules.includes("*") || modules.includes("inst:marketplace");
-
-  const recentRequests = [...marketplace]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5);
-
-  const recentBids = [...bids]
-    .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime())
-    .slice(0, 5);
-
-  const pendingList = [...pending]
-    .sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime())
-    .slice(0, 5);
-
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-      {/* Recent Requests */}
-      <SectionCard title="Recent Requests"
-        action={canMarket ? (
-          <Link to="/marketplace" className="flex items-center gap-1 text-[12px] text-ficium font-semibold hover:underline">
-            View All <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        ) : undefined}>
-        {lm ? (
-          <div className="p-4 space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
-        ) : recentRequests.length === 0 ? (
-          <p className="text-[13px] text-muted text-center py-8">No requests yet</p>
-        ) : (
-          <div className="divide-y divide-ink/[0.05]">
-            {recentRequests.map(req => (
-              <div key={req.id} className="flex items-center justify-between px-5 py-3 gap-3 hover:bg-ink/[0.02] transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-ficium/10 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 text-ficium" aria-hidden />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-ink truncate">{req.product_label ?? req.product_type}</div>
-                    <div className="text-[11px] text-muted font-mono">{(req.client_ref ?? req.id).slice(0, 14)} · {fmtDate(req.created_at)}</div>
-                  </div>
-                </div>
-                <StatusBadge status={req.status} />
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
-
-      {/* Recent Bids */}
-      <SectionCard title="Recent Bids"
-        action={
-          <Link to="/bids" className="flex items-center gap-1 text-[12px] text-ficium font-semibold hover:underline">
-            View All <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        }>
-        {lb ? (
-          <div className="p-4 space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
-        ) : recentBids.length === 0 ? (
-          <p className="text-[13px] text-muted text-center py-8">No bids yet</p>
-        ) : (
-          <div className="divide-y divide-ink/[0.05]">
-            {recentBids.map(bid => (
-              <div key={bid.id} className="flex items-center justify-between px-5 py-3 gap-3 hover:bg-ink/[0.02] transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                    <Gavel className="w-4 h-4 text-emerald-600" aria-hidden />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-ink truncate">{bid.product_label ?? bid.product_type ?? "Bid"}</div>
-                    <div className="text-[11px] text-muted">{fmtMUR(Number(bid.amount_offered))} · {timeAgo(bid.submitted_at)}</div>
-                  </div>
-                </div>
-                <StatusBadge status={bid.status} />
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
-
-      {/* Pending Approvals */}
-      <SectionCard title="Pending Approvals"
-        action={
-          <Link to="/approvals" className="flex items-center gap-1 text-[12px] text-ficium font-semibold hover:underline">
-            View All <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        }>
-        {lp ? (
-          <div className="p-4 space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
-        ) : pendingList.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <CheckCircle className="w-8 h-8 text-emerald-400" aria-hidden />
-            <p className="text-[13px] text-muted">Queue clear</p>
-          </div>
+    <Hero
+      eyebrow={`MARKETPLACE LIVE · ${dateLabel}`}
+      live
+      headline={
+        open.length > 0 ? (
+          <>
+            {greeting()}, {name}.<br />
+            <GradText>{open.length} request{open.length > 1 ? 's' : ''}</GradText> {open.length > 1 ? 'are' : 'is'} open for bids.
+          </>
         ) : (
           <>
-            <div className="divide-y divide-ink/[0.05]">
-              {pendingList.map(a => {
-                const expires = new Date(a.expires_at);
-                const urgent  = expires.getTime() - Date.now() < 4 * 3_600_000;
-                return (
-                  <div key={a.id} className="px-5 py-3 hover:bg-ink/[0.02] transition-colors">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="text-[13px] font-semibold text-ink truncate flex-1">{a.resource_type}</div>
-                      {urgent && (
-                        <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full flex-shrink-0">URGENT</span>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted font-mono">{a.id.slice(0, 8)}</span>
-                      <span className={`text-[11px] font-semibold ${urgent ? "text-red-500" : "text-muted"}`}>
-                        {timeAgo(a.expires_at)}
-                      </span>
+            {greeting()}, {name}.<br />
+            The marketplace is <GradText>quiet — for now.</GradText>
+          </>
+        )
+      }
+      subline={
+        pending.length > 0
+          ? `${pending.length} bid${pending.length > 1 ? 's' : ''} in your approval queue need a checker before they reach clients.`
+          : open.length > 0
+          ? 'Fresh financing requests are matched to your products. First credible offers win attention.'
+          : 'New client requests will appear here the moment they\'re posted.'
+      }
+      actions={
+        <>
+          <HeroButton onClick={() => navigate('/marketplace')}>Browse requests</HeroButton>
+          <HeroButton variant='ghost' onClick={() => navigate('/bids')}>My bids</HeroButton>
+        </>
+      }
+      stats={stats}
+    />
+  )
+}
+
+function NewRequests() {
+  const { data: marketplace = [], isLoading } = useMarketplace()
+  const open = marketplace
+    .filter(r => r.status === 'open' || r.status === 'bidding')
+    .slice(0, 3)
+  const total = marketplace.filter(r => r.status === 'open' || r.status === 'bidding').length
+
+  return (
+    <Reveal as='section' className='mt-12'>
+      <SectionHead
+        title='New requests for you'
+        subtitle='Matched to your product catalogue'
+        to='/marketplace'
+        toLabel={total > 3 ? `Browse all ${total}` : 'Marketplace'}
+      />
+      {isLoading ? (
+        <div className='grid sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+          {[...Array(3)].map((_, i) => <SkeletonBlock key={i} className='h-56' />)}
+        </div>
+      ) : open.length === 0 ? (
+        <Panel className='text-center py-10'>
+          <Store className='w-8 h-8 text-muted/50 mx-auto mb-2' aria-hidden />
+          <p className='text-[13.5px] text-muted'>No open requests right now — new ones land here automatically.</p>
+        </Panel>
+      ) : (
+        <div className='grid sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+          {open.map(req => {
+            const readiness = req.client_health_score ?? null
+            return (
+              <HoverCard key={req.id}>
+                <div className='flex items-center gap-3 mb-3'>
+                  <CardIcon>
+                    <Store className='w-5 h-5 text-ficium' aria-hidden />
+                  </CardIcon>
+                  <div className='min-w-0'>
+                    <h3 className='text-[15.5px] font-semibold text-ink truncate'>
+                      {titleCase(req.product_label ?? req.product_type)}
+                    </h3>
+                    <div className='text-[12.5px] text-muted mt-0.5'>
+                      Posted {timeAgo(req.created_at)}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            <div className="p-4 border-t border-ink/[0.07]">
-              <Link to="/approvals"
-                className="block w-full bg-ficium hover:bg-ficium-deep text-white text-[13px] font-bold text-center py-2.5 rounded-xl transition-colors">
-                Go to Approvals
+                </div>
+
+                <div className='font-display font-bold tracking-display text-[24px] text-ink'>
+                  {fmtMUR(Number(req.amount) || 0)}
+                  <span className='font-body font-medium tracking-normal text-[12.5px] text-muted ml-1.5'>
+                    {req.term_months ? `· ${req.term_months} months` : ''}
+                  </span>
+                </div>
+
+                {readiness !== null ? (
+                  <ProgressBar value={readiness} label='Client readiness' />
+                ) : (
+                  <div className='my-3' />
+                )}
+
+                <div className='flex items-center gap-2 mb-4 flex-wrap'>
+                  <Tag tone={statusTone(req.status)}>{req.status}</Tag>
+                  {req.client_employment_status && (
+                    <Tag tone='blue'>{titleCase(req.client_employment_status)}</Tag>
+                  )}
+                </div>
+
+                <div className='flex gap-2.5'>
+                  <Link
+                    to='/marketplace'
+                    className='bg-ink hover:bg-ficium text-white text-[13px] font-semibold px-4 py-2 rounded-[11px] transition-colors'
+                  >
+                    Place bid
+                  </Link>
+                  <Link
+                    to='/marketplace'
+                    className='border border-line hover:border-ficium hover:text-ficium text-ink text-[13px] font-semibold px-4 py-2 rounded-[11px] transition-colors'
+                  >
+                    Details
+                  </Link>
+                </div>
+              </HoverCard>
+            )
+          })}
+        </div>
+      )}
+    </Reveal>
+  )
+}
+
+function BiddingPulse() {
+  const { data: bids = [], isLoading } = useMyBids()
+
+  const chartData: ChartPoint[] = useMemo(() => {
+    const days: Record<string, number> = {}
+    const now = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i)
+      days[d.toLocaleDateString('en-MU', { month: 'short', day: 'numeric' })] = 0
+    }
+    bids.forEach(b => {
+      const label = new Date(b.submitted_at).toLocaleDateString('en-MU', { month: 'short', day: 'numeric' })
+      if (label in days) days[label]++
+    })
+    return Object.entries(days).map(([label, value]) => ({ label, value }))
+  }, [bids])
+
+  const weekTotal = chartData.reduce((s, p) => s + p.value, 0)
+  const accepted  = bids.filter(b => b.status === 'accepted').length
+  const recent    = bids.slice(0, 5)
+
+  return (
+    <Reveal as='section' className='mt-12'>
+      <SectionHead title="How you're bidding" subtitle='Your bids across the marketplace' to='/bids' toLabel='All bids' />
+      <div className='grid lg:grid-cols-[1.6fr_1fr] gap-4'>
+        <Panel>
+          <PanelHead
+            title='Bids placed'
+            subtitle={
+              <span>
+                <b className='text-ink text-[22px] font-display tracking-display'>{weekTotal}</b>
+                <span className='ml-2 text-good font-semibold'>this week · {accepted} accepted all-time</span>
+              </span>
+            }
+          />
+          {isLoading
+            ? <SkeletonBlock className='h-52 mt-5' />
+            : <LineChart data={chartData} unit='bids' ariaLabel='Bids placed, last 7 days' />}
+        </Panel>
+        <Panel>
+          <PanelHead title='Bid updates' subtitle='Latest from your bids' />
+          {isLoading ? (
+            <SkeletonBlock className='h-52 mt-5' />
+          ) : recent.length === 0 ? (
+            <p className='text-[13px] text-muted text-center py-10'>
+              No bids yet — your first one starts the story.
+            </p>
+          ) : (
+            <Feed>
+              {recent.map((b, i) => (
+                <FeedItem
+                  key={b.id}
+                  tone={
+                    b.status === 'accepted' ? 'good'
+                    : b.status === 'rejected' ? 'bad'
+                    : b.status === 'expired' ? 'warn'
+                    : 'blue'
+                  }
+                  title={`${titleCase(b.product_label ?? b.product_type ?? 'Bid')} — ${fmtMUR(Number(b.amount_offered) || 0)}`}
+                  detail={titleCase(b.status)}
+                  time={timeAgo(b.submitted_at)}
+                  last={i === recent.length - 1}
+                />
+              ))}
+            </Feed>
+          )}
+        </Panel>
+      </div>
+    </Reveal>
+  )
+}
+
+function Standing() {
+  const { data: bids = [], isLoading }    = useMyBids()
+  const { data: pending = [] }            = usePendingActions()
+  const { data: marketplace = [] }        = useMarketplace()
+
+  const accepted = bids.filter(b => b.status === 'accepted').length
+  const winRate  = bids.length > 0 ? Math.round((accepted / bids.length) * 100) : 0
+
+  return (
+    <Reveal as='section' className='mt-12'>
+      <SectionHead title='Your standing' subtitle='How your institution is performing on Ficium' />
+      {isLoading ? (
+        <div className='grid grid-cols-2 xl:grid-cols-4 gap-3.5'>
+          {[...Array(4)].map((_, i) => <SkeletonBlock key={i} className='h-20' />)}
+        </div>
+      ) : (
+        <div className='grid grid-cols-2 xl:grid-cols-4 gap-3.5'>
+          <StatMini
+            icon={<BarChart2 className='w-[18px] h-[18px] text-[#7C3AED]' aria-hidden />}
+            label='Win rate' value={`${winRate}%`} to='/bids'
+          />
+          <StatMini
+            icon={<Trophy className='w-[18px] h-[18px] text-[#7C3AED]' aria-hidden />}
+            label='Bids accepted' value={accepted} to='/bids'
+          />
+          <StatMini
+            icon={<Gavel className='w-[18px] h-[18px] text-[#7C3AED]' aria-hidden />}
+            label='Total bids' value={bids.length} to='/bids'
+          />
+          <StatMini
+            icon={<Store className='w-[18px] h-[18px] text-[#7C3AED]' aria-hidden />}
+            label='Open requests' value={marketplace.filter(r => r.status === 'open' || r.status === 'bidding').length}
+            to='/marketplace'
+          />
+        </div>
+      )}
+      {pending.length > 0 && (
+        <p className='text-[12.5px] text-muted mt-3'>
+          {pending.length} bid{pending.length > 1 ? 's' : ''} waiting in your{' '}
+          <Link to='/approvals' className='text-ficium font-semibold hover:underline'>approval queue</Link>.
+        </p>
+      )}
+    </Reveal>
+  )
+}
+
+function BidsAndCallout() {
+  const navigate = useNavigate()
+  const { data: bids = [], isLoading }     = useMyBids()
+  const { data: pending = [] }             = usePendingActions()
+  const { data: marketplace = [] }         = useMarketplace()
+
+  const recent = bids.slice(0, 5)
+  const openCount = marketplace.filter(r => r.status === 'open' || r.status === 'bidding').length
+
+  // One best action for this institution right now.
+  const callout = pending.length > 0
+    ? {
+        title: `${pending.length} bid${pending.length > 1 ? 's are' : ' is'} stuck in approvals.`,
+        body: 'Bids only reach clients after a checker signs off. Clearing the queue gets your offers in front of clients today.',
+        cta: 'Open approvals',
+        to: '/approvals',
+      }
+    : openCount > 0
+    ? {
+        title: `${openCount} open request${openCount > 1 ? 's' : ''}, zero of your bids on ${openCount > 1 ? 'them' : 'it'} yet.`,
+        body: 'Early, credible offers set the benchmark other institutions have to beat. A first bid takes about two minutes.',
+        cta: 'Browse requests',
+        to: '/marketplace',
+      }
+    : {
+        title: 'Keep your products sharp.',
+        body: 'No open requests right now — a good moment to review your product catalogue and rates so the next match is instant.',
+        cta: 'Review products',
+        to: '/products',
+      }
+
+  return (
+    <Reveal as='section' className='mt-12'>
+      <div className='grid lg:grid-cols-2 gap-4'>
+        <Panel>
+          <PanelHead
+            title='Your recent bids'
+            subtitle={`${bids.length} all-time`}
+            action={
+              <Link to='/bids' className='text-[13px] font-semibold text-ficium hover:underline'>
+                All bids
               </Link>
+            }
+          />
+          {isLoading ? (
+            <SkeletonBlock className='h-48 mt-4' />
+          ) : recent.length === 0 ? (
+            <p className='text-[13px] text-muted text-center py-10'>No bids yet.</p>
+          ) : (
+            <div className='mt-2 flex flex-col'>
+              {recent.map(b => (
+                <div key={b.id} className='flex items-center gap-3 px-1.5 py-3 rounded-xl hover:bg-[#F7F7FB] transition-colors'>
+                  <div
+                    className='w-9 h-9 rounded-[11px] grid place-items-center flex-shrink-0'
+                    style={{ background: 'linear-gradient(135deg,rgba(30,108,245,.10),rgba(124,58,237,.10))' }}
+                    aria-hidden
+                  >
+                    <Gavel className='w-4 h-4 text-ficium' aria-hidden />
+                  </div>
+                  <div className='min-w-0 flex-1'>
+                    <div className='text-[13.5px] font-semibold text-ink truncate'>
+                      {titleCase(b.product_label ?? b.product_type ?? 'Bid')}
+                    </div>
+                    <div className='text-[11.5px] text-muted'>
+                      {fmtMUR(Number(b.amount_offered) || 0)} · {timeAgo(b.submitted_at)}
+                    </div>
+                  </div>
+                  <Tag tone={statusTone(b.status)}>{b.status.replace(/_/g, ' ')}</Tag>
+                </div>
+              ))}
             </div>
-          </>
-        )}
-      </SectionCard>
-    </div>
-  );
+          )}
+        </Panel>
+
+        <DarkCallout
+          title={callout.title}
+          body={callout.body}
+          action={<HeroButton onClick={() => navigate(callout.to)}>{callout.cta}</HeroButton>}
+        />
+      </div>
+    </Reveal>
+  )
 }
 
 // ─── Page ─────────────────────────────────────────────────────
 
 export default function InstitutionDashboard() {
-  const { data: institution } = useMyInstitution();
-  const now = new Date().toLocaleDateString("en-MU", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-
   return (
-    <div className="p-5 lg:p-6 xl:p-8 max-w-[1440px] mx-auto">
-      {/* Page header */}
-      <div className="mb-6">
-        <h1 className="font-display font-bold text-[22px] text-ink">
-          Welcome back, <span className="text-ficium">{institution?.primary_contact_name ?? institution?.name ?? "Admin"}</span>
-        </h1>
-        <p className="text-[13px] text-muted mt-0.5">Here's what's happening with your bank today · {now}</p>
-      </div>
-
-      <KpiRow />
-      <ChartsRow />
-      <BottomRow />
+    <div className='max-w-[1180px] mx-auto px-4 sm:px-6 pt-4 pb-20'>
+      <InstitutionHero />
+      <NewRequests />
+      <BiddingPulse />
+      <Standing />
+      <BidsAndCallout />
     </div>
-  );
+  )
 }
