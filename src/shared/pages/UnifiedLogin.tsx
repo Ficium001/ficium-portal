@@ -22,18 +22,34 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
 import { supabase } from '../../shared/lib/supabase'
+import FiciumLogo from '../ui/FiciumLogo'
+import { GradText } from '../ui/dashboard/Hero'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Logo
+// Drifting background blade (matches the dashboard hero)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function FLogo({ size = 32 }: { size?: number }) {
+function Blade({ className, both = true }: { className: string; both?: boolean }) {
   return (
-    <svg width={size} height={size} viewBox='0 0 100 100' fill='none' aria-hidden>
-      <path
-        d='M28 18 H72 C75 18 76 21 74 24 L62 38 H44 V52 H58 C61 52 62 55 60 58 L52 68 H44 V82 C44 85 41 86 38 84 L26 76 C24 75 24 73 24 71 V22 C24 19 26 18 28 18 Z'
-        fill='currentColor'
-      />
+    <svg
+      viewBox='0 0 100 100'
+      className={`absolute opacity-50 blur-[2px] motion-safe:animate-drift will-change-transform pointer-events-none ${className}`}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id='loginBladeB' x1='0' y1='0' x2='1' y2='0'>
+          <stop offset='0' stopColor='#1E6CF5' />
+          <stop offset='1' stopColor='#0B3FD6' />
+        </linearGradient>
+        <linearGradient id='loginBladeP' x1='0' y1='0' x2='1' y2='0'>
+          <stop offset='0' stopColor='#7C3AED' />
+          <stop offset='1' stopColor='#C026D3' />
+        </linearGradient>
+      </defs>
+      {both && (
+        <path d='M14 42 C20 18, 62 8, 90 14 C84 34, 44 48, 14 42 Z' fill='url(#loginBladeB)' />
+      )}
+      <path d='M86 58 C80 82, 38 92, 10 86 C16 66, 56 52, 86 58 Z' fill='url(#loginBladeP)' />
     </svg>
   )
 }
@@ -65,34 +81,26 @@ async function detectUserType(authUserId: string): Promise<UserType> {
 
 function LeftPanel() {
   return (
-    <div className='hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col relative overflow-hidden'>
-      <div className='absolute inset-0 bg-gradient-to-br from-[#0a0f1e] via-[#0f1929] to-[#0b1628]' />
+    <div className='hidden lg:flex lg:w-[45%] xl:w-[40%] flex-col relative overflow-hidden text-white'>
       <div
         className='absolute inset-0'
-        style={{
-          background:
-            'radial-gradient(ellipse at 30% 40%, rgba(37,99,235,0.4) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(99,102,241,0.25) 0%, transparent 50%)',
-        }}
+        style={{ background: 'radial-gradient(120% 160% at 8% 0%, #181842 0%, #0B0B1E 55%)' }}
       />
-      <div className='absolute top-1/3 -left-10 w-72 h-72 rounded-full bg-blue-600/20 blur-[80px] animate-pulse' />
-      <div
-        className='absolute bottom-1/4 right-0 w-64 h-64 rounded-full bg-ficium/15 blur-[80px] animate-pulse'
-        style={{ animationDelay: '1.5s' }}
-      />
+      <Blade className='w-[420px] -top-20 -right-16 [animation-delay:-2s]' />
+      <Blade className='w-[320px] bottom-[12%] -right-10 [animation-duration:18s]' both={false} />
 
       <div className='relative z-10 flex flex-col h-full p-10 xl:p-14'>
         {/* Logo */}
-        <div className='flex items-center gap-3 text-white mb-auto'>
-          <FLogo size={28} />
-          <span className='font-display font-bold text-[20px] tracking-tight'>Ficium</span>
+        <div className='mb-auto'>
+          <FiciumLogo size={30} withWordmark wordmarkClassName='text-[20px] text-white' />
         </div>
 
         {/* Headline */}
         <div className='mb-auto'>
-          <h1 className='text-white font-display font-bold text-[36px] xl:text-[42px] leading-[1.1] tracking-tight mb-4'>
-            The reverse<br />banking<br />marketplace.
+          <h1 className='font-display font-bold tracking-display text-[36px] xl:text-[44px] leading-[1.08] mb-4'>
+            The reverse<br />banking<br /><GradText>marketplace.</GradText>
           </h1>
-          <p className='text-white/50 text-[15px] leading-relaxed max-w-xs'>
+          <p className='text-[#A6A6C8] text-[15px] leading-relaxed max-w-xs'>
             Clients post their needs. Providers compete. Everyone wins.
           </p>
         </div>
@@ -105,10 +113,13 @@ function LeftPanel() {
             { icon: Zap,       label: 'Live marketplace with real-time intelligence'     },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className='flex items-center gap-3'>
-              <div className='w-8 h-8 rounded-lg bg-ficium/[0.06] flex items-center justify-center flex-shrink-0'>
-                <Icon className='w-4 h-4 text-white/70' aria-hidden />
+              <div
+                className='w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0'
+                style={{ background: 'linear-gradient(135deg,rgba(30,108,245,.16),rgba(124,58,237,.16))' }}
+              >
+                <Icon className='w-4 h-4 text-white/80' aria-hidden />
               </div>
-              <span className='text-white/60 text-[13px]'>{label}</span>
+              <span className='text-[#8E8EB4] text-[13px]'>{label}</span>
             </div>
           ))}
         </div>
@@ -228,7 +239,7 @@ export default function UnifiedLogin() {
 
   if (detecting) {
     return (
-      <div className='min-h-screen bg-cream flex items-center justify-center'>
+      <div className='min-h-screen bg-paper flex items-center justify-center'>
         <div className='text-center'>
           <div className='w-8 h-8 border-2 border-ficium border-t-transparent rounded-full animate-spin mx-auto mb-3' />
           <p className='text-[13px] text-muted font-mono'>Detecting portal access…</p>
@@ -263,10 +274,10 @@ export default function UnifiedLogin() {
     return (
       <div className='min-h-screen flex overflow-hidden'>
         <LeftPanel />
-        <div className='flex-1 flex items-center justify-center p-8 bg-cream'>
+        <div className='flex-1 flex items-center justify-center p-8 bg-paper'>
           <div className='w-full max-w-[400px]'>
             <div className='flex items-center gap-3 mb-8'>
-              <div className='w-9 h-9 rounded-xl bg-ficium text-white flex items-center justify-center'><FLogo size={20} /></div>
+              <div className='w-9 h-9 rounded-xl bg-white border border-line flex items-center justify-center'><FiciumLogo size={20} /></div>
               <span className='font-display font-bold text-[18px] text-ink'>Set your password</span>
             </div>
             <p className='text-[13px] text-muted mb-6'>Choose a secure password to access your institution portal.</p>
@@ -303,7 +314,8 @@ export default function UnifiedLogin() {
                 <button
                   onClick={handleSetPassword}
                   disabled={pwLoading || !newPassword || !pwConfirm}
-                  className='w-full py-2.5 rounded-xl bg-ficium text-white text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-ficium/90 transition-colors'
+                  className='w-full py-2.5 rounded-xl text-white text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 ease-swift hover:-translate-y-0.5 hover:shadow-ficium'
+                  style={{ background: 'linear-gradient(92deg,#1E6CF5,#7C3AED 90%)' }}
                 >
                   {pwLoading ? <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' /> : <><ArrowRight className='w-4 h-4' />Activate account</>}
                 </button>
@@ -320,12 +332,11 @@ export default function UnifiedLogin() {
       <LeftPanel />
 
       {/* Right panel */}
-      <div className='flex-1 flex flex-col items-center justify-center p-6 lg:p-12 bg-cream'>
+      <div className='flex-1 flex flex-col items-center justify-center p-6 lg:p-12 bg-paper'>
         <div className='w-full max-w-[400px]'>
           {/* Mobile logo */}
           <div className='flex items-center gap-2.5 mb-8 lg:hidden'>
-            <FLogo size={24} />
-            <span className='font-display font-bold text-[18px] text-ink'>Ficium</span>
+            <FiciumLogo size={26} withWordmark wordmarkClassName='text-[18px] text-ink' />
           </div>
 
           <div className='mb-8'>
@@ -389,7 +400,8 @@ export default function UnifiedLogin() {
             <button
               type='submit'
               disabled={loading || !email || !password}
-              className='w-full bg-ficium hover:bg-ficium-deep disabled:opacity-50 text-white font-bold py-3.5 rounded-xl text-[15px] transition-colors flex items-center justify-center gap-2'
+              className='w-full disabled:opacity-50 text-white font-bold py-3.5 rounded-[14px] text-[15px] transition-all duration-300 ease-swift hover:-translate-y-0.5 hover:shadow-ficium active:scale-[.98] flex items-center justify-center gap-2'
+              style={{ background: 'linear-gradient(92deg,#1E6CF5,#7C3AED 90%)' }}
             >
               {loading ? (
                 <><span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' /> Signing in…</>
