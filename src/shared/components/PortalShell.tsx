@@ -35,7 +35,6 @@ import {
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
 } from 'lucide-react'
-import { supabase } from '../lib/supabase'
 import { useMyGroup } from '../../admin/hooks/useAdmin'
 import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '../lib/modules'
 import FiciumLogo from '../ui/FiciumLogo'
@@ -81,8 +80,9 @@ function useConnStatus(): ConnStatus {
     const check = async () => {
       if (!navigator.onLine) { if (!stale) setStatus('offline'); return }
       try {
-        const { error } = await supabase.auth.getSession()
-        if (!stale) setStatus(error ? 'reconnecting' : 'connected')
+        const { getValidAccessToken } = await import('../lib/ficiumAuth')
+        const token = await getValidAccessToken()
+        if (!stale) setStatus(token ? 'connected' : 'reconnecting')
       } catch { if (!stale) setStatus('offline') }
     }
     check()
@@ -476,17 +476,20 @@ export default function PortalShell() {
   const [userName,     setUserName]     = useState('')
   const [pendingCount] = useState(0)
 
-  // Fetch user display name
+  // Fetch user display name from JWT payload
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserName(data.user?.user_metadata?.display_name ?? data.user?.email?.split('@')[0] ?? 'User')
+    import('../lib/ficiumAuth').then(({ getTokenPayload }) => {
+      const payload = getTokenPayload()
+      const email   = payload?.['email'] as string | undefined
+      setUserName(email?.split('@')[0] ?? 'User')
     })
   }, [])
 
   const qc = useQueryClient()
 
   const handleSignOut = useCallback(async () => {
-    await supabase.auth.signOut()
+    const { signOut } = await import('../lib/ficiumAuth')
+    await signOut()
     qc.clear()
     navigate('/login?signedout=1')
   }, [navigate, qc])

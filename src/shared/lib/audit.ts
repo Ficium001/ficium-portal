@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { getTokenPayload } from "./ficiumAuth";
 
 /* ============================================================
    TYPES
@@ -78,8 +79,8 @@ function toActionCategory(eventName: AuditEventName): string {
 
 export async function logAudit(event: AuditEvent): Promise<void> {
   try {
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id ?? null;
+    const payload = getTokenPayload();
+    const userId  = payload?.['sub'] as string | null ?? null;
     if (!userId) return; // not signed in — skip audit
 
     const actionCategory = toActionCategory(event.eventName);

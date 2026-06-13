@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { getValidAccessToken, getTokenPayload } from '../lib/ficiumAuth'
 import { supabase } from '../lib/supabase'
 
 type State = 'loading' | 'ok' | 'unauthed' | 'no_access' | 'suspended' | 'pending'
@@ -23,33 +24,28 @@ export default function PortalRoute() {
   useEffect(() => {
     let cancelled = false
     async function check() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { if (!cancelled) setState('unauthed'); return }
+      const token = await getValidAccessToken()
+      if (!token) { if (!cancelled) setState('unauthed'); return }
 
-      const { data: userType } = await supabase
-        .rpc('detect_portal_user_type', { p_auth_user_id: session.user.id })
+      const payload = getTokenPayload()
+      if (!payload) { if (!cancelled) setState('unauthed'); return }
 
-      if (userType === 'admin') {
+      const role       = payload['user_role'] as string | undefined
+      const instId     = payload['institution_id'] as string | undefined
+
+      // Ficium admin — full access
+      if (role === 'admin' && !instId) {
         if (!cancelled) setState('ok')
         return
       }
 
-      if (userType === 'institution') {
-        const { data: member } = await supabase
-          .schema('institution')
-          .from('institution_members')
-          .select('institution_id')
-          .eq('auth_user_id', session.user.id)
-          .eq('active', true)
-          .maybeSingle()
-
-        if (!member) { if (!cancelled) setState('no_access'); return }
-
+      // Institution user — check approval + suspension via Supabase DB
+      if (instId) {
         const { data: inst } = await supabase
           .schema('institution')
           .from('institutions')
           .select('approved, suspended_at, suspension_reason')
-          .eq('id', member.institution_id)
+          .eq('id', instId)
           .maybeSingle()
 
         if (!inst) { if (!cancelled) setState('no_access'); return }

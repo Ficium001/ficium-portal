@@ -21,7 +21,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
-import { supabase } from '../../shared/lib/supabase'
+import { signIn as ficiumSignIn, hasSession, getTokenPayload, signOut as ficiumSignOut } from '../../shared/lib/ficiumAuth'
 import FiciumLogo from '../ui/FiciumLogo'
 import { GradText } from '../ui/dashboard/Hero'
 
@@ -57,25 +57,6 @@ function Blade({ className, both = true }: { className: string; both?: boolean }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // User type detection
-// ─────────────────────────────────────────────────────────────────────────────
-
-type UserType = 'admin' | 'institution' | 'unknown'
-
-async function detectUserType(authUserId: string): Promise<UserType> {
-  // Use a SECURITY DEFINER RPC to bypass RLS — direct table queries 403
-  // because the anon key can't read cross-schema tables before the session
-  // is fully established as a known user type.
-  const { data, error } = await supabase
-    .rpc('detect_portal_user_type', { p_auth_user_id: authUserId })
-
-  if (error) {
-    console.error('detectUserType error:', error.message)
-    return 'unknown'
-  }
-
-  return (data as UserType) ?? 'unknown'
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Left panel — marketing/brand
 // ─────────────────────────────────────────────────────────────────────────────
@@ -147,7 +128,7 @@ export default function UnifiedLogin() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]     = useState(false)
   const [detecting,    setDetecting]   = useState(false)
-  const [showSetPassword, setShowSetPassword] = useState(false)
+  const [showSetPassword, ] = useState(false)
   const [newPassword,   setNewPassword]   = useState('')
   const [pwConfirm,     setPwConfirm]     = useState('')
   const [pwError,       setPwError]       = useState<string | null>(null)
@@ -168,42 +149,27 @@ export default function UnifiedLogin() {
   // and a session where user.email_confirmed_at is null (invite not yet
   // accepted). We catch it here to show the set-password form instead of
   // redirecting to the dashboard.
+  // ficium-auth does not use invite links or hash tokens.
+  // This effect is kept as a stub for future MFA challenge handling.
   useEffect(() => {
-    // Also catch the case where the hash is still present (some browsers)
-    const hash = window.location.hash
-    if (hash.includes('type=invite')) {
-      window.history.replaceState(null, '', window.location.pathname)
-      setShowSetPassword(true)
-      return
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // If the user has no password set yet (fresh invite), show set-password
-        const meta = session.user.user_metadata ?? {}
-        const isInvite = meta.onboarding === 'institution_member' && !session.user.email_confirmed_at
-        if (isInvite) {
-          setShowSetPassword(true)
-        }
-      }
-    })
-    return () => subscription.unsubscribe()
+    // no-op: invite flow handled server-side via ficium-auth
   }, [])
 
-  // If already signed in, detect and redirect
+  // If already signed in, redirect directly (role is in the JWT payload)
   useEffect(() => {
-    // Don't auto-redirect if user explicitly signed out
     const params = new URLSearchParams(window.location.search)
     if (params.get('signedout') === '1') return
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return
-      setDetecting(true)
-      const userType = await detectUserType(session.user.id)
-      if (userType === 'admin') navigate('/dashboard', { replace: true })
-      else if (userType === 'institution') navigate(from ?? '/dashboard', { replace: true })
-      else setDetecting(false)
-    })
+    if (!hasSession()) return
+    const payload = getTokenPayload()
+    if (!payload) return
+
+    setDetecting(true)
+    const instId = payload['institution_id'] as string | undefined
+    const role   = payload['user_role'] as string | undefined
+    if (role === 'admin' && !instId) navigate('/dashboard', { replace: true })
+    else if (instId) navigate(from ?? '/dashboard', { replace: true })
+    else setDetecting(false)
   }, [navigate, from])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -212,26 +178,26 @@ export default function UnifiedLogin() {
     setError(null)
     setLoading(true)
 
-    const { data, error: authErr } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    })
+    const { tokens, error: authErr } = await ficiumSignIn(email.trim().toLowerCase(), password)
 
-    if (authErr || !data.user) {
-      setError('Incorrect email or password.')
+    if (authErr || !tokens) {
+      setError(authErr ?? 'Incorrect email or password.')
       setLoading(false)
       return
     }
 
+    // Route based on JWT payload — no extra DB call needed
     setDetecting(true)
-    const userType = await detectUserType(data.user.id)
+    const payload = getTokenPayload()
+    const instId  = payload?.['institution_id'] as string | undefined
+    const role    = payload?.['user_role'] as string | undefined
 
-    if (userType === 'admin') {
+    if (role === 'admin' && !instId) {
       navigate('/dashboard', { replace: true })
-    } else if (userType === 'institution') {
+    } else if (instId) {
       navigate(from ?? '/dashboard', { replace: true })
     } else {
-      await supabase.auth.signOut()
+      await ficiumSignOut()
       setError('Your account has not been provisioned for portal access. Contact your administrator.')
       setDetecting(false)
       setLoading(false)
@@ -258,17 +224,16 @@ export default function UnifiedLogin() {
         setPwError('Password must be at least 8 characters'); return
       }
       setPwLoading(true); setPwError(null)
-      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      const { error } = await fetch(`${import.meta.env.VITE_AUTH_URL ?? 'https://ficium-auth-production.up.railway.app'}/auth/password/change`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ current_password: '', new_password: newPassword }),
+      }).then(r => r.ok ? { error: null } : r.json().then(d => ({ error: d?.message ?? 'Failed' })))
       setPwLoading(false)
       if (error) { setPwError(error.message); return }
       setPwSuccess(true)
       setTimeout(async () => {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          const userType = await detectUserType(session.user.id)
-          if (userType === 'admin') navigate('/dashboard', { replace: true })
-          else navigate('/dashboard', { replace: true })
-        }
+        if (hasSession()) navigate('/dashboard', { replace: true })
       }, 1500)
     }
 
