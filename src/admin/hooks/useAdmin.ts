@@ -414,13 +414,25 @@ export function useAdminGroups() {
   })
 }
 
+// Shape of portal_admin.user_groups returned by GET /members/my-group.
+// null when the caller has no group.
+export interface MyGroup {
+  id?:                 string
+  slug?:               string
+  label?:              string
+  description?:        string
+  module_permissions?: string[]
+  user_type?:          'admin' | 'institution'
+  is_system?:          boolean
+}
+
 export function useMyGroup() {
   // Migrated to ficium-portal-api (Stage 4b). Calls portal_admin.get_my_group()
   // server-side via the same SECURITY DEFINER RPC, resolved by the verified
   // ficium-auth JWT (auth.uid()). Returns the user_groups row or null.
-  return useQuery({
+  return useQuery<MyGroup | null>({
     queryKey: ['admin', 'my-group'],
-    queryFn:  () => portalApi.get('/members/my-group'),
+    queryFn:  () => portalApi.get<MyGroup | null>('/members/my-group'),
     staleTime: 30_000,
   })
 }
