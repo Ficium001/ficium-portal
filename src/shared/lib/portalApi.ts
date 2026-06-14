@@ -10,12 +10,12 @@ const API_URL = (import.meta.env.VITE_PORTAL_API_URL as string | undefined)
   ?? "https://ficium-portal-api-production.up.railway.app"
 
 export class PortalApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
+  readonly status: number
+
+  constructor(status: number, message: string) {
     super(message)
     this.name = "PortalApiError"
+    this.status = status
   }
 }
 
