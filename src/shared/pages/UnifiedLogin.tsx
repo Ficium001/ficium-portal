@@ -6,22 +6,22 @@
  *   Single entry point for all portal users — institution analysts,
  *   institution admins, and Ficium internal admins.
  *
- *   Auth flow after credentials verified:
- *     1. Look up admin_users (portal_admin schema) → route to /admin/dashboard
- *     2. Look up institution_members (institution schema) → route to /dashboard
- *     3. Neither found → show "access not provisioned" error
+ *   Auth flow (ficium-auth, RS256):
+ *     1. POST /auth/login → RS256 access token stored in sessionStorage
+ *     2. GET /institutions/me (portal-api) → resolves admin vs institution
+ *     3. Route accordingly; unprovisioned users are signed out with an error
  *
  *   The user never chooses their portal type. The system detects it.
  *   One URL: portal.ficium.net
  *
  * @owner Ficium Engineering
- * @lastReviewed 2025-08
  */
 
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
-import { supabase } from '../../shared/lib/supabase'
+import { signIn as ficiumSignIn, getTokenPayload, hasSession, signOut as ficiumSignOut } from '../lib/ficiumAuth'
+import { portalApi, PortalApiError } from '../lib/portalApi'
 import FiciumLogo from '../ui/FiciumLogo'
 import { GradText } from '../ui/dashboard/Hero'
 
@@ -56,24 +56,33 @@ function Blade({ className, both = true }: { className: string; both?: boolean }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// User type detection
+// User type detection — from the verified JWT payload (no network) with a
+// portal-api fallback for the institution status gate.
 // ─────────────────────────────────────────────────────────────────────────────
 
 type UserType = 'admin' | 'institution' | 'unknown'
 
-async function detectUserType(authUserId: string): Promise<UserType> {
-  // Use a SECURITY DEFINER RPC to bypass RLS — direct table queries 403
-  // because the anon key can't read cross-schema tables before the session
-  // is fully established as a known user type.
-  const { data, error } = await supabase
-    .rpc('detect_portal_user_type', { p_auth_user_id: authUserId })
+interface MeResponse {
+  user_type: 'admin' | 'institution'
+}
 
-  if (error) {
-    console.error('detectUserType error:', error.message)
-    return 'unknown'
+async function detectUserType(): Promise<UserType> {
+  // Prefer the token payload (user_role claim) — zero network.
+  const payload = getTokenPayload()
+  const role = payload?.user_role as string | undefined
+  if (role === 'admin') return 'admin'
+
+  // Confirm institution access against the portal API (also gates suspended/pending).
+  try {
+    const me = await portalApi.get<MeResponse>('/institutions/me')
+    return me.user_type === 'admin' ? 'admin' : 'institution'
+  } catch (err) {
+    if (err instanceof PortalApiError && (err.status === 403 || err.status === 404)) {
+      return 'unknown'
+    }
+    // Network/other — fall back to the token role if we have one.
+    return role === 'institution' ? 'institution' : 'unknown'
   }
-
-  return (data as UserType) ?? 'unknown'
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -91,12 +100,10 @@ function LeftPanel() {
       <Blade className='w-[320px] bottom-[12%] -right-10 [animation-duration:18s]' both={false} />
 
       <div className='relative z-10 flex flex-col h-full p-10 xl:p-14'>
-        {/* Logo */}
         <div className='mb-auto'>
           <FiciumLogo heightPx={22} withWordmark wordmarkClassName='text-[20px] text-white' />
         </div>
 
-        {/* Headline */}
         <div className='mb-auto'>
           <h1 className='font-display font-bold tracking-display text-[36px] xl:text-[44px] leading-[1.08] mb-4'>
             The reverse<br />banking<br /><GradText>marketplace.</GradText>
@@ -106,7 +113,6 @@ function LeftPanel() {
           </p>
         </div>
 
-        {/* Feature pills */}
         <div className='space-y-3 mb-10'>
           {[
             { icon: Building2, label: 'Institution portal — bid on client requests'      },
@@ -147,12 +153,6 @@ export default function UnifiedLogin() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]     = useState(false)
   const [detecting,    setDetecting]   = useState(false)
-  const [showSetPassword, setShowSetPassword] = useState(false)
-  const [newPassword,   setNewPassword]   = useState('')
-  const [pwConfirm,     setPwConfirm]     = useState('')
-  const [pwError,       setPwError]       = useState<string | null>(null)
-  const [pwSuccess,     setPwSuccess]     = useState(false)
-  const [pwLoading,     setPwLoading]     = useState(false)
   const [error,        setError]       = useState<string | null>(null)
 
   const inputCls = (invalid?: boolean) => [
@@ -163,47 +163,23 @@ export default function UnifiedLogin() {
       : 'border-ink/[0.12] focus:border-ficium focus:ring-2 focus:ring-ficium/20',
   ].join(' ')
 
-  // Handle invite links — Supabase v2 auto-consumes the hash token via
-  // detectSessionInUrl, then fires onAuthStateChange with event='SIGNED_IN'
-  // and a session where user.email_confirmed_at is null (invite not yet
-  // accepted). We catch it here to show the set-password form instead of
-  // redirecting to the dashboard.
+  // If already signed in (valid ficium-auth token), detect and redirect.
   useEffect(() => {
-    // Also catch the case where the hash is still present (some browsers)
-    const hash = window.location.hash
-    if (hash.includes('type=invite')) {
-      window.history.replaceState(null, '', window.location.pathname)
-      setShowSetPassword(true)
-      return
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // If the user has no password set yet (fresh invite), show set-password
-        const meta = session.user.user_metadata ?? {}
-        const isInvite = meta.onboarding === 'institution_member' && !session.user.email_confirmed_at
-        if (isInvite) {
-          setShowSetPassword(true)
-        }
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // If already signed in, detect and redirect
-  useEffect(() => {
-    // Don't auto-redirect if user explicitly signed out
     const params = new URLSearchParams(window.location.search)
     if (params.get('signedout') === '1') return
+    if (!hasSession()) return
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return
-      setDetecting(true)
-      const userType = await detectUserType(session.user.id)
-      if (userType === 'admin') navigate('/dashboard', { replace: true })
-      else if (userType === 'institution') navigate(from ?? '/dashboard', { replace: true })
-      else setDetecting(false)
+    let cancelled = false
+    setDetecting(true)
+    detectUserType().then(userType => {
+      if (cancelled) return
+      if (userType === 'admin' || userType === 'institution') {
+        navigate(from ?? '/dashboard', { replace: true })
+      } else {
+        setDetecting(false)
+      }
     })
+    return () => { cancelled = true }
   }, [navigate, from])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -212,26 +188,24 @@ export default function UnifiedLogin() {
     setError(null)
     setLoading(true)
 
-    const { data, error: authErr } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
+    const { tokens, error: authErr } = await ficiumSignIn(
+      email.trim().toLowerCase(),
       password,
-    })
+    )
 
-    if (authErr || !data.user) {
-      setError('Incorrect email or password.')
+    if (authErr || !tokens) {
+      setError(authErr ?? 'Incorrect email or password.')
       setLoading(false)
       return
     }
 
     setDetecting(true)
-    const userType = await detectUserType(data.user.id)
+    const userType = await detectUserType()
 
-    if (userType === 'admin') {
-      navigate('/dashboard', { replace: true })
-    } else if (userType === 'institution') {
+    if (userType === 'admin' || userType === 'institution') {
       navigate(from ?? '/dashboard', { replace: true })
     } else {
-      await supabase.auth.signOut()
+      await ficiumSignOut()
       setError('Your account has not been provisioned for portal access. Contact your administrator.')
       setDetecting(false)
       setLoading(false)
@@ -249,93 +223,12 @@ export default function UnifiedLogin() {
     )
   }
 
-  if (showSetPassword) {
-    const handleSetPassword = async () => {
-      if (!newPassword || newPassword !== pwConfirm) {
-        setPwError('Passwords do not match'); return
-      }
-      if (newPassword.length < 8) {
-        setPwError('Password must be at least 8 characters'); return
-      }
-      setPwLoading(true); setPwError(null)
-      const { error } = await supabase.auth.updateUser({ password: newPassword })
-      setPwLoading(false)
-      if (error) { setPwError(error.message); return }
-      setPwSuccess(true)
-      setTimeout(async () => {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          const userType = await detectUserType(session.user.id)
-          if (userType === 'admin') navigate('/dashboard', { replace: true })
-          else navigate('/dashboard', { replace: true })
-        }
-      }, 1500)
-    }
-
-    return (
-      <div className='min-h-screen flex overflow-hidden'>
-        <LeftPanel />
-        <div className='flex-1 flex items-center justify-center p-8 bg-paper'>
-          <div className='w-full max-w-[400px]'>
-            <div className='flex items-center gap-3 mb-8'>
-              <div className='w-9 h-9 rounded-xl bg-white border border-line flex items-center justify-center'><FiciumLogo heightPx={20} /></div>
-              <span className='font-display font-bold text-[18px] text-ink'>Set your password</span>
-            </div>
-            <p className='text-[13px] text-muted mb-6'>Choose a secure password to access your institution portal.</p>
-            {pwSuccess ? (
-              <div className='text-center py-8'>
-                <div className='w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3'>
-                  <Shield className='w-6 h-6 text-emerald-600' />
-                </div>
-                <p className='font-semibold text-ink'>Password set — redirecting…</p>
-              </div>
-            ) : (
-              <div className='space-y-4'>
-                {pwError && <div className='text-[12px] text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2'>{pwError}</div>}
-                <div>
-                  <label className='block text-[11px] font-semibold text-muted uppercase tracking-wide mb-1.5'>New password</label>
-                  <input
-                    type='password'
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder='Min. 8 characters'
-                    className='w-full px-3.5 py-2.5 rounded-xl border border-ink/[0.12] text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-ficium/30 focus:border-ficium'
-                  />
-                </div>
-                <div>
-                  <label className='block text-[11px] font-semibold text-muted uppercase tracking-wide mb-1.5'>Confirm password</label>
-                  <input
-                    type='password'
-                    value={pwConfirm}
-                    onChange={e => setPwConfirm(e.target.value)}
-                    placeholder='Repeat password'
-                    className='w-full px-3.5 py-2.5 rounded-xl border border-ink/[0.12] text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-ficium/30 focus:border-ficium'
-                  />
-                </div>
-                <button
-                  onClick={handleSetPassword}
-                  disabled={pwLoading || !newPassword || !pwConfirm}
-                  className='w-full py-2.5 rounded-xl text-white text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 ease-swift hover:-translate-y-0.5 hover:shadow-ficium'
-                  style={{ background: 'linear-gradient(92deg,#1E6CF5,#7C3AED 90%)' }}
-                >
-                  {pwLoading ? <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' /> : <><ArrowRight className='w-4 h-4' />Activate account</>}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className='min-h-screen flex overflow-hidden'>
       <LeftPanel />
 
-      {/* Right panel */}
       <div className='flex-1 flex flex-col items-center justify-center p-6 lg:p-12 bg-paper'>
         <div className='w-full max-w-[400px]'>
-          {/* Mobile logo */}
           <div className='flex items-center gap-2.5 mb-8 lg:hidden'>
             <FiciumLogo heightPx={20} withWordmark wordmarkClassName='text-[18px] text-ink' />
           </div>
