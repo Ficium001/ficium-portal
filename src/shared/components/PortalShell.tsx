@@ -35,7 +35,7 @@ import {
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
 } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '../lib/ficiumAuth'
 import { useMyGroup } from '../../admin/hooks/useAdmin'
 import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '../lib/modules'
 import FiciumLogo from '../ui/FiciumLogo'
@@ -80,9 +80,10 @@ function useConnStatus(): ConnStatus {
     let stale = false
     const check = async () => {
       if (!navigator.onLine) { if (!stale) setStatus('offline'); return }
+      // Liveness: a valid ficium-auth token in session == connected.
+      // Network reachability is covered by navigator.onLine above.
       try {
-        const { error } = await supabase.auth.getSession()
-        if (!stale) setStatus(error ? 'reconnecting' : 'connected')
+        if (!stale) setStatus(hasSession() ? 'connected' : 'reconnecting')
       } catch { if (!stale) setStatus('offline') }
     }
     check()
@@ -476,17 +477,19 @@ export default function PortalShell() {
   const [userName,     setUserName]     = useState('')
   const [pendingCount] = useState(0)
 
-  // Fetch user display name
+  // User display name from the verified ficium-auth JWT payload (no network).
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserName(data.user?.user_metadata?.display_name ?? data.user?.email?.split('@')[0] ?? 'User')
-    })
+    const payload = getTokenPayload()
+    const email = (payload?.email as string | undefined) ?? ''
+    const display = (payload?.display_name as string | undefined)
+      ?? (email ? email.split('@')[0] : 'User')
+    setUserName(display)
   }, [])
 
   const qc = useQueryClient()
 
   const handleSignOut = useCallback(async () => {
-    await supabase.auth.signOut()
+    await ficiumSignOut()
     qc.clear()
     navigate('/login?signedout=1')
   }, [navigate, qc])
