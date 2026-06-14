@@ -12,6 +12,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../shared/lib/supabase'
+import { portalApi } from '../../shared/lib/portalApi'
 import adminDb from '../lib/adminSupabase'
 import type {
   AdminUser, AdminRole, AdminSession, DualControlAction,
@@ -414,13 +415,12 @@ export function useAdminGroups() {
 }
 
 export function useMyGroup() {
+  // Migrated to ficium-portal-api (Stage 4b). Calls portal_admin.get_my_group()
+  // server-side via the same SECURITY DEFINER RPC, resolved by the verified
+  // ficium-auth JWT (auth.uid()). Returns the user_groups row or null.
   return useQuery({
     queryKey: ['admin', 'my-group'],
-    queryFn:  async () => {
-      const { data, error } = await adminDb.rpc('get_my_group')
-      if (error) throw error
-      return data
-    },
+    queryFn:  () => portalApi.get('/members/my-group'),
     staleTime: 30_000,
   })
 }
