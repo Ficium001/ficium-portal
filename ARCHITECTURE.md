@@ -1,444 +1,211 @@
-# Ficium Portal — Architecture
+# Ficium Platform — Architecture
 
-> Last updated: August 2025  
-> Scope: `ficium-portal` repository only. For the client app (`ficium`), see that repo's ARCHITECTURE.md.
+_Last updated: 15 June 2026_
 
----
-
-## 1. System context
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         FICIUM PLATFORM                             │
-│                                                                     │
-│  ┌──────────────────┐        ┌──────────────────────────────────┐  │
-│  │  ficium (client) │        │  ficium-portal (this repo)       │  │
-│  │  app.ficium.net  │        │  portal.ficium.net               │  │
-│  │                  │        │                                  │  │
-│  │  Individual      │        │  Institution analysts  ─────┐   │  │
-│  │  clients post    │        │  Institution admins    ─────┤   │  │
-│  │  financing       │        │  Ficium internal admins ───┘   │  │
-│  │  requests        │        │  (all detected at login)        │  │
-│  └────────┬─────────┘        └──────────────┬───────────────────┘  │
-│           │                                 │                       │
-│           └────────────┬────────────────────┘                       │
-│                        ▼                                            │
-│              ┌─────────────────┐                                    │
-│              │    Supabase     │                                    │
-│              │  PostgreSQL     │                                    │
-│              │  ├─ public      │  ← client app data               │
-│              │  ├─ institution │  ← institution portal data        │
-│              │  └─ portal_admin│  ← admin portal data             │
-│              └─────────────────┘                                    │
-│                                                                     │
-│              ┌─────────────────┐                                    │
-│              │  ficium-rating  │  Railway (FastAPI)                │
-│              │  engine         │  ML credit scoring                │
-│              └─────────────────┘                                    │
-└─────────────────────────────────────────────────────────────────────┘
-```
+This document is the system of record for how the Ficium platform fits together: the services, how they authenticate, where data lives, and how a request flows end to end. It reflects the **currently deployed** state, not an aspirational design.
 
 ---
 
-## 2. Application architecture
+## 1. What Ficium is
 
-### 2.1 Single-page application
+Ficium is a **reverse banking marketplace**. Individuals and businesses post financial requests (loans, deposits, FX, trade finance); banks and fintechs compete to fulfil them. There are two distinct products:
 
-Ficium Portal is a React 19 SPA built with Vite. One HTML file is served for every URL; React Router handles client-side routing. This means:
+| Product | Audience | Purpose |
+|---------|----------|---------|
+| **Ficium App** | Consumers (public) | Post requests, receive and compare provider bids |
+| **Ficium Portal** | Institutions + Ficium staff | Bid on requests, manage products, run maker‑checker approvals, administer the platform |
 
-- One Vercel deployment, one build artifact
-- One set of environment variables
-- One Supabase project connection
-- All code is split by route (lazy imports) — users only download code for pages they access
-
-### 2.2 User detection flow
-
-```
-GET portal.ficium.net/*
-        │
-        ▼
-  React SPA loads
-        │
-        ▼
-  UnifiedLogin (/login or /)
-  ┌─────────────────────────────────┐
-  │  Enter email + password         │
-  │  supabase.auth.signInWithPassword│
-  └──────────┬──────────────────────┘
-             │
-    ┌────────▼──────────┐
-    │  detectUserType() │
-    │                   │
-    │  1. query         │
-    │  portal_admin.    │──→ found → /admin/dashboard
-    │  admin_users      │
-    │                   │
-    │  2. query         │
-    │  institution.     │──→ found → /dashboard
-    │  institution_     │
-    │  members          │
-    │                   │
-    │  3. neither       │──→ sign out + error
-    └───────────────────┘
-```
-
-No URL prefix, no user-type selector, no separate login pages. The system determines access from the database.
-
-### 2.3 Module structure
-
-The codebase is split into three modules under `src/`:
-
-```
-src/
-├── shared/          Pure utilities, shared clients, UnifiedLogin
-├── institution/     Institution portal (all /dashboard etc. routes)
-└── admin/           Admin portal (all /admin/* routes)
-```
-
-Each module is self-contained: its own types, hooks, Supabase client, UI primitives, and pages. Cross-module imports are only allowed for:
-- `shared/lib/supabase.ts` (schema client factory)
-- `shared/lib/format.ts` (formatting utilities)
-- `shared/pages/UnifiedLogin.tsx` (imports both institution and admin clients)
-
-### 2.4 Supabase client architecture
-
-```typescript
-// shared/lib/supabase.ts
-const supabase = createClient(url, key, {
-  auth: { storageKey: 'ficium-portal-auth' }  // one auth session
-})
-
-export function db(schema: string): SupabaseClient {
-  // Returns schema-scoped client sharing the same auth session
-}
-
-export const institutionDb = db('institution')   // institution module uses this
-export const adminDb       = db('portal_admin')  // admin module uses this
-```
-
-One Supabase project, one auth session, multiple schema clients. RLS policies on each schema enforce what authenticated users can see.
+The App and the Portal are separate frontends backed by separate data stores. They communicate over REST when the Portal needs live marketplace data from the App.
 
 ---
 
-## 3. Institution portal
-
-### 3.1 Route guard
-
-`InstitutionRoute` verifies before rendering any protected page:
-
-1. Supabase session exists
-2. `institution.institution_members` record exists for this auth user
-3. `institutions.suspended_at` is null
-4. `institutions.approved` is true → if not, redirect to `/pending`
-
-### 3.2 Role-based access
-
-Institution roles are stored in `institution.institution_members.role`:
+## 2. Services at a glance
 
 ```
-admin     → can approve pending_actions, manage team, configure products/webhooks
-analyst   → can submit bids (maker), view marketplace
-viewer    → read-only across all pages
-compliance→ audit log access
+┌──────────────────────────────────────────────────────────────────┐
+│                          FICIUM PORTAL                            │
+│              (React SPA — Vercel — ficium-portal.vercel.app)      │
+│                                                                   │
+│   Auth: ficium-auth (RS256 JWT in sessionStorage)                 │
+│   Data: ficium-portal-api (institution data, RLS)                 │
+│         institution Supabase (cross-project reads: marketplace)   │
+└───────────┬───────────────────────────────┬──────────────────────┘
+            │                               │
+            │ POST /auth/login              │ GET /institutions/me
+            │ (credentials → RS256 JWT)     │ (Bearer JWT → data)
+            ▼                               ▼
+┌────────────────────────┐      ┌──────────────────────────────────┐
+│      ficium-auth       │      │       ficium-portal-api          │
+│  (FastAPI — Railway)   │      │      (FastAPI — Railway)         │
+│                        │      │                                  │
+│  • Argon2id passwords  │      │  • Verifies JWT via JWKS         │
+│  • RS256 JWT issuance  │      │  • Sets request.jwt.claims       │
+│  • JWKS endpoint       │◄─────┤  • Queries with RLS enforced     │
+│  • MFA, sessions       │ JWKS │  • Maker-checker RPCs            │
+│  • Redis (rate limit,  │      │                                  │
+│    session store)      │      │                                  │
+└───────────┬────────────┘      └──────────────┬───────────────────┘
+            │                                  │
+            ▼                                  ▼
+┌────────────────────────┐      ┌──────────────────────────────────┐
+│   auth_portal schema   │      │     institution schema           │
+│   (Supabase Postgres)  │      │     (same Supabase Postgres)     │
+│                        │      │                                  │
+│  • auth_users          │      │  • institutions                  │
+│  • auth_sessions       │      │  • institution_members           │
+│  • mfa_backup_codes     │      │  • groups                        │
+│  • password_reset_*    │      │  • pending_actions               │
+│  • auth_audit_events   │      │  • portal_admin.* (RPCs)         │
+└────────────────────────┘      └──────────────────────────────────┘
 ```
 
-Pages and nav items are hidden based on institution `modules` array (feature flags per institution): a bank without the `marketplace` module cannot see the Marketplace or Bids pages regardless of role.
+**Three deployable services**, all live:
 
-### 3.3 Institution-level dual control
-
-Every material write creates a `pending_action` record. A second admin (not the maker) approves it in the Approvals page. The RPC `submit_for_approval()` enforces:
-
-- Caller must be an authenticated institution member
-- Self-approval blocked (application layer + RPC check)
-- All actions appended to `institution.audit_events`
-- TTL: 8 hours (cron or manual `expire_pending_actions()` call)
-
-### 3.4 Data flow (example: bid submission)
-
-```
-Analyst clicks "Submit bid"
-        │
-        ▼
-BidModal form validates
-        │
-        ▼
-useSubmitBid().mutateAsync()
-        │
-        ▼
-institutionDb.rpc('submit_for_approval', {
-  p_action_category: 'bid.submit',
-  p_payload: { rate, amount, term, ... }
-})
-        │
-        ▼
-pending_actions row created (status: pending)
-        │
-        ▼
-Approvals page shows action to institution admin
-        │
-        ▼
-Admin approves → execute_action() RPC → bid placed on marketplace
-All steps written to audit_events
-```
+1. **ficium-auth** — authentication service. Issues RS256 JWTs, owns the `auth_portal` schema, runs on Railway with Redis.
+2. **ficium-portal-api** — portable data API. Verifies ficium‑auth tokens against the JWKS, queries the `institution` schema with row‑level security enforced, exposes the maker‑checker RPCs. Runs on Railway.
+3. **ficium-portal** — the React SPA. Deployed on Vercel. Authenticates against ficium‑auth, reads institution data from ficium‑portal‑api, and reads cross‑project marketplace data directly from the institution Supabase project.
 
 ---
 
-## 4. Admin portal
+## 3. Authentication architecture (RS256 + JWKS)
 
-### 4.1 Route guard
+Authentication moved off Supabase Auth onto a self‑owned service, **ficium-auth**. This is the load‑bearing architectural decision of the platform.
 
-`AdminRoute` verifies before rendering:
+### Why RS256 (asymmetric) and not HS256 (shared secret)
 
-1. Supabase session exists
-2. `portal_admin.admin_users` record exists with `status = 'active'`
-3. Account not locked, suspended, or deactivated
+- **ficium-auth** holds the **private key** and is the only service that can mint tokens.
+- **ficium-portal-api** (and any future consumer) verifies tokens with the **public key**, fetched from ficium‑auth's JWKS endpoint. No shared secret ever leaves ficium‑auth.
+- Adding a new token consumer requires zero secret distribution — it just reads the public JWKS.
 
-Session `last_active_at` is updated on every route change.
+### The JWKS endpoint
 
-### 4.2 Permission model
-
-24 granular permission keys across 6 categories. Each role has a fixed permission set (system roles) or a custom set (custom roles). The admin nav dynamically hides items the user's role cannot access.
+`ficium-auth` exposes its public key at:
 
 ```
-Permission key format:  resource:action
-Examples:
-  users:create          users:suspend      users:unlock
-  users:reset_password  users:role_change  users:deactivate
-  roles:create          roles:edit         roles:delete
-  institutions:approve  institutions:suspend
-  dual_control:approve  audit:export       sessions:terminate
-  system:config
+GET https://ficium-auth-production.up.railway.app/.well-known/jwks.json
 ```
 
-`super_admin` has `permissions = ['*']` — all permission checks pass.
-
-### 4.3 Admin dual control
-
-Every write in the admin portal goes through `portal_admin.admin_submit_dual_control()`. No action executes immediately.
-
-```
-Admin initiates action (e.g. suspend user)
-        │
-        ▼
-useAdminMutation().mutateAsync(payload)
-        │
-        ▼
-adminDb.rpc('admin_submit_dual_control', {
-  action_category: 'user.suspend',
-  risk: 'high',
-  resource_type: 'admin_user',
-  payload: { admin_user_id, suspension_reason }
-})
-        │
-        ▼
-admin_dual_control_actions row created
-  maker_id = caller
-  maker_ip = session IP
-  status = 'pending'
-  expires_at = now + 8h
-        │
-        ▼
-Second admin (checker ≠ maker) sees it in Dual Control page
-        │
-        ▼
-admin_approve_dual_control(action_id)
-  → validates checker ≠ maker (DB constraint blocks this)
-  → validates has_permission('dual_control:approve')
-  → calls _execute_dual_control_action(action_id)
-  → dispatches by action_category
-  → updates admin_users / admin_sessions as appropriate
-  → writes to admin_audit_log
-```
-
-### 4.4 WORM audit log
-
-`portal_admin.admin_audit_log` is truly append-only:
-
-```sql
-CREATE RULE audit_log_no_update AS ON UPDATE TO portal_admin.admin_audit_log DO INSTEAD NOTHING;
-CREATE RULE audit_log_no_delete AS ON DELETE TO portal_admin.admin_audit_log DO INSTEAD NOTHING;
-```
-
-Even with service role access, UPDATE and DELETE silently do nothing. Only INSERT is permitted. This is not RLS — it's a Postgres RULE, which operates below the RLS layer.
-
-### 4.5 Session tracking
-
-Every admin login creates an `admin_sessions` row recording IP address, user agent, city, and country. The shell sends a heartbeat every 60 seconds to update `last_active_at`. Sessions are terminated:
-
-- On user logout (`end_reason: logout`)
-- On idle timeout in the shell (`end_reason: timeout`)
-- By a second admin via the Sessions page (`end_reason: forced`, via dual-control)
-
----
-
-## 5. Security controls summary
-
-| Control | Institution portal | Admin portal |
-|---|---|---|
-| Authentication | Supabase JWT | Supabase JWT |
-| MFA | Optional | Required (TOTP) |
-| Session idle timeout | 5 min warn / 5 min force | 8 min warn / 10 min force |
-| Failed login lockout | n/a (Supabase handles) | 5 attempts → auto-lock (DB trigger) |
-| Dual control | ✓ institution.pending_actions | ✓ admin_dual_control_actions |
-| Self-approval block | Application layer | Application + DB constraint |
-| Audit trail | institution.audit_events | portal_admin.admin_audit_log |
-| Audit immutability | RLS (no update/delete policies) | Postgres RULE (no update/delete) |
-| IP logging | n/a | ✓ sessions + dual_control |
-| Row-level security | ✓ all tables | ✓ all tables |
-| Schema isolation | institution schema | portal_admin schema |
-
----
-
-## 6. Data architecture
-
-### 6.1 Institution schema (key tables)
-
-```
-institution.institutions           — institution master record
-institution.institution_members    — users and their roles
-institution.pending_actions        — dual-control queue
-institution.audit_events           — append-only audit log
-institution.institution_products   — product catalogue with rate limits
-institution.institution_webhooks   — webhook endpoints
-institution.marketplace_requests   — VIEW: open client requests
-institution.my_bids                — VIEW: institution's bids
-```
-
-### 6.2 portal_admin schema
-
-```
-portal_admin.admin_users                  — Ficium staff accounts
-portal_admin.admin_roles                  — role definitions
-portal_admin.admin_sessions               — session tracking
-portal_admin.admin_dual_control_actions   — four-eyes queue
-portal_admin.admin_audit_log              — WORM audit trail
-```
-
-### 6.3 Supabase helper functions
-
-Institution schema:
-```sql
-institution.submit_for_approval(p_action_category, p_resource_type, p_payload)
-institution.approve_action(p_action_id)
-institution.reject_action(p_action_id, p_note)
-institution.expire_pending_actions()  -- run via pg_cron
-```
-
-portal_admin schema:
-```sql
-portal_admin.is_admin()
-portal_admin.has_permission(p_key)
-portal_admin.my_role_slug()
-portal_admin.admin_submit_dual_control(...)
-portal_admin.admin_approve_dual_control(p_action_id, p_note)
-portal_admin.admin_reject_dual_control(p_action_id, p_note)
-portal_admin._execute_dual_control_action(p_action_id)
-portal_admin.expire_dual_control_actions()  -- run via pg_cron
-```
-
----
-
-## 7. Frontend architecture
-
-### 7.1 State management
-
-TanStack Query v5 for all server state. No Redux or Zustand. Query keys are defined in a `QK` registry at the top of each hooks file to keep invalidation predictable.
-
-```typescript
-// institution/hooks/useInstitution.ts
-export const QK = {
-  institution:  ['institution', 'me'],
-  bids:         ['institution', 'bids'],
-  marketplace:  ['institution', 'marketplace'],
-  pendingActions: ['institution', 'pending-actions'],
-  ...
-}
-```
-
-### 7.2 Primitive component strategy
-
-Each module has its own primitive layer:
-
-- `institution/components/primitives/index.tsx` — light cream theme (KpiCard, DataTable, Modal, etc.)
-- `admin/components/primitives/index.tsx` — dark navy theme (AKpiCard, ADataTable, AModal, etc.)
-
-Pages import from their module's primitives. Pages are thin orchestrators — no inline component definitions, no business logic.
-
-### 7.3 Code splitting
-
-Every route is `lazy()`-wrapped. Vite splits by import boundary. The heaviest page chunk (InstitutionMarketplace) is ~24 KB gzip. Vendor libraries split into stable chunks (react, supabase, query, ui) that cache across deploys.
-
-```
-vendor-react.js     275 KB gzip:88 KB   — React + React DOM
-vendor-supabase.js  200 KB gzip:51 KB   — Supabase client
-vendor-ui.js        106 KB gzip:32 KB   — Lucide + form libs
-vendor-query.js      43 KB gzip:13 KB   — TanStack Query
-[per-page chunks]    2–25 KB gzip        — loaded on navigation
-```
-
-### 7.4 Error handling
-
-A `ChunkErrorBoundary` wraps every lazy route. If a chunk fails to load (common after a deploy when the user has an old tab open), it reloads the page once automatically then shows a manual reload button.
-
----
-
-## 8. Deployment architecture
-
-```
-GitHub (ficium-portal main branch)
-        │
-        ▼ (push / PR merge)
-Vercel (automatic deploy)
-        │
-        ▼
-portal.ficium.net (Vercel CDN)
-  ├── / → dist/index.html (all routes → SPA)
-  ├── /assets/* → immutable hashed JS/CSS chunks
-  └── /_vercel/* → Vercel internals
-```
-
-**Vercel config** (`vercel.json`):
-
+Response:
 ```json
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "keys": [{
+    "kty": "RSA", "use": "sig", "alg": "RS256",
+    "kid": "ficium-auth-rs256-v1",
+    "n": "…", "e": "AQAB"
+  }]
 }
 ```
 
-**No server-side rendering.** All API calls go directly from the browser to Supabase. There is no Next.js or edge function between the browser and the database.
+`ficium-portal-api` fetches and caches this on startup; every incoming token's `kid` header is matched against it to verify the signature.
 
----
+### Token claims
 
-## 9. pg_cron setup (recommended)
+Each access token carries:
 
-Schedule these functions in Supabase via pg_cron to keep the queues clean:
+| Claim | Meaning |
+|-------|---------|
+| `sub` | The user's id (= `auth_users.id` = `institution_members.auth_user_id`) |
+| `iss` | `ficium-auth` |
+| `aud` | `ficium-portal` |
+| `role` | `authenticated` (Supabase‑compatible — lets `auth.uid()` work in RLS) |
+| `user_role` | Application role: `super_admin`, `institution_admin`, etc. |
+| `institution_id` | The user's institution (placeholder UUID for platform admins) |
+| `email` | Used by the Portal shell to display the user's name |
+| `session_id`, `deployment`, `jti`, `iat`, `exp` | Session + standard JWT bookkeeping |
+
+### The Supabase‑compatibility trick
+
+The Portal's entire data‑access security model — RLS policies, `current_member_ctx()`, the maker‑checker functions — resolves the caller through `auth.uid()`, which reads the `request.jwt.claims` GUC. On Supabase, PostgREST sets that GUC. Off PostgREST, **ficium-portal-api sets it itself** per request:
 
 ```sql
--- Expire institution pending actions every hour
-SELECT cron.schedule('expire-institution-actions', '0 * * * *',
-  'SELECT institution.expire_pending_actions()');
-
--- Expire admin dual-control actions every hour
-SELECT cron.schedule('expire-admin-dc-actions', '0 * * * *',
-  'SELECT portal_admin.expire_dual_control_actions()');
-
--- Clean up stale admin sessions nightly
-SELECT cron.schedule('cleanup-admin-sessions', '0 2 * * *', $$
-  UPDATE portal_admin.admin_sessions
-  SET is_active = false, ended_at = now(), end_reason = 'expired'
-  WHERE is_active = true AND last_active_at < now() - INTERVAL '24 hours'
-$$);
+SELECT set_config('request.jwt.claims', '<verified JWT payload>', true);
 ```
+
+Because the token's `sub` and `role` claims mirror what Supabase Auth would have issued, **every existing RLS policy and SECURITY DEFINER function works unchanged.** This is why the migration required no rewrite of the database security layer.
+
+> Note: `ficium-portal-api` does **not** issue `SET LOCAL ROLE authenticated`. Supabase's transaction pooler (pgbouncer) resets session state between transactions and the pooler user cannot switch roles. RLS policies check `auth.uid()` (which reads the GUC), not `current_role`, so this is correct and matches how PostgREST itself behaves.
 
 ---
 
-## 10. Known gaps (pre-launch)
+## 4. Request lifecycle (end to end)
 
-| Gap | Impact | Notes |
-|---|---|---|
-| `ficium.net` email domain not verified in Resend | Emails sent from `onboarding@resend.dev` | Verify domain in Resend dashboard |
-| Admin MFA enforced at UI only | An admin could bypass TOTP if calling API directly | Enable Supabase MFA enforcement at project level |
-| `institution_onboarding_prefs` table not in migration | `InstitutionOnboarding` step 3 upsert will fail | Add table to migration or create manually |
-| `RequestChat` is a stub | Chat tab in request detail drawer shows placeholder | Wire to Supabase realtime on `requests.{id}` channel |
-| No pg_cron scheduled | Expired actions accumulate | Set up cron jobs (Section 9) |
-| No error monitoring | Unhandled exceptions invisible | Add Sentry before first institution user |
+A user loading their institution dashboard:
+
+1. **Login.** The SPA posts credentials to `ficium-auth` `POST /auth/login`. ficium‑auth verifies the Argon2id password hash, issues an RS256 access token (+ refresh cookie), and stores the access token in `sessionStorage`.
+2. **Route guard.** `PortalRoute` reads the token locally, then calls `ficium-portal-api` `GET /institutions/me` with `Authorization: Bearer <token>`.
+3. **Token verification.** ficium‑portal‑api matches the token's `kid` to the cached JWKS, verifies the RS256 signature, and checks `iss` / `aud` / `exp`.
+4. **Gate decision.** For platform admins it returns immediately by role. For institution users it opens a tenant‑scoped DB session, sets `request.jwt.claims`, and queries `institution.institutions` under RLS to return `approved` / `suspended` / `pending` status.
+5. **Shell + nav.** `PortalShell` calls `GET /members/my-group` to resolve the user's module permissions (via the `portal_admin.get_my_group()` SECURITY DEFINER RPC) and renders the navigation accordingly.
+6. **Marketplace data.** `useMarketplace` and `useMyBids` read directly from the institution Supabase project (cross‑project marketplace views), not from ficium‑portal‑api.
+
+---
+
+## 5. Data ownership & multi-tenancy
+
+The platform is **multi-tenant SaaS**. Every provider/institution is segregated:
+
+- Every tenant‑scoped table carries `institution_id NOT NULL`.
+- RLS is **enabled and FORCED** on tenant tables, scoped to the caller's institution via `current_member_ctx()`.
+- Composite indexes lead with `institution_id`.
+- A cross‑tenant guard trigger blocks assigning a member to another institution's group, regardless of write path.
+
+### Schema map
+
+| Schema | Owner | Contents |
+|--------|-------|----------|
+| `auth_portal` | ficium-auth | users, sessions, MFA, password‑reset & verification tokens, auth audit |
+| `institution` | ficium-portal-api | institutions, members, groups, pending_actions |
+| `portal_admin` | ficium-portal-api | admin RPCs, dual‑control actions, `get_my_group`, `get_institutions` |
+
+---
+
+## 6. Deployment topology
+
+| Service | Platform | URL |
+|---------|----------|-----|
+| ficium-portal | Vercel | `ficium-portal.vercel.app` |
+| ficium-auth | Railway | `ficium-auth-production.up.railway.app` |
+| ficium-portal-api | Railway | `ficium-portal-api-production.up.railway.app` |
+| Postgres + Auth tables | Supabase | project `egwobcajdlragubtkpqp` (institution) |
+| Redis | Railway | private service, attached to ficium-auth |
+
+### Deployment models supported
+
+`ficium-portal-api` is built to be **portable** across three models:
+
+1. **SaaS** (current) — Supabase Postgres, shared multi‑tenant.
+2. **Client cloud** — the institution's own managed Postgres.
+3. **On‑premises** — Postgres inside the institution's network.
+
+For non‑Supabase Postgres, the `db/000_auth_shim.sql` script recreates the `auth.uid()` / `auth.jwt()` helpers and the `authenticated` role that Supabase provides natively, so the same RLS policies run unchanged. (On Supabase this shim is skipped — the platform owns those objects.)
+
+---
+
+## 7. Connection details that matter
+
+These are the non‑obvious operational facts that have bitten us:
+
+- **Supabase direct connection (port 5432) is blocked** from external IPs on the free plan. `ficium-portal-api` connects via the **transaction pooler (port 6543)** using `psycopg2` (not asyncpg, which requires a direct connection).
+- The pooler host is region‑specific: `aws-1-ap-southeast-1.pooler.supabase.com`. The pooler **username** must be `postgres.<project-ref>`, not plain `postgres`.
+- **Git authorship:** all commits must use `kishan.jeebun@ficium.net` as the author email, or Vercel blocks the deployment.
+- **`tsc -b` strictness:** Vercel's build enforces `noUnusedLocals` and `erasableSyntaxOnly`. No parameter properties, enums, or namespaces; no unused imports. Local `tsc --noEmit` is laxer, so a clean local check can still fail on Vercel.
+- **Vercel Hobby plan** caps serverless functions at 12.
+
+---
+
+## 8. Current migration status
+
+The platform has moved from "all Supabase Auth + PostgREST" to "self‑owned ficium‑auth + ficium‑portal‑api," in stages:
+
+| Stage | Scope | Status |
+|-------|-------|--------|
+| 1–2 | ficium-auth (RS256, JWKS), ficium-portal-api scaffolding | ✅ Done |
+| 3 | PortalRoute + useMyInstitution → portal-api | ✅ Done |
+| 4 | Institution hooks → portal-api | ✅ Done |
+| 4b | Login, shell, useMyGroup → ficium-auth; marketplace/bids/products kept on Supabase (cross‑project) | ✅ Done |
+| 4c | `GroupsTab`, `InstitutionUsers` (groups CRUD + user provisioning) → portal-api | ⏳ Pending |
+| 5 | Admin dashboard tree → portal-api | ⏳ Pending |
+
+### Why marketplace/bids/products stay on Supabase
+
+These read data that lives in the **Ficium App's** Supabase project (consumer requests, live bids), not the institution project. They are cross‑project reads and correctly use the Supabase client directly; they were never meant to route through ficium‑portal‑api.
