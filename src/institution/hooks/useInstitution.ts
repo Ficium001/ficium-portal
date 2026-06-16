@@ -155,7 +155,7 @@ export function useProducts() {
 export function useAuditEvents(limit = 50) {
   return useQuery<AuditEvent[]>({
     queryKey: [...QK.audit, limit],
-    queryFn: () => portalApi.get<AuditEvent[]>(),
+    queryFn: () => portalApi.get<AuditEvent[]>(`/audit?limit=${limit}`),
     staleTime: 30 * 1000,
   })
 }
