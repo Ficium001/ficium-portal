@@ -57,7 +57,7 @@ export function useMarketplace(productCode?: string) {
     queryKey: [...QK.marketplace, productCode],
     queryFn: () => {
       const path = productCode
-        ? 
+        ? `/marketplace/requests?product_type=${encodeURIComponent(productCode)}`
         : '/marketplace/requests'
       return portalApi.get<MarketplaceRequest[]>(path)
     },
@@ -72,7 +72,7 @@ export function useMyBids(status?: string) {
     queryKey: [...QK.myBids, status],
     queryFn: () => {
       const path = status
-        ? 
+        ? `/marketplace/my-bids?status=${encodeURIComponent(status)}`
         : '/marketplace/my-bids'
       return portalApi.get<InstitutionBid[]>(path)
     },
@@ -112,7 +112,7 @@ export function useApproveAction() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ actionId, note }: { actionId: string; note?: string }) =>
-      portalApi.post(, { note: note ?? null }),
+      portalApi.post(`/approvals/${actionId}/approve`, { note: note ?? null }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.pendingActions })
       qc.invalidateQueries({ queryKey: QK.myBids })
@@ -126,7 +126,7 @@ export function useRejectAction() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ actionId, note }: { actionId: string; note: string }) =>
-      portalApi.post(, { note }),
+      portalApi.post(`/approvals/${actionId}/reject`, { note }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.pendingActions })
       qc.invalidateQueries({ queryKey: QK.audit })
