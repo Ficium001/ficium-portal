@@ -118,14 +118,18 @@ export interface MarketplaceRequest {
   product_id?: string | null
   product_label?: string | null
   family_label?: string | null
-  // Anonymous client profile fields (visible to marker/checker only)
-  client_country?: string | null
+  // Anonymised client financial signals (visible to marker/checker only).
+  // Source: ficium-portal-api /marketplace/requests, which reads
+  // public.client_financial_snapshot from the Ficium App DB.
+  // Only these three are currently returned by the API; the others below
+  // are reserved for future enrichment and will be null until then.
   client_monthly_income?: number | null
   client_net_worth?: number | null
-  client_health_score?: number | null     // used as credit score proxy
+  client_debt_to_income_ratio?: number | null
+  // Reserved / not yet populated by the API:
+  client_country?: string | null
   client_risk_score?: number | null
   client_affordability_score?: number | null
-  client_employment_status?: string | null
 }
 
 export interface PendingAction {

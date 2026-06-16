@@ -6,7 +6,7 @@
  *   the admin dashboard — only the content differs:
  *     1. Hero — greeting, open-request count, count-up KPIs
  *     2. "New requests for you" — open marketplace requests as bid cards
- *        (amount, term, client readiness from client_health_score)
+ *        (amount, term, affordability headroom from client_debt_to_income_ratio)
  *     3. "How you're bidding" — bids/day chart + live bid feed
  *     4. "Your standing" — win rate, accepted, pending approvals
  *     5. "Your recent bids" + one-best-action dark callout
@@ -148,7 +148,10 @@ function NewRequests() {
       ) : (
         <div className='grid sm:grid-cols-2 xl:grid-cols-3 gap-4'>
           {open.map(req => {
-            const readiness = req.client_health_score ?? null
+            // Affordability headroom = 100 - DTI%, clamped to [0,100]. Lower DTI ⇒ more headroom.
+            const readiness = req.client_debt_to_income_ratio != null
+              ? Math.max(0, Math.min(100, Math.round((1 - req.client_debt_to_income_ratio) * 100)))
+              : null
             return (
               <HoverCard key={req.id}>
                 <div className='flex items-center gap-3 mb-3'>
@@ -173,16 +176,13 @@ function NewRequests() {
                 </div>
 
                 {readiness !== null ? (
-                  <ProgressBar value={readiness} label='Client readiness' />
+                  <ProgressBar value={readiness} label='Affordability headroom' />
                 ) : (
                   <div className='my-3' />
                 )}
 
                 <div className='flex items-center gap-2 mb-4 flex-wrap'>
                   <Tag tone={statusTone(req.status)}>{req.status}</Tag>
-                  {req.client_employment_status && (
-                    <Tag tone='blue'>{titleCase(req.client_employment_status)}</Tag>
-                  )}
                 </div>
 
                 <div className='flex gap-2.5'>

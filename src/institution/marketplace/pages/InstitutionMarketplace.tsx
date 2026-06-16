@@ -77,7 +77,7 @@ function RequestCard({
 }) {
   const closing    = timeUntil(request.bid_window_closes_at);
   const isUrgent   = new Date(request.bid_window_closes_at).getTime() - Date.now() < 2 * 3_600_000;
-  const healthScore = request.client_health_score;
+  const dti = request.client_debt_to_income_ratio;
 
   return (
     <article
@@ -125,20 +125,20 @@ function RequestCard({
         </div>
 
         {/* Anonymous client signals */}
-        {(healthScore || request.client_monthly_income || request.client_employment_status) && (
+        {(dti != null || request.client_monthly_income || request.client_net_worth) && (
           <div className="bg-ink/[0.025] rounded-lg px-3 py-2.5 mb-4">
             <div className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">
               Client signals (anonymised)
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {healthScore && (
+              {dti != null && (
                 <div>
-                  <div className="text-[10px] text-muted">Health score</div>
+                  <div className="text-[10px] text-muted">Debt-to-income</div>
                   <div className={`text-[14px] font-bold ${
-                    healthScore >= 70 ? "text-emerald-600" :
-                    healthScore >= 40 ? "text-amber-600"  : "text-red-500"
+                    dti <= 0.35 ? "text-emerald-600" :
+                    dti <= 0.50 ? "text-amber-600"  : "text-red-500"
                   }`}>
-                    {healthScore}
+                    {`${(dti * 100).toFixed(0)}%`}
                   </div>
                 </div>
               )}
@@ -150,11 +150,11 @@ function RequestCard({
                   </div>
                 </div>
               )}
-              {request.client_employment_status && (
+              {request.client_net_worth != null && (
                 <div>
-                  <div className="text-[10px] text-muted">Employment</div>
-                  <div className="text-[12px] font-semibold text-ink capitalize">
-                    {request.client_employment_status.replace(/_/g, " ")}
+                  <div className="text-[10px] text-muted">Net worth</div>
+                  <div className="text-[14px] font-bold text-ink">
+                    {fmtMUR(request.client_net_worth)}
                   </div>
                 </div>
               )}

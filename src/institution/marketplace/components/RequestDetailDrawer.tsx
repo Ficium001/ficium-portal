@@ -39,13 +39,12 @@ export function RequestDetailDrawer({ request, onClose, onBid }: RequestDetailDr
       ...(request.purpose ? [`Purpose:        ${request.purpose}`] : []),
       `${"─".repeat(48)}`,
       `ANONYMOUS CLIENT PROFILE`,
-      `Credit Score:   ${request.client_health_score != null ? `${request.client_health_score}/100` : "—"}`,
+      `Debt-to-Income: ${request.client_debt_to_income_ratio != null ? `${(request.client_debt_to_income_ratio * 100).toFixed(0)}%` : "—"}`,
       `Affordability:  ${request.client_affordability_score != null ? `${request.client_affordability_score}/100` : "—"}`,
       `Risk Score:     ${request.client_risk_score != null ? `${request.client_risk_score}/100` : "—"}`,
       `Monthly Income: ${fmtMoney(request.client_monthly_income)}`,
       `Net Worth:      ${fmtMoney(request.client_net_worth)}`,
       `Country:        ${request.client_country ?? "—"}`,
-      `Employment:     ${request.client_employment_status?.replace(/_/g, " ") ?? "—"}`,
       ...(markerComment   ? [`\nMarker note:    ${markerComment}`]   : []),
       ...(approverComment ? [`Approver note:  ${approverComment}`] : []),
       `${"─".repeat(48)}`,
@@ -131,13 +130,12 @@ export function RequestDetailDrawer({ request, onClose, onBid }: RequestDetailDr
                     <span className="text-[10px] text-muted bg-ink/5 px-2 py-1 rounded-full">Anonymised</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <ProfileStat label="Credit Score"   value={request.client_health_score != null ? `${request.client_health_score}/100` : "—"} accent={request.client_health_score != null ? (request.client_health_score >= 70 ? "green" : request.client_health_score >= 50 ? "amber" : "red") : undefined} />
+                    <ProfileStat label="Debt-to-Income" value={request.client_debt_to_income_ratio != null ? `${(request.client_debt_to_income_ratio * 100).toFixed(0)}%` : "—"} accent={request.client_debt_to_income_ratio != null ? (request.client_debt_to_income_ratio <= 0.35 ? "green" : request.client_debt_to_income_ratio <= 0.50 ? "amber" : "red") : undefined} />
                     <ProfileStat label="Affordability"  value={request.client_affordability_score != null ? `${request.client_affordability_score}/100` : "—"} accent={request.client_affordability_score != null ? (request.client_affordability_score >= 70 ? "green" : request.client_affordability_score >= 50 ? "amber" : "red") : undefined} />
                     <ProfileStat label="Risk Score"     value={request.client_risk_score != null ? `${request.client_risk_score}/100` : "—"} />
                     <ProfileStat label="Monthly Income" value={fmtMoney(request.client_monthly_income)} />
                     <ProfileStat label="Net Worth"      value={fmtMoney(request.client_net_worth)} />
                     <ProfileStat label="Country"        value={request.client_country ?? "—"} />
-                    <ProfileStat label="Employment"     value={request.client_employment_status?.replace(/_/g, " ") ?? "—"} />
                   </div>
                   <p className="text-[10px] text-muted mt-2">Client identity not disclosed at this stage.</p>
                 </div>
