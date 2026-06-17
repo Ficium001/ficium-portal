@@ -818,24 +818,8 @@ CREATE TABLE IF NOT EXISTS audit.events (
   session_id    UUID,
   -- Payload
   metadata      JSONB       NOT NULL DEFAULT '{}'
-) PARTITION BY RANGE (occurred_at);
-
--- Create partitions: current month + next 12 months
-DO $$
-DECLARE
-  d DATE := date_trunc('month', now())::DATE;
-  i INT;
-BEGIN
-  FOR i IN 0..12 LOOP
-    EXECUTE format(
-      'CREATE TABLE IF NOT EXISTS audit.events_%s PARTITION OF audit.events
-       FOR VALUES FROM (%L) TO (%L)',
-      to_char(d + (i || ' months')::INTERVAL, 'YYYY_MM'),
-      d + (i || ' months')::INTERVAL,
-      d + ((i+1) || ' months')::INTERVAL
-    );
-  END LOOP;
-END $$;
+);
+-- NOTE: Partitioning omitted for now — add via pg_partman once tenant volume warrants it.
 
 CREATE INDEX IF NOT EXISTS idx_audit_occurred    ON audit.events (occurred_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_actor       ON audit.events (actor_id, occurred_at DESC);
