@@ -7,5 +7,5 @@
  */
 import { db } from '../../shared/lib/supabase'
 
-export const adminDb = db('portal_admin')
+const adminDb = db('portal_admin')
 export default adminDb

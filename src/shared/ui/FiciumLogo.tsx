@@ -24,7 +24,7 @@ const VB_W = 310
 const VB_H = 153
 const RATIO = VB_H / VB_W
 
-export function FiciumLogo({
+function FiciumLogo({
   size = 28,
   heightPx,
   withWordmark = false,
