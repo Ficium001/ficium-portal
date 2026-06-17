@@ -19,7 +19,7 @@ function Spinner() {
     <div className="min-h-screen bg-[#f5f4f8] flex items-center justify-center">
       <div className="text-center">
         <div className="w-8 h-8 border-2 border-ficium border-t-transparent rounded-full animate-spin mx-auto mb-3" aria-label="Loading" />
-        <p className="text-[13px] text-muted font-mono">Loading portal\u2026</p>
+        <p className="text-[13px] text-muted font-mono">Loading portal…</p>
       </div>
     </div>
   )
