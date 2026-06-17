@@ -604,15 +604,6 @@ export default function InstitutionOnboarding() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | undefined>();
 
-  // If already past onboarding, redirect
-  if (!isLoading && institution) {
-    const stage = institution.onboarding_stage;
-    if (!["registered", "commercial_review"].includes(stage)) {
-      navigate("/pending");
-      return null;
-    }
-  }
-
   const uploadDocs = useCallback(async (institutionId: string) => {
     const toUpload = [
       { file: docs.amlPolicy,       name: "aml_policy"        },
@@ -674,6 +665,12 @@ export default function InstitutionOnboarding() {
   }
 
   if (!institution) return null;
+
+  // If already past onboarding, redirect away from the registration flow.
+  if (!["registered", "commercial_review"].includes(institution.onboarding_stage)) {
+    navigate("/pending");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-cream flex items-start justify-center py-12 px-4">
