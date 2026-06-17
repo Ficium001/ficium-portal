@@ -58,7 +58,10 @@ function useInstitutionGroups() {
         .select("*")
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as InstitutionGroup[];
+      return (data ?? []).map((g: any) => ({
+        ...g,
+        module_permissions: g.module_permissions ?? [],
+      })) as InstitutionGroup[];
     },
     staleTime: 30 * 1000,
   });
@@ -303,10 +306,10 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                   </Td>
                   <Td>
                     <div className="flex flex-wrap gap-1 max-w-[260px]">
-                      {g.module_permissions.length === 0 ? (
+                      {(g.module_permissions ?? []).length === 0 ? (
                         <span className="text-[11px] text-muted">No modules</span>
                       ) : (
-                        g.module_permissions.map((k) => (
+                        (g.module_permissions ?? []).map((k) => (
                           <span key={k} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ink/[0.05] text-muted border border-ink/[0.08]">
                             {k.replace("inst:", "")}
                           </span>
