@@ -160,6 +160,15 @@ SELECT id, family_id, code, label, description, currency, active, sort_order, cr
 FROM institution.products
 ON CONFLICT (id) DO NOTHING;
 
+-- Move product tables from institution → catalog schema, then create compat views
+DO $$ BEGIN ALTER TABLE institution.product_families    SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.products            SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_parameters  SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_rate_config SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_sla_defaults SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_eligibility SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_documents   SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+
 -- Compatibility views in institution schema (keep old code working)
 CREATE OR REPLACE VIEW institution.product_families
   WITH (security_invoker = on) AS SELECT * FROM catalog.product_families;
@@ -433,7 +442,10 @@ BEGIN
   END IF;
 END $$;
 
--- Compat view for institution.institution_bids
+-- Move institution.institution_bids → marketplace.bids, then compat view
+DO $$ BEGIN ALTER TABLE institution.institution_bids SET SCHEMA marketplace; ALTER TABLE marketplace.institution_bids RENAME TO bids; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+
+-- Compat view
 CREATE OR REPLACE VIEW institution.institution_bids
   WITH (security_invoker = on)
   AS SELECT * FROM marketplace.bids;
@@ -548,7 +560,13 @@ BEGIN
   END IF;
 END $$;
 
--- Compat views
+-- Move institution.pending_actions → governance, then create compat view
+DO $$ BEGIN ALTER TABLE institution.pending_actions SET SCHEMA governance; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
+
+-- Add scope column if it came from the old table (didn't have it)
+DO $$ BEGIN ALTER TABLE governance.pending_actions ADD COLUMN scope TEXT NOT NULL DEFAULT 'institution' CHECK (scope IN ('institution','platform')); EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
+-- Compat view
 CREATE OR REPLACE VIEW institution.pending_actions
   WITH (security_invoker = on)
   AS SELECT * FROM governance.pending_actions WHERE scope = 'institution';
