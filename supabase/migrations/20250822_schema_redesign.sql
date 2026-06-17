@@ -61,6 +61,17 @@ GRANT SELECT ON identity.login_events TO authenticated;
 -- ─────────────────────────────────────────────────────────────────────────────
 GRANT USAGE ON SCHEMA catalog TO authenticated;
 
+-- Move existing tables from institution → catalog FIRST
+-- (before CREATE TABLE IF NOT EXISTS, so duplicate_table never fires)
+DO $$ BEGIN ALTER TABLE institution.product_families     SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.products             SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_parameters   SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_rate_config  SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_sla_defaults SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_eligibility  SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.product_documents    SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; END $$;
+
+-- Now CREATE TABLE IF NOT EXISTS only runs if tables didn't exist in institution
 CREATE TABLE IF NOT EXISTS catalog.product_families (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   code       TEXT        NOT NULL UNIQUE,
@@ -148,26 +159,6 @@ ON CONFLICT (key) DO NOTHING;
 
 -- No RLS on catalog — public reference data
 GRANT SELECT ON ALL TABLES IN SCHEMA catalog TO authenticated;
-
--- Backfill catalog from institution schema if products already exist there
-INSERT INTO catalog.product_families (id, code, label, sort_order, created_at)
-SELECT id, code, label, sort_order, created_at
-FROM institution.product_families
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO catalog.products (id, family_id, code, label, description, currency, active, sort_order, created_at, updated_at)
-SELECT id, family_id, code, label, description, currency, active, sort_order, created_at, updated_at
-FROM institution.products
-ON CONFLICT (id) DO NOTHING;
-
--- Move product tables from institution → catalog schema, then create compat views
-DO $$ BEGIN ALTER TABLE institution.product_families    SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.products            SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.product_parameters  SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.product_rate_config SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.product_sla_defaults SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.product_eligibility SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.product_documents   SET SCHEMA catalog; EXCEPTION WHEN undefined_table THEN NULL; WHEN duplicate_table THEN NULL; END $$;
 
 -- Compatibility views in institution schema (keep old code working)
 CREATE OR REPLACE VIEW institution.product_families
