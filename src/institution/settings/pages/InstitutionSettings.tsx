@@ -36,7 +36,7 @@ import {
   SectionHeader, StatusBadge, InlineAlert, DataTable, DataRow, Td,
   Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
 } from "../../components/primitives";
-import GroupsTab from "./components/GroupsTab";
+import GroupsTab from "../components/GroupsTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab types
