@@ -181,6 +181,7 @@ function Drawer({
       for (const k of s.keys) {
         if (!visibleKeys.has(k)) continue
         const mod = byKey[k]
+        if (!mod) continue
         if (seenPaths.has(mod.path)) continue
         seenPaths.add(mod.path)
         mods.push(mod)
@@ -320,7 +321,7 @@ function Drawer({
             style={{ background: 'linear-gradient(135deg,#1E6CF5,#7C3AED)' }}
             aria-hidden
           >
-            <span className='text-[12.5px] font-bold text-white'>{(userName || 'U')[0].toUpperCase()}</span>
+            <span className='text-[12.5px] font-bold text-white'>{(userName || 'U').charAt(0).toUpperCase()}</span>
           </div>
           <div className='min-w-0'>
             <div className='text-[13.5px] font-semibold text-ink truncate'>{userName || 'User'}</div>
@@ -419,7 +420,7 @@ function TopBar({
         style={{ background: 'linear-gradient(135deg,#1E6CF5,#7C3AED)' }}
         aria-hidden
       >
-        <span className='text-[13px] font-bold text-white'>{(userName || 'U')[0].toUpperCase()}</span>
+        <span className='text-[13px] font-bold text-white'>{(userName || 'U').charAt(0).toUpperCase()}</span>
       </div>
 
       {/* Sign out */}
@@ -482,7 +483,7 @@ export default function PortalShell() {
     const payload = getTokenPayload()
     const email = (payload?.email as string | undefined) ?? ''
     const display = (payload?.display_name as string | undefined)
-      ?? (email ? email.split('@')[0] : 'User')
+      ?? (email ? (email.split('@')[0] ?? 'User') : 'User')
     setUserName(display)
   }, [])
 

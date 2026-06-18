@@ -220,7 +220,7 @@ function BiddingPulse() {
     }
     bids.forEach(b => {
       const label = new Date(b.submitted_at).toLocaleDateString('en-MU', { month: 'short', day: 'numeric' })
-      if (label in days) days[label]++
+      if (label in days) days[label] = (days[label] ?? 0) + 1
     })
     return Object.entries(days).map(([label, value]) => ({ label, value }))
   }, [bids])

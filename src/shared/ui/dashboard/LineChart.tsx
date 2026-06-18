@@ -50,10 +50,14 @@ export default function LineChart({
     const x = (i: number) => PAD.l + (i * (W - PAD.l - PAD.r)) / Math.max(data.length - 1, 1)
     const y = (v: number) => H - PAD.b - (v / maxV) * (H - PAD.t - PAD.b)
     const pts = data.map((p, i) => [x(i), y(p.value)] as const)
-    let line = pts.length ? `M${pts[0][0]},${pts[0][1]}` : ''
+    const firstPt = pts[0]
+    let line = firstPt ? `M${firstPt[0]},${firstPt[1]}` : ''
     for (let i = 1; i < pts.length; i++) {
-      const [x0, y0] = pts[i - 1]
-      const [x1, y1] = pts[i]
+      const prev = pts[i - 1]
+      const curr = pts[i]
+      if (!prev || !curr) continue
+      const [x0, y0] = prev
+      const [x1, y1] = curr
       const mx = (x0 + x1) / 2
       line += ` C${mx},${y0} ${mx},${y1} ${x1},${y1}`
     }
@@ -125,37 +129,42 @@ export default function LineChart({
           />
         )}
 
-        {data.map((p, i) => (
-          <g key={i}>
-            <text
-              x={x(i)} y={H - 8}
-              fontSize='10.5' fill='#9A9AB5' textAnchor='middle'
-              fontFamily='Inter Tight, sans-serif'
-            >
-              {p.label}
-            </text>
-            <circle
-              cx={pts[i][0]} cy={pts[i][1]}
-              r={hover === i ? 6 : 4}
-              fill='#fff'
-              stroke={`url(#lcS-${uid})`}
-              strokeWidth='2.5'
-              style={{ transition: 'r .2s' }}
-            />
-            {/* generous invisible hit target */}
-            <circle
-              cx={pts[i][0]} cy={pts[i][1]} r={14}
-              fill='transparent'
-              className='cursor-pointer'
-              onMouseEnter={() => setHover(i)}
-              onMouseLeave={() => setHover(null)}
-            />
-          </g>
-        ))}
+        {data.map((p, i) => {
+          const pt = pts[i]
+          if (!pt) return null
+          const [cx, cy] = pt
+          return (
+            <g key={i}>
+              <text
+                x={x(i)} y={H - 8}
+                fontSize='10.5' fill='#9A9AB5' textAnchor='middle'
+                fontFamily='Inter Tight, sans-serif'
+              >
+                {p.label}
+              </text>
+              <circle
+                cx={cx} cy={cy}
+                r={hover === i ? 6 : 4}
+                fill='#fff'
+                stroke={`url(#lcS-${uid})`}
+                strokeWidth='2.5'
+                style={{ transition: 'r .2s' }}
+              />
+              {/* generous invisible hit target */}
+              <circle
+                cx={cx} cy={cy} r={14}
+                fill='transparent'
+                className='cursor-pointer'
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+              />
+            </g>
+          )
+        })}
       </svg>
 
       {/* Tooltip */}
-      {hovered && hover !== null && (
+      {hovered && hover !== null && pts[hover] && (
         <div
           className='absolute pointer-events-none bg-ink text-white text-[12px] font-semibold
                      px-2.5 py-1.5 rounded-[9px] whitespace-nowrap z-[3]'
