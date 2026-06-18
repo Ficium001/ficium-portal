@@ -50,7 +50,7 @@ function useInstitutionMembers() {
     queryFn: async () => {
       const { data, error } = await institutionSupabase
         .from("institution_members")
-        .select("*")
+        .select("id, institution_id, user_id, role, is_primary_admin, invited_by, created_at")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as InstitutionUser[];
@@ -65,7 +65,7 @@ function useInstitutionGroups() {
     queryFn: async () => {
       const { data, error } = await institutionSupabase
         .from("groups")
-        .select("*")
+        .select("id, institution_id, slug, label, description, module_permissions, is_system, created_by, created_at, updated_at")
         .order("label", { ascending: true });
       if (error) throw error;
       return (data ?? []) as InstitutionGroup[];

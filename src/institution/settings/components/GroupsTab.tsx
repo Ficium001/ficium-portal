@@ -57,7 +57,7 @@ function useInstitutionGroups() {
     queryFn: async () => {
       const { data, error } = await institutionSupabase
         .from("groups")
-        .select("*")
+        .select("id, institution_id, slug, label, description, module_permissions, is_system, created_by, created_at, updated_at")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []).map((g: Record<string, unknown>) => ({
