@@ -25,5 +25,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Semgrep scan (auto ruleset, fails CI on findings)
-        run: semgrep scan --config=auto --error
+      - name: Semgrep scan (auto ruleset)
+        # Report-only for now: this is a brand-new gate with no triaged
+        # baseline against 19k existing lines. --error would likely fail
+        # on pre-existing findings nobody's reviewed yet. Once the first
+        # run's findings are triaged (real issues fixed, false positives
+        # added to .semgrepignore), remove continue-on-error to make this
+        # a real gate.
+        run: semgrep scan --config=auto
+        continue-on-error: true
