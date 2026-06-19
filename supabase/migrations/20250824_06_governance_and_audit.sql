@@ -130,9 +130,19 @@ SELECT
   maker_id, COALESCE(maker_role,''), maker_ip,
   COALESCE(resource_type,'unknown'), resource_id, resource_label,
   COALESCE(payload,'{}'), payload_before,
-  COALESCE(status::TEXT,'pending'), checker_id, checker_role, checker_note,
-  checker_ip, checked_at,
-  CASE WHEN status::TEXT = 'executed' THEN 'executed' ELSE 'pending' END,
+  -- Map old status → new status (only pending/approved/rejected/expired/cancelled allowed)
+  CASE
+    WHEN status::TEXT IN ('pending','approved','rejected','expired','cancelled') THEN status::TEXT
+    WHEN status::TEXT = 'executed' THEN 'approved'
+    ELSE 'pending'
+  END,
+  checker_id, checker_role, checker_note, checker_ip, checked_at,
+  -- Map old status → execution_status
+  CASE
+    WHEN status::TEXT = 'executed' THEN 'executed'
+    WHEN status::TEXT = 'approved' THEN 'executed'
+    ELSE 'pending'
+  END,
   executed_at, execution_error,
   COALESCE(expires_at, now() + INTERVAL '7 days'), initiated_at
 FROM portal_admin.admin_dual_control_actions
