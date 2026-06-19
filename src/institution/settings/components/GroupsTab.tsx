@@ -14,9 +14,11 @@
  *   wildcard ('*') or unrestricted access.
  *
  * @dataSource
- *   institution.groups          → list (30 s cache)
- *   institution.pending_actions → pending group.* actions badge
- *   get_my_modules()            → selectable module keys
+ *   institution.groups            → list (30 s cache)
+ *   institution.pending_actions_v → pending group.* actions badge (compat view
+ *                                   over governance.action; institution.pending_actions
+ *                                   itself is no longer written to as of migration 06)
+ *   get_my_modules()              → selectable module keys
  *
  * @owner Ficium Engineering
  */
@@ -58,9 +60,9 @@ function useInstitutionGroups() {
         .select("*")
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []).map((g: any) => ({
+      return (data ?? []).map((g: Record<string, unknown>) => ({
         ...g,
-        module_permissions: g.module_permissions ?? [],
+        module_permissions: (g.module_permissions as string[] | undefined) ?? [],
       })) as InstitutionGroup[];
     },
     staleTime: 30 * 1000,
@@ -71,14 +73,23 @@ function usePendingGroupActions() {
   return useQuery<PendingAction[]>({
     queryKey: ["institution", "groups", "pending"],
     queryFn: async () => {
+      // institution.pending_actions is no longer written to — submit_for_approval
+      // now delegates to governance.submit() (see migration 06). Read through the
+      // compat view instead, aliasing back to the column names this component
+      // (and the PendingAction type) already expect.
       const { data, error } = await institutionSupabase
-        .from("pending_actions")
-        .select("*")
-        .eq("action_status", "pending")
-        .like("action_category", "group.%");
-      // pending_actions table may not exist yet — fail silently
+        .from("pending_actions_v")
+        .select(
+          "id, action_category:category, action_status:status, maker_id, maker_role, " +
+          "institution_id, initiated_at:created_at, resource_type, resource_id, payload, " +
+          "payload_before, checker_id, checker_role, checker_note, checked_at, " +
+          "expires_at, executed_at, execution_error, created_at",
+        )
+        .eq("status", "pending")
+        .like("category", "group.%");
+      // pending_actions_v may not exist yet on older environments — fail silently
       if (error) return [];
-      return (data ?? []) as PendingAction[];
+      return (data ?? []) as unknown as PendingAction[];
     },
     refetchInterval: 60 * 1000,
   });

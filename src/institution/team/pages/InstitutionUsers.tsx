@@ -21,7 +21,9 @@
  * @dataSource
  *   institution.institution_members  (30 s cache)
  *   institution.groups               (30 s cache)
- *   institution.pending_actions      (60 s poll)
+ *   institution.pending_actions_v    (60 s poll) — compat view over governance.action;
+ *                                     institution.pending_actions itself is no longer
+ *                                     written to as of migration 06.
  *
  * @owner Ficium Engineering
  */
@@ -76,13 +78,22 @@ function usePendingUserActions() {
   return useQuery<PendingAction[]>({
     queryKey: ["institution", "users", "pending"],
     queryFn: async () => {
+      // institution.pending_actions is no longer written to — submit_for_approval
+      // now delegates to governance.submit() (see migration 06). Read through the
+      // compat view instead, aliasing back to the column names this component
+      // (and the PendingAction type) already expect.
       const { data, error } = await institutionSupabase
-        .from("pending_actions")
-        .select("*")
-        .eq("action_status", "pending")
-        .in("action_category", ["user.create", "user.assign_group"]);
+        .from("pending_actions_v")
+        .select(
+          "id, action_category:category, action_status:status, maker_id, maker_role, " +
+          "institution_id, initiated_at:created_at, resource_type, resource_id, payload, " +
+          "payload_before, checker_id, checker_role, checker_note, checked_at, " +
+          "expires_at, executed_at, execution_error, created_at",
+        )
+        .eq("status", "pending")
+        .in("category", ["user.create", "user.assign_group"]);
       if (error) return [];
-      return (data ?? []) as PendingAction[];
+      return (data ?? []) as unknown as PendingAction[];
     },
     refetchInterval: 60 * 1000,
   });
