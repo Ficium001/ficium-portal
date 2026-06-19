@@ -89,8 +89,9 @@ AS $$
   LEFT JOIN institution."group"        cg ON cg.id = m.custom_group_id
   LEFT JOIN admin.system_group         sg ON sg.id = m.system_group_id
   LEFT JOIN portal_admin.user_groups   pg ON pg.id = m.group_id
-  WHERE m.user_id = auth.uid()
-    AND m.status  = 'active'
+  -- real column name is auth_user_id; active is BOOLEAN not status TEXT
+  WHERE m.auth_user_id = auth.uid()
+    AND m.active = true
   LIMIT 1;
 $$;
 
@@ -190,23 +191,29 @@ CREATE OR REPLACE FUNCTION institution.assign_default_member_group()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = institution, admin, portal_admin AS $$
 BEGIN
-  IF NEW.system_group_id IS NULL AND NEW.group_id IS NULL THEN
+  -- group_id is the real existing column; system_group_id added in this migration
+  IF NEW.group_id IS NULL THEN
     IF NEW.is_primary_admin THEN
-      SELECT id INTO NEW.system_group_id
-        FROM admin.system_group WHERE slug = 'institution_admin' LIMIT 1;
-      IF NEW.system_group_id IS NULL THEN
-        SELECT id INTO NEW.group_id
-          FROM portal_admin.user_groups WHERE slug = 'institution_admin' LIMIT 1;
-      END IF;
+      SELECT id INTO NEW.group_id
+        FROM portal_admin.user_groups WHERE slug = 'institution_admin' LIMIT 1;
     ELSE
-      SELECT id INTO NEW.system_group_id
-        FROM admin.system_group WHERE slug = 'bank_officer' LIMIT 1;
-      IF NEW.system_group_id IS NULL THEN
-        SELECT id INTO NEW.group_id
-          FROM portal_admin.user_groups WHERE slug = 'bank_officer' LIMIT 1;
-      END IF;
+      SELECT id INTO NEW.group_id
+        FROM portal_admin.user_groups WHERE slug = 'bank_officer' LIMIT 1;
     END IF;
   END IF;
+  -- Also populate system_group_id if the column exists (v2)
+  BEGIN
+    IF NEW.system_group_id IS NULL THEN
+      IF NEW.is_primary_admin THEN
+        SELECT id INTO NEW.system_group_id
+          FROM admin.system_group WHERE slug = 'institution_admin' LIMIT 1;
+      ELSE
+        SELECT id INTO NEW.system_group_id
+          FROM admin.system_group WHERE slug = 'bank_officer' LIMIT 1;
+      END IF;
+    END IF;
+  EXCEPTION WHEN undefined_column THEN NULL;
+  END;
   RETURN NEW;
 END;
 $$;
