@@ -230,7 +230,13 @@ BEGIN
   END IF;
 END $$;
 
--- Compat view so portal-api code calling institution.institution_bids keeps working
+-- institution_bids is a real table — rename it to archive, then create compat view
+DO $$ BEGIN
+  ALTER TABLE institution.institution_bids RENAME TO institution_bids_archive;
+EXCEPTION WHEN undefined_table THEN NULL;
+         WHEN duplicate_table  THEN NULL; END $$;
+
+-- Now safe to create compat view over marketplace.bid
 CREATE OR REPLACE VIEW institution.institution_bids
   WITH (security_invoker = on)
   AS SELECT * FROM marketplace.bid;
