@@ -37,16 +37,18 @@ EXCEPTION WHEN undefined_table THEN NULL;
          WHEN duplicate_table  THEN NULL; END $$;
 
 -- Add new columns to member
-DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN system_group_id UUID;           EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN custom_group_id UUID;           EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN system_group_id UUID;                                                                            EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN custom_group_id UUID;                                                                            EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN member_role     TEXT NOT NULL DEFAULT 'maker' CHECK (member_role IN ('maker','checker','viewer','api_operator')); EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN invited_by      UUID REFERENCES auth.users(id);   EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN invited_at      TIMESTAMPTZ;    EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN activated_at    TIMESTAMPTZ;    EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN deactivated_at  TIMESTAMPTZ;    EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN invited_by      UUID REFERENCES auth.users(id);                                                  EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN invited_at      TIMESTAMPTZ;                                                                     EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN activated_at    TIMESTAMPTZ;                                                                     EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.member ADD COLUMN deactivated_at  TIMESTAMPTZ;                                                                     EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+-- NOTE: real table uses auth_user_id (not user_id) and active boolean (not status text)
+-- user_id alias view handled in compat layer; do NOT add conflicting columns
 
-CREATE INDEX IF NOT EXISTS idx_member_institution ON institution.member (institution_id, status);
-CREATE INDEX IF NOT EXISTS idx_member_user        ON institution.member (user_id);
+CREATE INDEX IF NOT EXISTS idx_member_institution ON institution.member (institution_id, active);
+CREATE INDEX IF NOT EXISTS idx_member_user        ON institution.member (auth_user_id);
 
 CREATE OR REPLACE TRIGGER institution_member_updated_at
   BEFORE UPDATE ON institution.member
@@ -207,8 +209,8 @@ AS $$
   LEFT JOIN institution.group          cg ON cg.id = m.custom_group_id
   LEFT JOIN portal_admin.user_groups   pg ON pg.id = m.group_id         -- old column still exists
   LEFT JOIN admin.system_group         sg ON sg.id = m.system_group_id
-  WHERE m.user_id = auth.uid()
-    AND m.status  = 'active'
+  WHERE m.auth_user_id = auth.uid()
+    AND m.active = true
   LIMIT 1;
 $$;
 
@@ -219,7 +221,12 @@ GRANT EXECUTE ON FUNCTION institution.current_member_ctx() TO authenticated;
 CREATE OR REPLACE VIEW institution.institutions
   WITH (security_invoker = on) AS SELECT * FROM institution.institution;
 CREATE OR REPLACE VIEW institution.institution_members
-  WITH (security_invoker = on) AS SELECT * FROM institution.member;
+  WITH (security_invoker = on) AS
+  SELECT
+    m.*,
+    m.auth_user_id AS user_id,   -- v2 alias
+    CASE WHEN m.active THEN 'active' ELSE 'deactivated' END AS status  -- v2 alias
+  FROM institution.member m;
 CREATE OR REPLACE VIEW institution.groups
   WITH (security_invoker = on) AS SELECT * FROM institution.group;
 CREATE OR REPLACE VIEW institution.institution_product_config
