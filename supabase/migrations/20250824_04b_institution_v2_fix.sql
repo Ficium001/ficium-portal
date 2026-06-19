@@ -14,22 +14,26 @@ DO $$ BEGIN
 EXCEPTION WHEN undefined_table THEN NULL;
          WHEN duplicate_table  THEN NULL; END $$;
 
--- ── Fix 2: Create api_key as a NEW table (didn't exist before) ───────────────
+-- ── Fix 2: api_key — create if missing, then add any missing columns ────────
 CREATE TABLE IF NOT EXISTS institution.api_key (
-  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  institution_id  UUID        NOT NULL REFERENCES institution.institution(id) ON DELETE CASCADE,
-  label           TEXT        NOT NULL,
-  key_prefix      TEXT        NOT NULL,
-  key_hash        TEXT        NOT NULL UNIQUE,
-  scopes          TEXT[]      NOT NULL DEFAULT '{}',
-  last_used_at    TIMESTAMPTZ,
-  last_used_ip    INET,
-  expires_at      TIMESTAMPTZ,
-  revoked_at      TIMESTAMPTZ,
-  revoked_by      UUID        REFERENCES institution.member(id) ON DELETE SET NULL,
-  created_by      UUID        REFERENCES institution.member(id) ON DELETE SET NULL,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  institution_id UUID NOT NULL,
+  label          TEXT NOT NULL DEFAULT '',
+  key_prefix     TEXT NOT NULL DEFAULT '',
+  key_hash       TEXT NOT NULL DEFAULT '' UNIQUE,
+  scopes         TEXT[] NOT NULL DEFAULT '{}',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Add every v2 column idempotently (skips if already present)
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN last_used_at  TIMESTAMPTZ;                                                              EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN last_used_ip  INET;                                                                     EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN expires_at    TIMESTAMPTZ;                                                              EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN revoked_at    TIMESTAMPTZ;                                                              EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN revoked_by    UUID REFERENCES institution.member(id) ON DELETE SET NULL;                EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN created_by    UUID REFERENCES institution.member(id) ON DELETE SET NULL;                EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN key_prefix    TEXT NOT NULL DEFAULT '';                                                 EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN ALTER TABLE institution.api_key ADD COLUMN key_hash      TEXT NOT NULL DEFAULT '';                                                 EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 CREATE INDEX IF NOT EXISTS idx_api_key_inst
   ON institution.api_key (institution_id, revoked_at);
