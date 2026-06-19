@@ -295,7 +295,11 @@ INSERT INTO audit.event
 SELECT
   created_at, actor_id, 'admin', actor_email, actor_role, actor_ip,
   action_category, resource_type, resource_id, resource_label,
-  COALESCE(outcome::TEXT,'logged'), outcome_note, dual_control_id
+  COALESCE(outcome::TEXT,'logged'), outcome_note,
+  -- NULL out if the referenced governance action was skipped in backfill
+  CASE WHEN dual_control_id IS NOT NULL
+            AND EXISTS (SELECT 1 FROM governance.action WHERE id = dual_control_id)
+       THEN dual_control_id ELSE NULL END
 FROM portal_admin.admin_audit_log
 ON CONFLICT DO NOTHING;
 
