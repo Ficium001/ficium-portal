@@ -104,8 +104,23 @@ CREATE TABLE IF NOT EXISTS marketplace.bid_event (
 );
 CREATE INDEX IF NOT EXISTS idx_bid_event_bid ON marketplace.bid_event (bid_id, occurred_at DESC);
 
-DO $$ BEGIN CREATE RULE marketplace_bid_event_no_update AS ON UPDATE TO marketplace.bid_event DO INSTEAD NOTHING; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE RULE marketplace_bid_event_no_delete AS ON DELETE TO marketplace.bid_event DO INSTEAD NOTHING; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+-- WORM via trigger (not RULE — rules block ON CONFLICT inserts)
+CREATE OR REPLACE FUNCTION marketplace.block_bid_event_mutation()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'marketplace.bid_event is append-only';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS bid_event_no_update ON marketplace.bid_event;
+CREATE TRIGGER bid_event_no_update
+  BEFORE UPDATE ON marketplace.bid_event
+  FOR EACH ROW EXECUTE FUNCTION marketplace.block_bid_event_mutation();
+
+DROP TRIGGER IF EXISTS bid_event_no_delete ON marketplace.bid_event;
+CREATE TRIGGER bid_event_no_delete
+  BEFORE DELETE ON marketplace.bid_event
+  FOR EACH ROW EXECUTE FUNCTION marketplace.block_bid_event_mutation();
 
 -- ── marketplace.acceptance ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS marketplace.acceptance (
