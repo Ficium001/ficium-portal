@@ -57,7 +57,11 @@ CREATE OR REPLACE VIEW institution.institution_api_keys
 GRANT SELECT ON institution.institution_api_keys TO authenticated;
 
 -- ── Fix 3: DROP current_member_ctx before redefining (return type changed) ───
-DROP FUNCTION IF EXISTS institution.current_member_ctx();
+-- CASCADE drops all dependent policies — they are recreated below
+DROP FUNCTION IF EXISTS institution.current_member_ctx() CASCADE;
+
+-- Recreate all policies that depended on current_member_ctx
+-- (dropped by CASCADE above — must be recreated after new function is defined)
 
 CREATE OR REPLACE FUNCTION institution.current_member_ctx()
 RETURNS TABLE (
@@ -92,6 +96,76 @@ $$;
 
 REVOKE ALL ON FUNCTION institution.current_member_ctx() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION institution.current_member_ctx() TO authenticated;
+
+-- Recreate all policies dropped by CASCADE
+DO $$ BEGIN
+  CREATE POLICY inst_groups_select ON institution."group"
+    FOR SELECT TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY inst_groups_insert ON institution."group"
+    FOR INSERT TO authenticated
+    WITH CHECK (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY inst_groups_update ON institution."group"
+    FOR UPDATE TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY inst_groups_delete ON institution."group"
+    FOR DELETE TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx)
+      AND (SELECT ctx.is_admin FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY pending_actions_select ON institution.pending_actions
+    FOR SELECT TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY pending_actions_insert ON institution.pending_actions
+    FOR INSERT TO authenticated
+    WITH CHECK (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx)
+      AND maker_id = (SELECT ctx.member_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY pending_actions_update ON institution.pending_actions
+    FOR UPDATE TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx)
+      AND (SELECT ctx.is_admin FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY inst_bids_select ON institution.institution_bids
+    FOR SELECT TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY webhook_delivery_select ON institution.webhook_delivery
+    FOR SELECT TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY kyb_document_select ON institution.kyb_document
+    FOR SELECT TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY api_key_select ON institution.api_key
+    FOR SELECT TO authenticated
+    USING (institution_id = (SELECT ctx.institution_id FROM institution.current_member_ctx() ctx));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ── Fix 4a: Compat views for old names (step 11) ─────────────────────────────
 CREATE OR REPLACE VIEW institution.institutions
