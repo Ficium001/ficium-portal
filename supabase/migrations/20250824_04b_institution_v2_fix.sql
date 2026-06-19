@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS institution.api_key (
 );
 
 CREATE INDEX IF NOT EXISTS idx_api_key_inst
-  ON institution.api_key (institution_id) WHERE revoked_at IS NULL;
+  ON institution.api_key (institution_id, revoked_at);
 
 ALTER TABLE institution.api_key ENABLE ROW LEVEL SECURITY;
 ALTER TABLE institution.api_key FORCE ROW LEVEL SECURITY;
