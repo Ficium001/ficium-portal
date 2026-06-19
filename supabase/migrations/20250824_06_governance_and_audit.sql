@@ -115,6 +115,8 @@ SELECT
   COALESCE(execution_status,'pending'), executed_at, execution_error,
   COALESCE(expires_at, now() + INTERVAL '7 days'), created_at, created_at
 FROM institution.pending_actions
+-- Skip rows where maker = checker (violates four_eyes; logged separately)
+WHERE checker_id IS NULL OR checker_id != maker_id
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Backfill from portal_admin.admin_dual_control_actions ─────────────────────
@@ -134,6 +136,7 @@ SELECT
   executed_at, execution_error,
   COALESCE(expires_at, now() + INTERVAL '7 days'), initiated_at
 FROM portal_admin.admin_dual_control_actions
+WHERE checker_id IS NULL OR checker_id != maker_id
 ON CONFLICT DO NOTHING;
 
 -- ── governance.submit RPC ─────────────────────────────────────────────────────
