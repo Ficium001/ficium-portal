@@ -244,8 +244,23 @@ CREATE INDEX IF NOT EXISTS idx_audit_institution ON audit.event (institution_id,
 CREATE INDEX IF NOT EXISTS idx_audit_action      ON audit.event (action, outcome);
 CREATE INDEX IF NOT EXISTS idx_audit_governance  ON audit.event (governance_action_id) WHERE governance_action_id IS NOT NULL;
 
-DO $$ BEGIN CREATE RULE audit_event_no_update AS ON UPDATE TO audit.event DO INSTEAD NOTHING; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE RULE audit_event_no_delete AS ON DELETE TO audit.event DO INSTEAD NOTHING; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+-- WORM via trigger (not RULE — rules block ON CONFLICT inserts)
+CREATE OR REPLACE FUNCTION audit.block_mutation()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'audit.event is append-only — updates and deletes are not permitted';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_event_no_update ON audit.event;
+CREATE TRIGGER audit_event_no_update
+  BEFORE UPDATE ON audit.event
+  FOR EACH ROW EXECUTE FUNCTION audit.block_mutation();
+
+DROP TRIGGER IF EXISTS audit_event_no_delete ON audit.event;
+CREATE TRIGGER audit_event_no_delete
+  BEFORE DELETE ON audit.event
+  FOR EACH ROW EXECUTE FUNCTION audit.block_mutation();
 
 ALTER TABLE audit.event ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit.event FORCE ROW LEVEL SECURITY;
