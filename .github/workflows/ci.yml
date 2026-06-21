@@ -1,6 +1,7 @@
 name: CI
 
-# Validates every push and pull request: install → typecheck → lint → dead-code → build.
+# Validates every push and pull request: secret-scan → install → audit →
+# typecheck → lint → dead-code → build.
 # Keeps main always shippable and gives PRs a green/red signal before merge.
 
 on:
@@ -14,10 +15,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (full history for diff-aware scan)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
   verify:
     name: Typecheck, lint & build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: secrets
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +47,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Dependency audit (high+ severity)
+        run: npm audit --audit-level=high
 
       - name: Typecheck (app)
         run: npx tsc --noEmit -p tsconfig.app.json

@@ -80,7 +80,8 @@ function AdminHero() {
     { label: 'Audit failure rate', value: metricNum(byKey.audit_fail_rate?.value ?? 0), suffix: '%' },
   ]
 
-  const firstName = (me?.email ?? 'there').split('@')[0].split('.')[0]
+  const emailLocalPart = (me?.email ?? 'there').split('@')[0] ?? 'there'
+  const firstName = emailLocalPart.split('.')[0] ?? emailLocalPart
   const niceName  = firstName.charAt(0).toUpperCase() + firstName.slice(1)
   const dateLabel = new Date()
     .toLocaleDateString('en-MU', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -200,7 +201,7 @@ function PulseAndFeed() {
     }
     entries.forEach(e => {
       const label = new Date(e.created_at).toLocaleDateString('en-MU', { month: 'short', day: 'numeric' })
-      if (label in days) days[label]++
+      if (label in days) days[label] = (days[label] ?? 0) + 1
     })
     return Object.entries(days).map(([label, value]) => ({ label, value }))
   }, [entries])
@@ -302,13 +303,15 @@ function SessionsAndCallout() {
   )
 
   // One best action: most urgent thing on the platform right now.
+  const soonestPending = pending.length
+    ? pending.slice().sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime())[0]
+    : undefined
+
   const callout = pending.length > 0
     ? {
         title: `${pending.length} action${pending.length > 1 ? 's' : ''} waiting in dual-control.`,
         body: 'The soonest one expires ' +
-          (pending.length ? `in ${expiresIn(
-            pending.slice().sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime())[0].expires_at,
-          )}` : 'soon') +
+          (soonestPending ? `in ${expiresIn(soonestPending.expires_at)}` : 'soon') +
           '. A quick review keeps makers unblocked and the platform moving.',
         cta: 'Review queue',
         to: '/admin/dual-control',
@@ -355,7 +358,7 @@ function SessionsAndCallout() {
                       style={{ background: 'linear-gradient(135deg,#1E6CF5,#7C3AED)' }}
                       aria-hidden
                     >
-                      {name[0].toUpperCase()}
+                      {name.charAt(0).toUpperCase()}
                     </div>
                     <div className='min-w-0 flex-1'>
                       <div className='text-[13.5px] font-semibold text-ink truncate'>{name}</div>
