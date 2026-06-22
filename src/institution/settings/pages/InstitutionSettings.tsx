@@ -196,10 +196,10 @@ function TeamTab({ isAdmin }: { isAdmin: boolean }) {
                 <Td>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-ficium/10 flex items-center justify-center text-[11px] font-bold text-ficium flex-shrink-0 uppercase">
-                      {(u.user_id ?? u.id).slice(0, 2)}
+                      {(u.auth_user_id ?? u.id).slice(0, 2)}
                     </div>
                     <code className="text-[12px] font-mono text-muted">
-                      {(u.user_id ?? u.id).slice(0, 12)}…
+                      {(u.auth_user_id ?? u.id).slice(0, 12)}…
                     </code>
                   </div>
                 </Td>
