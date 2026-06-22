@@ -70,15 +70,21 @@ export default function AdminInstitutions() {
   }, [institutions])
 
   const handleConfirm = () => {
-    if (!confirmTarget) return
+    if (!confirmTarget || isPending) return
     const { inst, action } = confirmTarget
     if (action === 'approve') {
-      approveMut.mutate({ institution_id: inst.id, institution_name: inst.name })
+      approveMut.mutate(
+        { institution_id: inst.id, institution_name: inst.name },
+        { onSuccess: () => { setConfirmTarget(null); setNote('') },
+          onError:   () => { setConfirmTarget(null); setNote('') } }
+      )
     } else {
-      suspendMut.mutate({ institution_id: inst.id, institution_name: inst.name, suspension_reason: note })
+      suspendMut.mutate(
+        { institution_id: inst.id, institution_name: inst.name, suspension_reason: note },
+        { onSuccess: () => { setConfirmTarget(null); setNote('') },
+          onError:   () => { setConfirmTarget(null); setNote('') } }
+      )
     }
-    setConfirmTarget(null)
-    setNote('')
   }
 
   const isPending = approveMut.isPending || suspendMut.isPending
@@ -161,7 +167,7 @@ export default function AdminInstitutions() {
                   <ABtn
                     size="sm"
                     onClick={() => setConfirmTarget({ inst, action: 'approve' })}
-                    disabled={!canApprove}
+                    disabled={!canApprove || isPending}
                   >
                     Approve
                   </ABtn>
@@ -170,7 +176,7 @@ export default function AdminInstitutions() {
                     size="sm"
                     variant="danger"
                     onClick={() => setConfirmTarget({ inst, action: 'suspend' })}
-                    disabled={!canSuspend}
+                    disabled={!canSuspend || isPending}
                   >
                     Suspend
                   </ABtn>
