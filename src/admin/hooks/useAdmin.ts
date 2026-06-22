@@ -11,7 +11,6 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../shared/lib/supabase'
 import { portalApi } from '../../shared/lib/portalApi'
 import type {
   AdminUser, AdminRole, AdminSession, DualControlAction,
@@ -39,13 +38,6 @@ export const QK = {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-/** Call a public SECURITY DEFINER RPC and return its JSONB result. */
-async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T | null> {
-  const { data, error } = await supabase.rpc(fn, args)
-  if (error) { console.error(`RPC ${fn} error:`, error.message); return null }
-  return data as T
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Read hooks — all use RPCs
