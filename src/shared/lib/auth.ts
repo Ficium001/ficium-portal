@@ -68,7 +68,7 @@ export async function signUpInstitution(input: SignUpInstitutionInput): Promise<
   if (!data.user) return { ok: false, error: { code: "unknown", message: "Sign up did not return a user." } };
 
   const { data: instData, error: instError } = await institutionDb
-    .from("institutions")
+    .from("institution")
     .insert({
       name:                  institutionName,
       legal_name:            institutionName,
@@ -94,7 +94,7 @@ export async function signUpInstitution(input: SignUpInstitutionInput): Promise<
   }
 
   await institutionDb
-    .from("institution_members")
+    .from("member")
     .insert({
       institution_id:   instData.id,
       auth_user_id:     data.user.id,
