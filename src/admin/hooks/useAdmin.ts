@@ -13,7 +13,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../shared/lib/supabase'
 import { portalApi } from '../../shared/lib/portalApi'
-import adminDb from '../lib/adminSupabase'
 import type {
   AdminUser, AdminRole, AdminSession, DualControlAction,
   AdminAuditEntry, SystemMetric, Institution,
@@ -165,9 +164,8 @@ async function submitDualControl(params: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload_before?: any
 }): Promise<string> {
-  const { data, error } = await adminDb.rpc('admin_submit_dual_control', params)
-  if (error) throw new Error(error.message)
-  return data as string
+  const res = await portalApi.post<{ action_id: string }>('/admin/dual-control/submit', params)
+  return res.action_id
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,12 +330,7 @@ export function useApproveDualControl() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ actionId, note }: { actionId: string; note?: string }) => {
-      const { data, error } = await adminDb.rpc('admin_approve_dual_control', {
-        p_action_id: actionId,
-        p_note:      note ?? null,
-      })
-      if (error) throw new Error(error.message)
-      return data
+      return await portalApi.post('/admin/dual-control/approve', { action_id: actionId, note: note ?? null })
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.dualControl })
@@ -352,12 +345,7 @@ export function useRejectDualControl() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ actionId, note }: { actionId: string; note: string }) => {
-      const { data, error } = await adminDb.rpc('admin_reject_dual_control', {
-        p_action_id: actionId,
-        p_note:      note,
-      })
-      if (error) throw new Error(error.message)
-      return data
+      return await portalApi.post('/admin/dual-control/reject', { action_id: actionId, note })
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.dualControl })
@@ -374,19 +362,7 @@ export function useTerminateSession() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ sessionId, reason }: { sessionId: string; reason: string }) => {
-      const { error } = await adminDb
-        .from('admin_sessions')
-        .update({ is_active: false, ended_at: new Date().toISOString(), end_reason: 'forced' })
-        .eq('id', sessionId)
-      if (error) throw new Error(error.message)
-      await adminDb.from('admin_audit_log').insert({
-        action_category: 'session.terminate',
-        event_label:     'Session forcibly terminated',
-        resource_type:   'admin_session',
-        resource_id:     sessionId,
-        outcome:         'success',
-        outcome_note:    reason,
-      })
+      await portalApi.post('/admin/sessions/terminate', { session_id: sessionId, reason })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.sessions }),
   })
