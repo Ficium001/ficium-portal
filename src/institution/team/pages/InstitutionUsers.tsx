@@ -407,11 +407,11 @@ export default function InstitutionUsers() {
                   <Td>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-ficium/10 flex items-center justify-center text-[11px] font-bold text-ficium flex-shrink-0 uppercase">
-                        {(m.user_id ?? m.id).slice(0, 2)}
+                        {(m.auth_user_id ?? m.id).slice(0, 2)}
                       </div>
                       <div className="min-w-0">
                         <code className="text-[12px] font-mono text-muted block truncate max-w-[140px]">
-                          {(m.user_id ?? m.id).slice(0, 16)}…
+                          {(m.auth_user_id ?? m.id).slice(0, 16)}…
                         </code>
                         {m.is_primary_admin && (
                           <span className="text-[10px] font-semibold text-ficium">Primary admin</span>
