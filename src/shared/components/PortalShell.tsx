@@ -217,7 +217,7 @@ function Drawer({
           open ? 'translate-x-0' : '-translate-x-[104%]',
         ].join(' ')}
         aria-label='Main navigation'
-        aria-hidden={!open}
+        inert={!open}
       >
         {/* Head */}
         <div className='flex items-center gap-2.5 px-2.5 pb-5'>
