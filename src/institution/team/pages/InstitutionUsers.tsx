@@ -49,8 +49,8 @@ function useInstitutionMembers() {
     queryKey: ["institution", "members"],
     queryFn: async () => {
       const { data, error } = await institutionSupabase
-        .from("institution_members")
-        .select("id, institution_id, user_id, role, is_primary_admin, invited_by, created_at")
+        .from("member")
+        .select("id, institution_id, auth_user_id, role, is_primary_admin, invited_by, created_at")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as InstitutionUser[];
@@ -64,7 +64,7 @@ function useInstitutionGroups() {
     queryKey: ["institution", "groups"],
     queryFn: async () => {
       const { data, error } = await institutionSupabase
-        .from("groups")
+        .from("group")
         .select("id, institution_id, slug, label, description, module_permissions, is_system, created_by, created_at, updated_at")
         .order("label", { ascending: true });
       if (error) throw error;
@@ -83,15 +83,15 @@ function usePendingUserActions() {
       // compat view instead, aliasing back to the column names this component
       // (and the PendingAction type) already expect.
       const { data, error } = await institutionSupabase
-        .from("pending_actions_v")
+        .from("pending_actions")
         .select(
-          "id, action_category:category, action_status:status, maker_id, maker_role, " +
-          "institution_id, initiated_at:created_at, resource_type, resource_id, payload, " +
+          "id, action_category, action_status, maker_id, maker_role, " +
+          "institution_id, initiated_at, resource_type, resource_id, payload, " +
           "payload_before, checker_id, checker_role, checker_note, checked_at, " +
           "expires_at, executed_at, execution_error, created_at",
         )
-        .eq("status", "pending")
-        .in("category", ["user.create", "user.assign_group"]);
+        .eq("action_status", "pending")
+        .in("action_category", ["user.create", "user.assign_group"]);
       if (error) return [];
       return (data ?? []) as unknown as PendingAction[];
     },
