@@ -55,7 +55,7 @@ async function rpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T
 export function useAdminMe() {
   return useQuery<AdminUser | null>({
     queryKey: QK.me,
-    queryFn:  () => rpc<AdminUser>('get_admin_me'),
+    queryFn:  () => portalApi.get<AdminUser | null>('/admin/me'),
     staleTime: 5 * 60 * 1000,
     retry: false,
   })
@@ -65,10 +65,8 @@ export function useAdminUsers(statusFilter?: string) {
   return useQuery<AdminUser[]>({
     queryKey: [...QK.users, statusFilter],
     queryFn:  async () => {
-      const data = await rpc<AdminUser[]>('get_admin_users', {
-        p_status: (statusFilter && statusFilter !== 'all') ? statusFilter : null,
-      })
-      return data ?? []
+      const qs = (statusFilter && statusFilter !== 'all') ? `?status=${encodeURIComponent(statusFilter)}` : ''
+      return await portalApi.get<AdminUser[]>(`/admin/users${qs}`)
     },
     staleTime: 30 * 1000,
   })
@@ -77,7 +75,7 @@ export function useAdminUsers(statusFilter?: string) {
 export function useAdminRoles() {
   return useQuery<AdminRole[]>({
     queryKey: QK.roles,
-    queryFn:  async () => (await rpc<AdminRole[]>('get_admin_roles')) ?? [],
+    queryFn:  () => portalApi.get<AdminRole[]>('/admin/roles'),
     staleTime: 60 * 60 * 1000,
   })
 }
@@ -86,8 +84,7 @@ export function useAdminSessions(activeOnly = false) {
   return useQuery<AdminSession[]>({
     queryKey: [...QK.sessions, activeOnly],
     queryFn:  async () => {
-      const data = await rpc<AdminSession[]>('get_admin_sessions', { p_active_only: activeOnly })
-      return data ?? []
+      return await portalApi.get<AdminSession[]>(`/admin/sessions?active_only=${activeOnly}`)
     },
     refetchInterval: 30 * 1000,
     staleTime: 15 * 1000,
@@ -98,8 +95,7 @@ export function useDualControlActions(statusFilter = 'pending') {
   return useQuery<DualControlAction[]>({
     queryKey: [...QK.dualControl, statusFilter],
     queryFn:  async () => {
-      const data = await rpc<DualControlAction[]>('get_admin_dual_control', { p_status: statusFilter })
-      return data ?? []
+      return await portalApi.get<DualControlAction[]>(`/admin/dual-control?status=${encodeURIComponent(statusFilter)}`)
     },
     refetchInterval: 30 * 1000,
     staleTime: 15 * 1000,
@@ -110,12 +106,10 @@ export function useAdminAudit(limit = 100, outcomeFilter?: string, categoryFilte
   return useQuery<AdminAuditEntry[]>({
     queryKey: [...QK.audit, limit, outcomeFilter, categoryFilter],
     queryFn:  async () => {
-      const data = await rpc<AdminAuditEntry[]>('get_admin_audit', {
-        p_limit:    limit,
-        p_outcome:  (outcomeFilter  && outcomeFilter  !== 'all') ? outcomeFilter  : null,
-        p_category: (categoryFilter && categoryFilter !== 'all') ? categoryFilter : null,
-      })
-      return data ?? []
+      const params = new URLSearchParams({ limit: String(limit) })
+      if (outcomeFilter  && outcomeFilter  !== 'all') params.set('outcome',  outcomeFilter)
+      if (categoryFilter && categoryFilter !== 'all') params.set('category', categoryFilter)
+      return await portalApi.get<AdminAuditEntry[]>(`/admin/audit?${params.toString()}`)
     },
     staleTime: 15 * 1000,
   })
@@ -125,14 +119,14 @@ export function useSystemMetrics() {
   return useQuery<SystemMetric[]>({
     queryKey: QK.metrics,
     queryFn:  async () => {
-      const raw = await rpc<{
+      const raw = await portalApi.get<{
         total_admins:    number
         active_admins:   number
         locked_accounts: number
         active_sessions: number
         pending_dc:      number
         recent_audit:    { outcome: string }[] | null
-      }>('get_admin_metrics')
+      }>('/admin/metrics')
 
       if (!raw) return []
 
@@ -406,9 +400,7 @@ export function useAdminGroups() {
   return useQuery({
     queryKey: ['admin', 'groups'],
     queryFn:  async () => {
-      const { data, error } = await adminDb.rpc('get_user_groups')
-      if (error) throw error
-      return data ?? []
+      return await portalApi.get('/admin/user-groups')
     },
     staleTime: 30_000,
   })
@@ -477,9 +469,7 @@ export function useInstitutions() {
   return useQuery<Institution[]>({
     queryKey: ['admin', 'institutions'],
     queryFn:  async () => {
-      const { data, error } = await adminDb.rpc('get_institutions')
-      if (error) throw new Error(error.message)
-      return (data as Institution[]) ?? []
+      return await portalApi.get<Institution[]>('/admin/institutions')
     },
     staleTime: 30_000,
   })
