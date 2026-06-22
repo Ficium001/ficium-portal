@@ -15,8 +15,7 @@
  * @dataSource
  *   useMyInstitution   → institutions table (5 min cache)
  *   useMyRole          → institution_members (10 min cache)
- *   useInstitutionUsers → institution_members (all active)
- *   useProducts         → products table (1 hr cache)
+  *   useProducts         → products table (1 hr cache)
  *
  * @owner Ficium Engineering
  * @lastReviewed 2025-08
@@ -24,10 +23,10 @@
 
 import { useState } from "react";
 import {
-  Building2, Users, Key, Clock, Copy, Check, Plus, Eye, EyeOff, Shield,
+  Building2, Key, Clock, Copy, Check, Plus, Eye, EyeOff, Shield,
 } from "lucide-react";
 import {
-  useMyInstitution, useMyRole, useInstitutionUsers, useProducts,
+  useMyInstitution, useMyRole, useProducts,
 } from "../../hooks/useInstitution";
 import { useMyGroup } from "../../../admin/hooks/useAdmin";
 import type { Institution } from "../../types/institution";
@@ -42,11 +41,10 @@ import GroupsTab from "../components/GroupsTab";
 // Tab types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "team" | "groups" | "api-keys" | "sla";
+type Tab = "profile" | "groups" | "api-keys" | "sla";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "profile",  label: "Profile",   icon: Building2 },
-  { key: "team",     label: "Team",      icon: Users     },
   { key: "groups",   label: "Groups",    icon: Shield    },
   { key: "api-keys", label: "API keys",  icon: Key       },
   { key: "sla",      label: "SLA",       icon: Clock     },
@@ -118,159 +116,6 @@ function ProfileTab({ institution }: { institution: Institution }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TeamTab
-// ─────────────────────────────────────────────────────────────────────────────
-
-function TeamTab({ isAdmin }: { isAdmin: boolean }) {
-  const { data: users = [], isLoading } = useInstitutionUsers();
-  const [showInvite,    setShowInvite]    = useState(false);
-  const [inviteEmail,   setInviteEmail]   = useState("");
-  const [inviteRole,    setInviteRole]    = useState("analyst");
-  const [inviteSuccess, setInviteSuccess] = useState(false);
-  const [submitting,    setSubmitting]    = useState(false);
-
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setSubmitting(true);
-    try {
-      await portalApi.post("/approvals/submit", {
-        action_category: "user.invite",
-        resource_type:   "institution_users",
-        resource_id:     null,
-        payload:         { email: inviteEmail, role: inviteRole },
-      });
-      setInviteSuccess(true);
-      setShowInvite(false);
-      setInviteEmail("");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const ROLE_STYLE: Record<string, string> = {
-    admin:      "bg-ficium/8 text-ficium border-ficium/20",
-    analyst:    "bg-ink/[0.05] text-muted border-ink/[0.08]",
-    viewer:     "bg-ink/[0.05] text-muted border-ink/[0.08]",
-    compliance: "bg-amber-50 text-amber-700 border-amber-200",
-  };
-
-  return (
-    <div className="space-y-4">
-      {inviteSuccess && (
-        <InlineAlert variant="success" onDismiss={() => setInviteSuccess(false)}>
-          Invitation submitted for maker-checker approval. The user will be notified once approved.
-        </InlineAlert>
-      )}
-
-      <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
-        <div className="px-5 py-4 border-b border-ink/[0.07] flex items-center justify-between">
-          <div>
-            <h2 className="font-display font-bold text-[15px] text-ink">Team members</h2>
-            <p className="text-[11px] text-muted mt-0.5">
-              {users.length} active member{users.length !== 1 ? "s" : ""} · invitations require maker-checker approval
-            </p>
-          </div>
-          {isAdmin && (
-            <Btn
-              variant="primary"
-              size="sm"
-              icon={Plus}
-              onClick={() => setShowInvite(true)}
-            >
-              Invite member
-            </Btn>
-          )}
-        </div>
-
-        {isLoading ? (
-          <DataTable headers={["Member", "Role", "Primary admin", "Since"]} caption="Loading team…">
-            {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} cols={4} />)}
-          </DataTable>
-        ) : users.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title="No team members"
-            description="Invite your first team member above"
-          />
-        ) : (
-          <DataTable headers={["Member", "Role", "Primary admin", "Since"]} caption="Institution team">
-            {users.map((u) => (
-              <DataRow key={u.id}>
-                <Td>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-ficium/10 flex items-center justify-center text-[11px] font-bold text-ficium flex-shrink-0 uppercase">
-                      {(u.auth_user_id ?? u.id).slice(0, 2)}
-                    </div>
-                    <code className="text-[12px] font-mono text-muted">
-                      {(u.auth_user_id ?? u.id).slice(0, 12)}…
-                    </code>
-                  </div>
-                </Td>
-                <Td>
-                  <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${ROLE_STYLE[u.role] ?? ROLE_STYLE.analyst}`}>
-                    {u.role}
-                  </span>
-                </Td>
-                <Td className="text-muted text-[12px]">
-                  {u.is_primary_admin ? "Yes" : "—"}
-                </Td>
-                <Td className="text-muted text-[12px]">
-                  {new Date(u.created_at).toLocaleDateString("en-MU", { month: "short", year: "numeric" })}
-                </Td>
-              </DataRow>
-            ))}
-          </DataTable>
-        )}
-      </div>
-
-      {/* Invite modal */}
-      <Modal open={showInvite} onClose={() => setShowInvite(false)} title="Invite team member">
-        <div className="space-y-4">
-          <FormField label="Email address">
-            <input
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="colleague@yourinstitution.mu"
-              type="email"
-              className={inputCls}
-            />
-          </FormField>
-          <FormField
-            label="Role"
-            hint="Admins can approve actions. Analysts can bid. Viewers are read-only. Compliance can view audit logs."
-          >
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value)}
-              className={inputCls}
-            >
-              <option value="analyst">Analyst — can submit bids</option>
-              <option value="admin">Admin — can approve actions</option>
-              <option value="viewer">Viewer — read-only access</option>
-              <option value="compliance">Compliance — audit log access</option>
-            </select>
-          </FormField>
-          <InlineAlert variant="info">
-            This invitation enters the maker-checker queue. A second admin must approve it
-            before the account is created.
-          </InlineAlert>
-          <div className="flex gap-3 pt-1">
-            <Btn
-              variant="primary"
-              onClick={handleInvite}
-              disabled={!inviteEmail.trim()}
-              loading={submitting}
-            >
-              Submit for approval
-            </Btn>
-            <Btn variant="ghost" onClick={() => setShowInvite(false)}>Cancel</Btn>
-          </div>
-        </div>
-      </Modal>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // ApiKeysTab
 // ─────────────────────────────────────────────────────────────────────────────
@@ -568,7 +413,6 @@ export default function InstitutionSettings() {
 
       {/* Tab content */}
       {tab === "profile"  && institution && <ProfileTab institution={institution} />}
-      {tab === "team"     && <TeamTab  isAdmin={isAdmin} />}
       {tab === "groups"   && <GroupsTab isAdmin={isAdmin} />}
       {tab === "api-keys" && <ApiKeysTab isAdmin={isAdmin} />}
       {tab === "sla"      && <SlaTab   isAdmin={isAdmin} />}

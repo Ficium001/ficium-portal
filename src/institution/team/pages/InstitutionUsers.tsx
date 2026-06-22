@@ -33,7 +33,7 @@ import {
   Plus, Users, Clock, Shield,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import institutionSupabase from "../../lib/institutionSupabase";
+import { portalApi } from "../../../shared/lib/portalApi";
 import { useMyGroup } from "../../../admin/hooks/useAdmin";
 import type { InstitutionUser, PendingAction } from "../../types/institution";
 import type { InstitutionGroup } from "../../settings/components/GroupsTab";
@@ -47,14 +47,7 @@ import {
 function useInstitutionMembers() {
   return useQuery<InstitutionUser[]>({
     queryKey: ["institution", "members"],
-    queryFn: async () => {
-      const { data, error } = await institutionSupabase
-        .from("member")
-        .select("id, institution_id, auth_user_id, role, is_primary_admin, invited_by, created_at")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as InstitutionUser[];
-    },
+    queryFn: () => portalApi.get<InstitutionUser[]>("/members"),
     staleTime: 30 * 1000,
   });
 }
@@ -62,14 +55,7 @@ function useInstitutionMembers() {
 function useInstitutionGroups() {
   return useQuery<InstitutionGroup[]>({
     queryKey: ["institution", "groups"],
-    queryFn: async () => {
-      const { data, error } = await institutionSupabase
-        .from("group")
-        .select("id, institution_id, slug, label, description, module_permissions, is_system, created_by, created_at, updated_at")
-        .order("label", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as InstitutionGroup[];
-    },
+    queryFn: () => portalApi.get<InstitutionGroup[]>("/groups"),
     staleTime: 30 * 1000,
   });
 }
@@ -78,22 +64,11 @@ function usePendingUserActions() {
   return useQuery<PendingAction[]>({
     queryKey: ["institution", "users", "pending"],
     queryFn: async () => {
-      // institution.pending_actions is no longer written to — submit_for_approval
-      // now delegates to governance.submit() (see migration 06). Read through the
-      // compat view instead, aliasing back to the column names this component
-      // (and the PendingAction type) already expect.
-      const { data, error } = await institutionSupabase
-        .from("pending_actions")
-        .select(
-          "id, action_category, action_status, maker_id, maker_role, " +
-          "institution_id, initiated_at, resource_type, resource_id, payload, " +
-          "payload_before, checker_id, checker_role, checker_note, checked_at, " +
-          "expires_at, executed_at, execution_error, created_at",
-        )
-        .eq("action_status", "pending")
-        .in("action_category", ["user.create", "user.assign_group"]);
-      if (error) return [];
-      return (data ?? []) as unknown as PendingAction[];
+      try {
+        return await portalApi.get<PendingAction[]>("/members/pending");
+      } catch {
+        return [];
+      }
     },
     refetchInterval: 60 * 1000,
   });
@@ -136,16 +111,20 @@ function AssignGroupModal({
     if (!member || !groupId) return;
     setSubmitting(true);
     setError(null);
-    const { error: rpcErr } = await institutionSupabase.rpc("submit_for_approval", {
-      p_action_category: "user.assign_group",
-      p_resource_type:   "institution_members",
-      p_resource_id:     member.id,
-      p_payload:         { member_id: member.id, custom_group_id: groupId, member_role: role },
-    });
-    setSubmitting(false);
-    if (rpcErr) { setError(rpcErr.message); return; }
-    qc.invalidateQueries({ queryKey: ["institution", "users", "pending"] });
-    onClose();
+    try {
+      await portalApi.post("/approvals/submit", {
+        action_category: "user.assign_group",
+        resource_type:   "institution_members",
+        resource_id:     member.id,
+        payload:         { member_id: member.id, custom_group_id: groupId, member_role: role },
+      });
+      qc.invalidateQueries({ queryKey: ["institution", "users", "pending"] });
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Submission failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -211,23 +190,27 @@ function CreateUserModal({
     if (!email.trim() || !groupId) return;
     setSubmitting(true);
     setError(null);
-    const { error: rpcErr } = await institutionSupabase.rpc("submit_for_approval", {
-      p_action_category: "user.create",
-      p_resource_type:   "institution_members",
-      p_resource_id:     null,
-      p_payload: {
-        email:           email.trim().toLowerCase(),
-        first_name:      firstName.trim(),
-        last_name:       lastName.trim(),
-        custom_group_id: groupId,
-        member_role:     role,
-      },
-    });
-    setSubmitting(false);
-    if (rpcErr) { setError(rpcErr.message); return; }
-    reset();
-    onClose();
-    onSuccess();
+    try {
+      await portalApi.post("/approvals/submit", {
+        action_category: "user.create",
+        resource_type:   "institution_members",
+        resource_id:     null,
+        payload: {
+          email:           email.trim().toLowerCase(),
+          first_name:      firstName.trim(),
+          last_name:       lastName.trim(),
+          custom_group_id: groupId,
+          member_role:     role,
+        },
+      });
+      reset();
+      onClose();
+      onSuccess();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Submission failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
