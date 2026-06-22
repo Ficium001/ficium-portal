@@ -5,6 +5,10 @@
 import { supabase, institutionDb } from "./supabase";
 import { audit } from "./audit";
 
+const PORTAL_API_URL =
+  (import.meta.env.VITE_PORTAL_API_URL as string | undefined)
+  ?? "https://ficium-portal-api-production.up.railway.app";
+
 export type AuthError = {
   code:
     | "email_already_registered"
@@ -104,6 +108,25 @@ export async function signUpInstitution(input: SignUpInstitutionInput): Promise<
       is_primary_admin: true,
       active:           true,
     });
+
+  // Create ficium-auth entry so the user can log in via the portal login page.
+  // Uses the same UUID as the Supabase auth user so JWT sub matches member.auth_user_id.
+  try {
+    await fetch(`${PORTAL_API_URL}/auth/provision-member`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        auth_user_id:   data.user.id,
+        email,
+        password,
+        institution_id: instData.id,
+        role:           "institution_admin",
+      }),
+    });
+  } catch (e) {
+    // Non-fatal: admin can provision manually if this fails.
+    console.error("ficium-auth provision failed:", e);
+  }
 
   return { ok: true, userId: data.user.id, needsEmailConfirmation: !data.session };
 }
