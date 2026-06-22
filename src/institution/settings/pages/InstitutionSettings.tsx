@@ -289,16 +289,19 @@ function ApiKeysTab({ isAdmin }: { isAdmin: boolean }) {
     const raw = "fk_live_" + Array.from(
       crypto.getRandomValues(new Uint8Array(24))
     ).map((b) => b.toString(16).padStart(2, "0")).join("");
-    await institutionSupabase.rpc("submit_for_approval", {
-      p_action_category: "api_key.create",
-      p_resource_type:   "institution_api_keys",
-      p_resource_id:     null,
-      p_payload:         { label, scopes: ["bids:write", "requests:read"] },
-    });
-    setSubmitting(false);
-    setCreatedKey(raw);
-    setShowCreate(false);
-    setLabel("");
+    try {
+      await portalApi.post("/approvals/submit", {
+        action_category: "api_key.create",
+        resource_type:   "institution_api_keys",
+        resource_id:     null,
+        payload:         { label, scopes: ["bids:write", "requests:read"] },
+      });
+      setCreatedKey(raw);
+      setShowCreate(false);
+      setLabel("");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const copyKey = () => {
@@ -428,12 +431,11 @@ function SlaTab({ isAdmin }: { isAdmin: boolean }) {
 
   const handleSave = async (code: string) => {
     const v = getVal(code);
-    await institutionSupabase
-      .from("institution_sla_config")
-      .upsert(
-        { product_code: code, bid_window_minutes: v.bid, auto_withdraw_minutes: v.auto },
-        { onConflict: "institution_id,product_code" }
-      );
+    await portalApi.post("/sla-config", {
+      product_code:          code,
+      bid_window_minutes:    v.bid,
+      auto_withdraw_minutes: v.auto,
+    });
     setSaved((prev) => ({ ...prev, [code]: true }));
     setTimeout(() => setSaved((prev) => ({ ...prev, [code]: false })), 2500);
   };
