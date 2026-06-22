@@ -30,8 +30,8 @@ import {
   useMyInstitution, useMyRole, useInstitutionUsers, useProducts,
 } from "../../hooks/useInstitution";
 import { useMyGroup } from "../../../admin/hooks/useAdmin";
-import institutionSupabase from "../../lib/institutionSupabase";
 import type { Institution } from "../../types/institution";
+import { portalApi } from "../../../shared/lib/portalApi";
 import {
   SectionHeader, StatusBadge, InlineAlert, DataTable, DataRow, Td,
   Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
@@ -132,16 +132,19 @@ function TeamTab({ isAdmin }: { isAdmin: boolean }) {
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setSubmitting(true);
-    await institutionSupabase.rpc("submit_for_approval", {
-      p_action_category: "user.invite",
-      p_resource_type:   "institution_users",
-      p_resource_id:     null,
-      p_payload:         { email: inviteEmail, role: inviteRole },
-    });
-    setSubmitting(false);
-    setInviteSuccess(true);
-    setShowInvite(false);
-    setInviteEmail("");
+    try {
+      await portalApi.post("/approvals/submit", {
+        action_category: "user.invite",
+        resource_type:   "institution_users",
+        resource_id:     null,
+        payload:         { email: inviteEmail, role: inviteRole },
+      });
+      setInviteSuccess(true);
+      setShowInvite(false);
+      setInviteEmail("");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const ROLE_STYLE: Record<string, string> = {

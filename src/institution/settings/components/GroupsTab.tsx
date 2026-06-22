@@ -26,7 +26,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Shield, Pencil, Trash2, Clock } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import institutionSupabase from "../../lib/institutionSupabase";
+import { portalApi } from "../../../shared/lib/portalApi";
 import { INSTITUTION_MODULE_LIST } from "../../../shared/lib/modules";
 import type { PendingAction } from "../../types/institution";
 import {
@@ -54,17 +54,7 @@ export interface InstitutionGroup {
 function useInstitutionGroups() {
   return useQuery<InstitutionGroup[]>({
     queryKey: ["institution", "groups"],
-    queryFn: async () => {
-      const { data, error } = await institutionSupabase
-        .from("groups")
-        .select("id, institution_id, slug, label, description, module_permissions, is_system, created_by, created_at, updated_at")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data ?? []).map((g: Record<string, unknown>) => ({
-        ...g,
-        module_permissions: (g.module_permissions as string[] | undefined) ?? [],
-      })) as InstitutionGroup[];
-    },
+    queryFn: () => portalApi.get<InstitutionGroup[]>("/groups"),
     staleTime: 30 * 1000,
   });
 }
@@ -73,23 +63,11 @@ function usePendingGroupActions() {
   return useQuery<PendingAction[]>({
     queryKey: ["institution", "groups", "pending"],
     queryFn: async () => {
-      // institution.pending_actions is no longer written to — submit_for_approval
-      // now delegates to governance.submit() (see migration 06). Read through the
-      // compat view instead, aliasing back to the column names this component
-      // (and the PendingAction type) already expect.
-      const { data, error } = await institutionSupabase
-        .from("pending_actions_v")
-        .select(
-          "id, action_category:category, action_status:status, maker_id, maker_role, " +
-          "institution_id, initiated_at:created_at, resource_type, resource_id, payload, " +
-          "payload_before, checker_id, checker_role, checker_note, checked_at, " +
-          "expires_at, executed_at, execution_error, created_at",
-        )
-        .eq("status", "pending")
-        .like("category", "group.%");
-      // pending_actions_v may not exist yet on older environments — fail silently
-      if (error) return [];
-      return (data ?? []) as unknown as PendingAction[];
+      try {
+        return await portalApi.get<PendingAction[]>("/groups/pending");
+      } catch {
+        return [];
+      }
     },
     refetchInterval: 60 * 1000,
   });
@@ -102,12 +80,13 @@ function useGrantableModules() {
   return useQuery<string[]>({
     queryKey: ["institution", "my-modules"],
     queryFn: async () => {
-      const { data, error } = await institutionSupabase.rpc("get_my_modules");
-      // RPC may not exist yet (migration pending) — fall back to full catalogue
-      if (error) return ALL_INSTITUTION_KEYS;
-      const mine = (data ?? []) as string[];
-      if (mine.length === 0 || mine.includes("*")) return ALL_INSTITUTION_KEYS;
-      return ALL_INSTITUTION_KEYS.filter((k) => mine.includes(k));
+      try {
+        const mine = await portalApi.get<string[]>("/groups/my-modules");
+        if (mine.length === 0 || mine.includes("*")) return ALL_INSTITUTION_KEYS;
+        return ALL_INSTITUTION_KEYS.filter((k) => mine.includes(k));
+      } catch {
+        return ALL_INSTITUTION_KEYS;
+      }
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -207,16 +186,21 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const submit = async (category: string, payload: Record<string, unknown>) => {
     setSubmitting(true);
     setError(null);
-    const { error: rpcError } = await institutionSupabase.rpc("submit_for_approval", {
-      p_action_category: category,
-      p_resource_type:   "institution_groups",
-      p_resource_id:     (payload.group_id as string) ?? null,
-      p_payload:         payload,
-    });
-    setSubmitting(false);
-    if (rpcError) { setError(rpcError.message); return false; }
-    invalidate();
-    return true;
+    try {
+      await portalApi.post("/approvals/submit", {
+        action_category: category,
+        resource_type:   "institution_groups",
+        resource_id:     (payload.group_id as string) ?? null,
+        payload,
+      });
+      invalidate();
+      setSubmitting(false);
+      return true;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Submission failed");
+      setSubmitting(false);
+      return false;
+    }
   };
 
   const handleCreate = async () => {
