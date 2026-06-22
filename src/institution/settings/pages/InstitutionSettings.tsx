@@ -32,8 +32,8 @@ import { useMyGroup } from "../../../admin/hooks/useAdmin";
 import type { Institution } from "../../types/institution";
 import { portalApi } from "../../../shared/lib/portalApi";
 import {
-  SectionHeader, StatusBadge, InlineAlert, DataTable, DataRow, Td,
-  Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
+  SectionHeader, StatusBadge, InlineAlert,
+  Modal, FormField, inputCls, Btn,
 } from "../../components/primitives";
 import GroupsTab from "../components/GroupsTab";
 
