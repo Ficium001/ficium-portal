@@ -251,10 +251,18 @@ function UserDrawer({
   const [email,     setEmail]     = useState(member.email ?? "");
   const [editRole,  setEditRole]  = useState(false);
   const [memberRole, setMemberRole] = useState(member.member_role ?? "maker");
+  const [editGroup, setEditGroup] = useState(false);
+  const [newGroupId, setNewGroupId] = useState(member.custom_group_id ?? "");
   const [error,     setError]     = useState<string | null>(null);
   const [flash,     setFlash]     = useState<string | null>(null);
   const [tempPw,    setTempPw]    = useState<string | null>(null);
   const [confirming, setConfirming] = useState<"deactivate" | "reactivate" | null>(null);
+
+  const assignGroupMut = useMutation({
+    mutationFn: (body: object) => portalApi.post("/approvals/submit", body),
+    onSuccess: () => { setEditGroup(false); setFlash("Group change submitted for approval."); onRefresh(); },
+    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed to submit"),
+  });
 
   const isActive = member.active !== false;
 
@@ -381,8 +389,36 @@ function UserDrawer({
 
           {/* Group */}
           <div>
-            <span className="text-[12px] font-semibold text-muted uppercase tracking-wider block mb-1">Group</span>
-            {group ? (
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[12px] font-semibold text-muted uppercase tracking-wider">Group</span>
+              {isAdmin && !member.is_primary_admin && (
+                <button onClick={() => setEditGroup(v => !v)} className="text-[11px] text-ficium font-semibold flex items-center gap-1">
+                  <Edit2 className="w-3 h-3" /> Edit
+                </button>
+              )}
+            </div>
+            {editGroup ? (
+              <div className="space-y-2">
+                <select value={newGroupId} onChange={e => setNewGroupId(e.target.value)} className={inputCls}>
+                  <option value="">Select group…</option>
+                  {Array.from(groupMap.values()).map(g => (
+                    <option key={g.id} value={g.id}>{g.label}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <Btn size="sm" variant="primary" loading={assignGroupMut.isPending}
+                    onClick={() => {
+                      if (!newGroupId) return;
+                      assignGroupMut.mutate({ member_id: member.id, custom_group_id: newGroupId, member_role: member.member_role ?? "maker" });
+                    }}
+                  >
+                    Submit for approval
+                  </Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => setEditGroup(false)}>Cancel</Btn>
+                </div>
+                <p className="text-[10px] text-muted">Group changes require checker approval.</p>
+              </div>
+            ) : group ? (
               <div className="flex items-center gap-2">
                 <Shield className="w-3.5 h-3.5 text-ficium" />
                 <span className="text-[13px] font-medium text-ink">{group.label}</span>
