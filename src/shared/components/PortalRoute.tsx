@@ -74,9 +74,7 @@ export default function PortalRoute() {
       // 2. Try to resolve from JWT claims first — avoids network for clear cases
       const p = getTokenPayload()
       const role = p?.user_role as string | undefined
-      const institutionId = p?.institution_id as string | undefined
-
-      // For admin roles, no need to hit the network
+          // For admin roles, no need to hit the network
       if (role === "admin" || role === "super_admin") {
         _cachedSub   = currentSub
         _cachedState = "ok"
