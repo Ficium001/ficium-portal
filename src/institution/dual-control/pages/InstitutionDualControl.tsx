@@ -257,10 +257,10 @@ function ActionCard({
 // ─── Temp password modal ──────────────────────────────────────────────────────
 
 function TempPasswordModal({
-  open, onClose, email, fullName, tempPassword,
+  open, onClose, email, fullName, tempPassword, username,
 }: {
   open: boolean; onClose: () => void;
-  email: string; fullName: string; tempPassword: string;
+  email: string; fullName: string; tempPassword: string; username?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -274,6 +274,12 @@ function TempPasswordModal({
         <InlineAlert variant="success">
           <strong>{fullName || email}</strong> has been created and can now log in to the portal.
         </InlineAlert>
+        {username && (
+          <div className="bg-ink/[0.03] border border-ink/[0.10] rounded-xl px-4 py-3">
+            <p className="text-[11px] text-muted mb-0.5">Username (for login)</p>
+            <code className="text-[13px] font-mono font-bold text-ink">{username}</code>
+          </div>
+        )}
         <div>
           <p className="text-[12px] text-muted mb-1">Temporary password — share this with the user</p>
           <div className="flex items-center gap-2 bg-ink/[0.03] border border-ink/[0.10] rounded-xl px-4 py-3">
@@ -290,7 +296,7 @@ function TempPasswordModal({
         </InlineAlert>
         <p className="text-[12px] text-muted">
           Login URL: <strong>https://ficium-portal.vercel.app</strong><br />
-          Email: <strong>{email}</strong>
+          Username: <strong>{username || email}</strong>
         </p>
         <Btn variant="primary" onClick={onClose}>Done</Btn>
       </div>
@@ -306,7 +312,7 @@ export default function InstitutionDualControl() {
   const rejectAction  = useRejectAction();
 
   const [provisionResult, setProvisionResult] = useState<{
-    email: string; fullName: string; tempPassword: string;
+    email: string; fullName: string; tempPassword: string; username?: string;
   } | null>(null);
 
   const pending = actions.filter(
@@ -332,6 +338,7 @@ export default function InstitutionDualControl() {
                   email: result.email,
                   fullName: result.full_name,
                   tempPassword: result.temp_password,
+                  username: result.username,
                 });
               }
             } catch (err) {
@@ -436,6 +443,7 @@ export default function InstitutionDualControl() {
           email={provisionResult.email}
           fullName={provisionResult.fullName}
           tempPassword={provisionResult.tempPassword}
+          username={provisionResult.username}
         />
       )}
     </main>
