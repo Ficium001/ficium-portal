@@ -75,7 +75,7 @@ const INSTITUTION_MODULES: PortalModule[] = [
     label:       'Dual Control',
     description: 'Four-eyes approval queue for internal actions (groups, users, settings)',
     category:    'institution',
-    path:        '/approvals',
+    path:        '/inst-dual-control',
     iconKey:     'GitMerge',
     shortcut:    'Q',
   },
