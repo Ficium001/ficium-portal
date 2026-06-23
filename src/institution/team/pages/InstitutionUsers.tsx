@@ -390,12 +390,17 @@ export default function InstitutionUsers() {
                   <Td>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-ficium/10 flex items-center justify-center text-[11px] font-bold text-ficium flex-shrink-0 uppercase">
-                        {(m.auth_user_id ?? m.id).slice(0, 2)}
+                        {m.full_name
+                          ? m.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)
+                          : (m.auth_user_id ?? m.id).slice(0, 2)}
                       </div>
                       <div className="min-w-0">
-                        <code className="text-[12px] font-mono text-muted block truncate max-w-[140px]">
-                          {(m.auth_user_id ?? m.id).slice(0, 16)}…
-                        </code>
+                        <span className="text-[13px] font-medium text-ink block truncate">
+                          {m.full_name || m.email || (m.auth_user_id ?? m.id).slice(0, 16) + "…"}
+                        </span>
+                        {m.email && m.full_name && (
+                          <span className="text-[11px] text-muted block truncate">{m.email}</span>
+                        )}
                         {m.is_primary_admin && (
                           <span className="text-[10px] font-semibold text-ficium">Primary admin</span>
                         )}

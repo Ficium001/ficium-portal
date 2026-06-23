@@ -69,6 +69,8 @@ export interface InstitutionUser {
   id: string
   institution_id: string
   auth_user_id: string
+  email?: string
+  full_name?: string
   role: 'admin' | 'analyst' | 'viewer' | 'compliance'
   is_primary_admin: boolean
   invited_by?: string
