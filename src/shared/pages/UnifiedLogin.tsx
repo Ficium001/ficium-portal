@@ -73,9 +73,11 @@ async function detectUserType(): Promise<UserType> {
   // permissions on every protected endpoint anyway.
   const payload = getTokenPayload()
   const role = payload?.user_role as string | undefined
-  if (role === 'admin') return 'admin'
-  if (role === 'institution_member' || role === 'institution_admin') return 'institution'
-  // Fallback: check if token has institution_id claim (provisioned member)
+  // Ficium internal admins
+  if (role === 'admin' || role === 'super_admin') return 'admin'
+  // Institution users: all institution_* roles route to institution portal
+  if (role?.startsWith('institution_')) return 'institution'
+  // Fallback: any token with an institution_id is an institution user
   if (payload?.institution_id) return 'institution'
   return 'unknown'
 }
