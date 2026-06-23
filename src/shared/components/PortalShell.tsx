@@ -500,7 +500,7 @@ export default function PortalShell() {
 
   // Keyboard nav
   const permissions    = myGroup?.module_permissions ?? []
-  const visibleModules = allowedModules(MODULE_CATALOGUE, permissions)
+  const visibleModules = allowedModules(MODULE_CATALOGUE, permissions, myGroup?.user_type)
 
   useEffect(() => {
     const routes = Object.fromEntries(

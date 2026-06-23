@@ -224,8 +224,15 @@ export const ADMIN_MODULE_LIST = ADMIN_MODULES
 export function allowedModules(
   list: PortalModule[],
   permissions: string[],
+  userType?: 'admin' | 'institution',
 ): PortalModule[] {
-  if (permissions.includes('*')) return list
+  if (permissions.includes('*')) {
+    // Wildcard — return only modules matching the user's category
+    // so admins don't see inst:* and institution users don't see admin:*
+    if (userType === 'admin')       return list.filter(m => m.category === 'admin')
+    if (userType === 'institution') return list.filter(m => m.category === 'institution')
+    return list // fallback: unknown user_type gets everything (shouldn't happen)
+  }
   return list.filter(m => permissions.includes(m.key))
 }
 

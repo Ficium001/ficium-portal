@@ -123,7 +123,9 @@ function RequireModule({ moduleKey, children }: { moduleKey: string; children: R
   const { data: myGroup, isLoading } = useMyGroup()
   if (isLoading) return <PageLoader />
   const permissions = myGroup?.module_permissions ?? []
-  const allowed = permissions.includes('*') || permissions.includes(moduleKey)
+  const category    = moduleKey.startsWith('admin:') ? 'admin' : 'institution'
+  const isWildcard  = permissions.includes('*') && myGroup?.user_type === category
+  const allowed     = isWildcard || permissions.includes(moduleKey)
   if (!allowed) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
