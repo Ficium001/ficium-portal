@@ -293,7 +293,7 @@ export default function UnifiedLogin() {
 
             <button
               type='submit'
-              disabled={loading || !email || !password}
+              disabled={loading || !username || !password}
               className='w-full disabled:opacity-50 text-white font-bold py-3.5 rounded-[14px] text-[15px] transition-all duration-300 ease-swift hover:-translate-y-0.5 hover:shadow-ficium active:scale-[.98] flex items-center justify-center gap-2'
               style={{ background: 'linear-gradient(92deg,#1E6CF5,#7C3AED 90%)' }}
             >
