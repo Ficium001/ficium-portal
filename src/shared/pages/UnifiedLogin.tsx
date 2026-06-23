@@ -67,22 +67,17 @@ interface MeResponse {
 }
 
 async function detectUserType(): Promise<UserType> {
-  // Prefer the token payload (user_role claim) — zero network.
+  // Trust the JWT payload entirely — zero network call on redirect.
+  // The token is RS256-signed by ficium-auth; role is set at login time
+  // and is authoritative for routing. The portal-api enforces real
+  // permissions on every protected endpoint anyway.
   const payload = getTokenPayload()
   const role = payload?.user_role as string | undefined
   if (role === 'admin') return 'admin'
-
-  // Confirm institution access against the portal API (also gates suspended/pending).
-  try {
-    const me = await portalApi.get<MeResponse>('/institutions/me')
-    return me.user_type === 'admin' ? 'admin' : 'institution'
-  } catch (err) {
-    if (err instanceof PortalApiError && (err.status === 403 || err.status === 404)) {
-      return 'unknown'
-    }
-    // Network/other — fall back to the token role if we have one.
-    return role === 'institution' ? 'institution' : 'unknown'
-  }
+  if (role === 'institution_member' || role === 'institution_admin') return 'institution'
+  // Fallback: check if token has institution_id claim (provisioned member)
+  if (payload?.institution_id) return 'institution'
+  return 'unknown'
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
