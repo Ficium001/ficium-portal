@@ -23,7 +23,7 @@ export interface AuthError {
 
 // ── Login ─────────────────────────────────────────────────────
 export async function signIn(
-  email: string,
+  username: string,
   password: string,
 ): Promise<{ tokens: AuthTokens; error: null } | { tokens: null; error: string }> {
   try {
@@ -31,7 +31,7 @@ export async function signIn(
       method:      'POST',
       credentials: 'include',          // receive httpOnly refresh cookie
       headers:     { 'Content-Type': 'application/json' },
-      body:        JSON.stringify({ email, password }),
+      body:        JSON.stringify({ username, password }),
     })
     const data = await res.json()
     if (!res.ok) {
