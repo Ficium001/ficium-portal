@@ -115,6 +115,19 @@ function DashboardRouter() {
   return <S><InstitutionDashboard /></S>
 }
 
+// ─── Route-level module permission guard ──────────────────────
+// Checks that the user's group includes the required module key.
+// If not, redirects to /dashboard silently.
+
+function RequireModule({ moduleKey, children }: { moduleKey: string; children: ReactNode }) {
+  const { data: myGroup, isLoading } = useMyGroup()
+  if (isLoading) return <PageLoader />
+  const permissions = myGroup?.module_permissions ?? []
+  const allowed = permissions.includes('*') || permissions.includes(moduleKey)
+  if (!allowed) return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
+
 // ─────────────────────────────────────────────────────────────
 // Router
 // ─────────────────────────────────────────────────────────────
@@ -139,24 +152,24 @@ export const router = createBrowserRouter([
           { path: '/dashboard',    element: <DashboardRouter />               },
 
           // Institution pages
-          { path: '/marketplace',  element: <S><InstitutionMarketplace /></S> },
-          { path: '/bids',         element: <S><InstitutionBids /></S>        },
-          { path: '/approvals',    element: <S><InstitutionApprovals /></S>   },
-          { path: '/products',     element: <S><InstitutionProducts /></S>    },
-          { path: '/webhooks',     element: <S><InstitutionWebhooks /></S>    },
-          { path: '/audit',        element: <S><InstitutionAudit /></S>       },
-          { path: '/settings',     element: <S><InstitutionSettings /></S>    },
-          { path: '/team/users',        element: <S><InstitutionUsers /></S>       },
-          { path: '/inst-dual-control', element: <S><InstitutionDualControl /></S> },
+          { path: '/marketplace',  element: <RequireModule moduleKey="inst:marketplace"><S><InstitutionMarketplace /></S></RequireModule> },
+          { path: '/bids',         element: <RequireModule moduleKey="inst:bids"><S><InstitutionBids /></S></RequireModule> },
+          { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
+          { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
+          { path: '/webhooks',     element: <RequireModule moduleKey="inst:webhooks"><S><InstitutionWebhooks /></S></RequireModule> },
+          { path: '/audit',        element: <RequireModule moduleKey="inst:audit"><S><InstitutionAudit /></S></RequireModule> },
+          { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },
+          { path: '/team/users',        element: <RequireModule moduleKey="inst:team"><S><InstitutionUsers /></S></RequireModule> },
+          { path: '/inst-dual-control', element: <RequireModule moduleKey="inst:dual_control"><S><InstitutionDualControl /></S></RequireModule> },
 
           // Admin pages
-          { path: '/users',        element: <S><AdminUsers /></S>       },
-          { path: '/groups',       element: <S><AdminGroups /></S>      },
-          { path: '/institutions', element: <S><AdminInstitutions /></S> },
-          { path: '/dual-control', element: <S><AdminDualControl /></S> },
-          { path: '/sessions',     element: <S><AdminSessions /></S>    },
-          { path: '/admin-audit',  element: <S><AdminAudit /></S>       },
-          { path: '/system',       element: <S><AdminSystem /></S>      },
+          { path: '/users',        element: <RequireModule moduleKey="admin:users"><S><AdminUsers /></S></RequireModule> },
+          { path: '/groups',       element: <RequireModule moduleKey="admin:groups"><S><AdminGroups /></S></RequireModule> },
+          { path: '/institutions', element: <RequireModule moduleKey="admin:institutions"><S><AdminInstitutions /></S></RequireModule> },
+          { path: '/dual-control', element: <RequireModule moduleKey="admin:dual_control"><S><AdminDualControl /></S></RequireModule> },
+          { path: '/sessions',     element: <RequireModule moduleKey="admin:sessions"><S><AdminSessions /></S></RequireModule> },
+          { path: '/admin-audit',  element: <RequireModule moduleKey="admin:audit"><S><AdminAudit /></S></RequireModule> },
+          { path: '/system',       element: <RequireModule moduleKey="admin:system"><S><AdminSystem /></S></RequireModule> },
         ],
       },
     ],
