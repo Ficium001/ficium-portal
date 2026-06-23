@@ -32,6 +32,7 @@ import {
 const DUAL_CONTROL_CATEGORIES = new Set([
   "group.create",
   "group.update",
+  "group.update_modules",
   "group.delete",
   "user.create",
   "user.assign_group",
@@ -51,6 +52,7 @@ const DUAL_CONTROL_CATEGORIES = new Set([
 const ACTION_META: Record<string, { icon: string; label: string; risk: "low" | "medium" | "high" }> = {
   "group.create":               { icon: "◈",  label: "Group created",          risk: "medium" },
   "group.update":               { icon: "◈",  label: "Group updated",          risk: "medium" },
+  "group.update_modules":       { icon: "◈",  label: "Group modules updated",  risk: "medium" },
   "group.delete":               { icon: "◈",  label: "Group deleted",          risk: "high"   },
   "user.create":                { icon: "👤", label: "User created",           risk: "medium" },
   "user.assign_group":          { icon: "🔄", label: "Group assignment",       risk: "medium" },
