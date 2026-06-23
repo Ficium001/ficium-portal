@@ -108,11 +108,17 @@ function S({ children }: { children: ReactNode }) {
 // ─── Dashboard router — resolves correct dashboard by user type
 import { useMyGroup } from '../admin/hooks/useAdmin'
 
+const InstitutionAdminDashboard = lazy(() => import('../institution/dashboard/pages/InstitutionAdminDashboard'))
+
 function DashboardRouter() {
   const { data: myGroup, isLoading } = useMyGroup()
   if (isLoading) return <PageLoader />
   if (myGroup?.user_type === 'admin') return <S><AdminDashboard /></S>
-  return <S><InstitutionDashboard /></S>
+  // Institution split — marketplace access = trading dashboard, otherwise admin dashboard
+  const permissions    = myGroup?.module_permissions ?? []
+  const hasMarketplace = permissions.includes('*') || permissions.includes('inst:marketplace')
+  if (hasMarketplace) return <S><InstitutionDashboard /></S>
+  return <S><InstitutionAdminDashboard /></S>
 }
 
 // ─── Route-level module permission guard ──────────────────────
