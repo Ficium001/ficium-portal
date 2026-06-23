@@ -62,7 +62,7 @@ export function useMarketplace(productCode?: string) {
       return portalApi.get<MarketplaceRequest[]>(path)
     },
     refetchInterval: 30 * 1000,
-    staleTime: 15 * 1000,
+    staleTime: 60 * 1000,
   })
 }
 
@@ -76,7 +76,7 @@ export function useMyBids(status?: string) {
         : '/marketplace/my-bids'
       return portalApi.get<InstitutionBid[]>(path)
     },
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -156,7 +156,7 @@ export function useAuditEvents(limit = 50) {
   return useQuery<AuditEvent[]>({
     queryKey: [...QK.audit, limit],
     queryFn: () => portalApi.get<AuditEvent[]>(`/audit?limit=${limit}`),
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
