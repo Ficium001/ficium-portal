@@ -143,6 +143,7 @@ function CreateUserModal({ groups, open, onClose, onSuccess }: {
   const [firstName,  setFirstName]  = useState("");
   const [lastName,   setLastName]   = useState("");
   const [email,      setEmail]      = useState("");
+  const [username,   setUsername]   = useState("");
   const [groupId,    setGroupId]    = useState("");
   const [role,       setRole]       = useState("maker");
   const [error,      setError]      = useState<string | null>(null);
@@ -150,7 +151,7 @@ function CreateUserModal({ groups, open, onClose, onSuccess }: {
   const mut = useMutation({
     mutationFn: (body: object) => portalApi.post("/approvals/submit", body),
     onSuccess: () => {
-      setFirstName(""); setLastName(""); setEmail(""); setGroupId(""); setRole("maker");
+      setFirstName(""); setLastName(""); setEmail(""); setUsername(""); setGroupId(""); setRole("maker");
       onSuccess(); onClose();
     },
     onError: (e: any) => setError(e?.detail ?? e?.message ?? "Submission failed"),
@@ -170,6 +171,10 @@ function CreateUserModal({ groups, open, onClose, onSuccess }: {
         <FormField label="Email">
           <input value={email} onChange={e => setEmail(e.target.value)} type="email" className={inputCls} placeholder="jane@mcb.mu" />
         </FormField>
+        <FormField label="Username">
+          <input value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s+/g, "_"))} className={inputCls} placeholder="jane_smith" />
+          <p className="text-[10px] text-muted mt-1">Used to log in to the portal</p>
+        </FormField>
         <FormField label="Group">
           <select value={groupId} onChange={e => setGroupId(e.target.value)} className={inputCls}>
             <option value="">Select group…</option>
@@ -187,12 +192,12 @@ function CreateUserModal({ groups, open, onClose, onSuccess }: {
             variant="primary"
             loading={mut.isPending}
             onClick={() => {
-              if (!firstName || !email || !groupId) return setError("First name, email and group are required.");
+              if (!firstName || !email || !username || !groupId) return setError("First name, email, username and group are required.");
               setError(null);
               mut.mutate({
                 action_category: "user.create",
                 resource_type: "institution_members",
-                payload: { first_name: firstName, last_name: lastName, email, custom_group_id: groupId, member_role: role },
+                payload: { first_name: firstName, last_name: lastName, email, username, custom_group_id: groupId, member_role: role },
               });
             }}
           >
@@ -208,12 +213,18 @@ function CreateUserModal({ groups, open, onClose, onSuccess }: {
 
 // ─── User detail drawer ───────────────────────────────────────
 
-function TempPasswordModal({ password, email, onClose }: { password: string; email: string; onClose: () => void }) {
+function TempPasswordModal({ password, email, username, onClose }: { password: string; email: string; username?: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   return (
     <Modal open onClose={onClose} title="Temporary password">
       <div className="space-y-4">
         <InlineAlert variant="warning">Share this with <strong>{email}</strong> — it won't be shown again.</InlineAlert>
+        {username && (
+          <div className="bg-ink/[0.03] border border-ink/[0.10] rounded-xl px-4 py-3">
+            <p className="text-[11px] text-muted mb-0.5">Username (for login)</p>
+            <code className="text-[13px] font-mono font-bold text-ink">{username}</code>
+          </div>
+        )}
         <div className="flex items-center gap-2 bg-ink/[0.03] border border-ink/10 rounded-xl px-4 py-3">
           <code className="flex-1 text-[15px] font-mono font-bold text-ink tracking-wider">{password}</code>
           <button
