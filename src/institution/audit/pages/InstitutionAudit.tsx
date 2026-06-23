@@ -376,133 +376,122 @@ export default function InstitutionAudit() {
 
       {activeTab === "log" && (
         <>
+          {/* Compliance banner */}
+          <div className="bg-ink/[0.025] border border-ink/[0.07] rounded-xl px-5 py-3 flex items-center gap-3 mb-6">
+            <ScrollText className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+            <p className="text-[11px] text-muted font-mono tracking-wide uppercase">
+              Append-only · WORM compliant · FSC Mauritius reportable · 7-year retention ·
+              No updates or deletes permitted
+            </p>
+          </div>
 
-      {/* Compliance banner */}
-      <div className="bg-ink/[0.025] border border-ink/[0.07] rounded-xl px-5 py-3 flex items-center gap-3 mb-6">
-        <ScrollText className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
-        <p className="text-[11px] text-muted font-mono tracking-wide uppercase">
-          Append-only · WORM compliant · FSC Mauritius reportable · 7-year retention ·
-          No updates or deletes permitted
-        </p>
-      </div>
+          {/* KPIs */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <KpiCard label="Total events"    value={totalEvents}   />
+            <KpiCard label="Successful"      value={successCount}  />
+            <KpiCard label="Rejected/failed" value={failCount} alert={failCount > 0} />
+            <KpiCard label="Showing"         value={filtered.length} />
+          </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label="Total events"    value={totalEvents}   />
-        <KpiCard label="Successful"      value={successCount}  />
-        <KpiCard label="Rejected/failed" value={failCount} alert={failCount > 0} />
-        <KpiCard label="Showing"         value={filtered.length} />
-      </div>
-
-      {/* Filters row */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
-          <FilterPills
-            options={OUTCOME_OPTIONS}
-            value={outcome}
-          onChange={(v) => setOutcome(v as OutcomeKey)}
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-wrap lg:ml-4">
-          <FilterPills
-            options={CATEGORY_OPTIONS}
-            value={category}
-          onChange={(v) => setCategory(v as CategoryKey)}
-          />
-        </div>
-        {/* Search */}
-        <div className="relative lg:ml-auto">
-          <Search className="w-3.5 h-3.5 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search event, resource, role…"
-            aria-label="Search audit events"
-            className="bg-white border border-ink/[0.12] rounded-xl pl-9 pr-9 py-2 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 w-full lg:w-60 transition-all"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              aria-label="Clear search"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Table */}
-      {isLoading ? (
-        <DataTable
-          headers={["Timestamp", "Event", "Category", "Resource", "Actor role", "Outcome", "Note"]}
-          caption="Audit events loading…"
-        >
-          {Array.from({ length: 8 }).map((_, i) => (
-            <SkeletonRow key={i} cols={7} />
-          ))}
-        </DataTable>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={ScrollText}
-          title="No events match"
-          description={search || outcome !== "all" || category !== "all"
-            ? "Try adjusting your filters or clearing the search"
-            : "Audit events will appear here as actions occur"
-          }
-        />
-      ) : (
-        <>
-          <DataTable
-            headers={["Timestamp", "Event", "Category", "Resource", "Actor role", "Outcome", "Note"]}
-            caption="Institution audit log"
-          >
-            {filtered.map((e) => {
-              const { date, time } = fmtDate(e.created_at);
-              return (
-                <DataRow key={e.id}>
-                  <Td>
-                    <div className="font-semibold text-[13px] whitespace-nowrap">{date}</div>
-                    <div className="text-[11px] text-muted font-mono">{time}</div>
-                  </Td>
-                  <Td>
-                    <code className="text-[11px] text-ink bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono">
-                      {e.event_label}
-                    </code>
-                  </Td>
-                  <Td className="text-muted text-[12px]">
-                    {e.action_category ?? "—"}
-                  </Td>
-                  <Td className="text-ficium font-medium">
-                    {e.resource_type ?? "—"}
-                  </Td>
-                  <Td className="text-muted text-[12px]">
-                    {e.actor_role ?? "system"}
-                  </Td>
-                  <Td>
-                    <StatusBadge status={e.outcome} size="xs" />
-                  </Td>
-                  <Td className="text-muted max-w-[200px]">
-                    <span className="block truncate text-[12px]" title={e.outcome_note ?? ""}>
-                      {e.outcome_note ?? "—"}
-                    </span>
-                  </Td>
-                </DataRow>
-              );
-            })}
-          </DataTable>
-
-          {events.length >= limit && (
-            <div className="flex justify-center mt-5">
-              <Btn
-                variant="secondary"
-                size="sm"
-                onClick={() => setLimit((l) => l + 50)}
-              >
-                Load more (showing {limit})
-              </Btn>
+          {/* Filters row */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Filter className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+              <FilterPills
+                options={OUTCOME_OPTIONS}
+                value={outcome}
+                onChange={(v) => setOutcome(v as OutcomeKey)}
+              />
             </div>
+            <div className="flex items-center gap-2 flex-wrap lg:ml-4">
+              <FilterPills
+                options={CATEGORY_OPTIONS}
+                value={category}
+                onChange={(v) => setCategory(v as CategoryKey)}
+              />
+            </div>
+            {/* Search */}
+            <div className="relative lg:ml-auto">
+              <Search className="w-3.5 h-3.5 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" aria-hidden />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search event, resource, role…"
+                aria-label="Search audit events"
+                className="bg-white border border-ink/[0.12] rounded-xl pl-9 pr-9 py-2 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 w-full lg:w-60 transition-all"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Table */}
+          {isLoading ? (
+            <DataTable
+              headers={["Timestamp", "Event", "Category", "Resource", "Actor role", "Outcome", "Note"]}
+              caption="Audit events loading…"
+            >
+              {Array.from({ length: 8 }).map((_, i) => (
+                <SkeletonRow key={i} cols={7} />
+              ))}
+            </DataTable>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={ScrollText}
+              title="No events match"
+              description={search || outcome !== "all" || category !== "all"
+                ? "Try adjusting your filters or clearing the search"
+                : "Audit events will appear here as actions occur"
+              }
+            />
+          ) : (
+            <>
+              <DataTable
+                headers={["Timestamp", "Event", "Category", "Resource", "Actor role", "Outcome", "Note"]}
+                caption="Institution audit log"
+              >
+                {filtered.map((e) => {
+                  const { date, time } = fmtDate(e.created_at);
+                  return (
+                    <DataRow key={e.id}>
+                      <Td>
+                        <div className="font-semibold text-[13px] whitespace-nowrap">{date}</div>
+                        <div className="text-[11px] text-muted font-mono">{time}</div>
+                      </Td>
+                      <Td>
+                        <code className="text-[11px] text-ink bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono">
+                          {e.event_label}
+                        </code>
+                      </Td>
+                      <Td className="text-muted text-[12px]">{e.action_category ?? "—"}</Td>
+                      <Td className="text-ficium font-medium">{e.resource_type ?? "—"}</Td>
+                      <Td className="text-muted text-[12px]">{e.actor_role ?? "system"}</Td>
+                      <Td><StatusBadge status={e.outcome} size="xs" /></Td>
+                      <Td className="text-muted max-w-[200px]">
+                        <span className="block truncate text-[12px]" title={e.outcome_note ?? ""}>
+                          {e.outcome_note ?? "—"}
+                        </span>
+                      </Td>
+                    </DataRow>
+                  );
+                })}
+              </DataTable>
+
+              {events.length >= limit && (
+                <div className="flex justify-center mt-5">
+                  <Btn variant="secondary" size="sm" onClick={() => setLimit((l) => l + 50)}>
+                    Load more (showing {limit})
+                  </Btn>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
