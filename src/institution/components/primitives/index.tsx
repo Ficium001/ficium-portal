@@ -237,10 +237,12 @@ export function DataRow({
   children,
   onClick,
   selected = false,
+  className = "",
 }: {
   children: ReactNode;
   onClick?: () => void;
   selected?: boolean;
+  className?: string;
 }) {
   return (
     <tr
@@ -248,6 +250,7 @@ export function DataRow({
         "border-b border-ink/[0.04] transition-colors",
         onClick ? "cursor-pointer hover:bg-cream/70" : "hover:bg-cream/40",
         selected ? "bg-ficium/[0.04]" : "",
+        className,
       ].join(" ")}
       onClick={onClick}
       role={onClick ? "button" : undefined}

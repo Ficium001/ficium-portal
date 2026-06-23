@@ -237,10 +237,9 @@ type MemberExt = InstitutionUser & {
 };
 
 function UserDrawer({
-  member, groups, groupMap, isAdmin, onClose, onRefresh,
+  member, groupMap, isAdmin, onClose, onRefresh,
 }: {
   member: MemberExt;
-  groups: InstitutionGroup[];
   groupMap: Map<string, InstitutionGroup>;
   isAdmin: boolean;
   onClose: () => void;
@@ -653,7 +652,6 @@ export default function InstitutionUsers() {
       {drawerMember && (
         <UserDrawer
           member={drawerMember}
-          groups={groups}
           groupMap={groupMap}
           isAdmin={isAdmin}
           onClose={() => setDrawerMember(null)}
