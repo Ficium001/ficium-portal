@@ -247,6 +247,8 @@ function UserDrawer({
 }) {
   const [editName,  setEditName]  = useState(false);
   const [fullName,  setFullName]  = useState(member.full_name ?? "");
+  const [editEmail, setEditEmail] = useState(false);
+  const [email,     setEmail]     = useState(member.email ?? "");
   const [editRole,  setEditRole]  = useState(false);
   const [memberRole, setMemberRole] = useState(member.member_role ?? "maker");
   const [error,     setError]     = useState<string | null>(null);
@@ -330,6 +332,27 @@ function UserDrawer({
               </div>
             ) : (
               <p className="text-[13px] text-ink font-medium">{member.full_name || "—"}</p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[12px] font-semibold text-muted uppercase tracking-wider">Email</span>
+              {isAdmin && !member.is_primary_admin && (
+                <button onClick={() => setEditEmail(!editEmail)} className="text-[11px] text-ficium font-semibold flex items-center gap-1">
+                  <Edit2 className="w-3 h-3" /> Edit
+                </button>
+              )}
+            </div>
+            {editEmail ? (
+              <div className="flex gap-2">
+                <input value={email} onChange={e => setEmail(e.target.value)} type="email" className={`${inputCls} flex-1`} />
+                <Btn size="sm" variant="primary" loading={updateMut.isPending} onClick={() => updateMut.mutate({ email })}>Save</Btn>
+                <Btn size="sm" variant="ghost" onClick={() => { setEditEmail(false); setEmail(member.email ?? ""); }}>Cancel</Btn>
+              </div>
+            ) : (
+              <p className="text-[13px] text-ink font-medium">{member.email || "—"}</p>
             )}
           </div>
 
