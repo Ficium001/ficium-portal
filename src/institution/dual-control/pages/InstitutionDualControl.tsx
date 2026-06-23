@@ -16,14 +16,15 @@
 import { useState, useCallback } from "react";
 import {
   Clock, CheckCircle, XCircle, AlertTriangle,
-  ChevronDown, ChevronUp, FileText, ShieldCheck, GitMerge,
+  ChevronDown, ChevronUp, FileText, ShieldCheck, GitMerge, Copy, Key,
 } from "lucide-react";
 import { usePendingActions, useApproveAction, useRejectAction } from "../../hooks/useInstitution";
+import { portalApi } from "../../../shared/lib/portalApi";
 import { formatDistanceToNow } from "../../lib/utils";
 import type { PendingAction } from "../../types/institution";
 import {
   SectionHeader, InlineAlert, EmptyState,
-  Btn, inputCls,
+  Btn, inputCls, Modal,
 } from "../../components/primitives";
 
 // ─── Categories that belong on THIS page (not bid approvals) ─────────────────
@@ -245,6 +246,50 @@ function ActionCard({
   );
 }
 
+// ─── Temp password modal ──────────────────────────────────────────────────────
+
+function TempPasswordModal({
+  open, onClose, email, fullName, tempPassword,
+}: {
+  open: boolean; onClose: () => void;
+  email: string; fullName: string; tempPassword: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(tempPassword);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Modal open={open} onClose={onClose} title="User provisioned">
+      <div className="space-y-4">
+        <InlineAlert variant="success">
+          <strong>{fullName || email}</strong> has been created and can now log in to the portal.
+        </InlineAlert>
+        <div>
+          <p className="text-[12px] text-muted mb-1">Temporary password — share this with the user</p>
+          <div className="flex items-center gap-2 bg-ink/[0.03] border border-ink/[0.10] rounded-xl px-4 py-3">
+            <Key className="w-4 h-4 text-ficium flex-shrink-0" aria-hidden />
+            <code className="flex-1 text-[14px] font-mono font-bold text-ink tracking-wider">{tempPassword}</code>
+            <button onClick={copy} className="text-ficium hover:text-ficium-deep transition-colors" aria-label="Copy password">
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          {copied && <p className="text-[11px] text-good mt-1">Copied to clipboard</p>}
+        </div>
+        <InlineAlert variant="warning">
+          The user must change this password on first login. This password will not be shown again.
+        </InlineAlert>
+        <p className="text-[12px] text-muted">
+          Login URL: <strong>https://ficium-portal.vercel.app</strong><br />
+          Email: <strong>{email}</strong>
+        </p>
+        <Btn variant="primary" onClick={onClose}>Done</Btn>
+      </div>
+    </Modal>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function InstitutionDualControl() {
@@ -252,7 +297,10 @@ export default function InstitutionDualControl() {
   const approveAction = useApproveAction();
   const rejectAction  = useRejectAction();
 
-  // Only internal actions — no bid approvals here
+  const [provisionResult, setProvisionResult] = useState<{
+    email: string; fullName: string; tempPassword: string;
+  } | null>(null);
+
   const pending = actions.filter(
     a => a.action_status === "pending" && DUAL_CONTROL_CATEGORIES.has(a.action_category)
   );
@@ -261,9 +309,33 @@ export default function InstitutionDualControl() {
   ).length;
 
   const handleApprove = useCallback(
-    (actionId: string) => approveAction.mutate({ actionId }),
-    [approveAction]
+    (actionId: string) => {
+      const action = actions.find(a => a.id === actionId);
+      approveAction.mutate({ actionId }, {
+        onSuccess: async () => {
+          if (action?.action_category === "user.create") {
+            try {
+              const result = await portalApi.post<{
+                ok: boolean; created: boolean;
+                email: string; full_name: string; temp_password: string;
+              }>(`/approvals/${actionId}/provision-user`, {});
+              if (result.created) {
+                setProvisionResult({
+                  email: result.email,
+                  fullName: result.full_name,
+                  tempPassword: result.temp_password,
+                });
+              }
+            } catch (err) {
+              console.error("Provision failed:", err);
+            }
+          }
+        },
+      });
+    },
+    [approveAction, actions]
   );
+
   const handleReject = useCallback(
     (actionId: string, note: string) => rejectAction.mutate({ actionId, note }),
     [rejectAction]
@@ -330,6 +402,16 @@ export default function InstitutionDualControl() {
           />
         ))}
       </div>
+
+      {provisionResult && (
+        <TempPasswordModal
+          open
+          onClose={() => setProvisionResult(null)}
+          email={provisionResult.email}
+          fullName={provisionResult.fullName}
+          tempPassword={provisionResult.tempPassword}
+        />
+      )}
     </main>
   );
 }
