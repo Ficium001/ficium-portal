@@ -29,13 +29,15 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
-import { ScrollText, Download, Search, X, Filter } from "lucide-react";
+import { ScrollText, Download, Search, X, Filter, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuditEvents } from "../../hooks/useInstitution";
+import { portalApi } from "../../../shared/lib/portalApi";
 import type { AuditEvent } from "../../types/institution";
 import {
   SectionHeader, DataTable, DataRow, Td, StatusBadge,
   KpiCard, FilterPills, EmptyState,
-  SkeletonRow, Btn,
+  SkeletonRow, Btn, inputCls,
 } from "../../components/primitives";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -101,7 +103,214 @@ function exportCSV(events: AuditEvent[], filename: string) {
 // Page — thin orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── User report tab ──────────────────────────────────────────
+
+function UserAuditReport() {
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const [tab, setTab] = useState<"logins" | "actions" | "governance">("logins");
+
+  const { data: members = [] } = useQuery<any[]>({
+    queryKey: ["institution", "members"],
+    queryFn: () => portalApi.get("/members"),
+    staleTime: 30_000,
+  });
+
+  const { data: report, isLoading: reportLoading } = useQuery<any>({
+    queryKey: ["institution", "member-audit", selectedMember],
+    queryFn: () => portalApi.get(`/members/${selectedMember}/audit?limit=100`),
+    enabled: !!selectedMember,
+    staleTime: 30_000,
+  });
+
+  const OUTCOME_ICON: Record<string, string> = { success: "✓", failed: "✗", rejected: "⊘", logged: "○" };
+
+  return (
+    <div className="space-y-6">
+      {/* Member selector */}
+      <div className="bg-white border border-line rounded-xl p-5">
+        <label className="text-[12px] font-semibold text-muted uppercase tracking-wider block mb-2">Select team member</label>
+        <select
+          value={selectedMember ?? ""}
+          onChange={e => { setSelectedMember(e.target.value || null); setTab("logins"); }}
+          className={`${inputCls} max-w-sm`}
+        >
+          <option value="">Choose a member…</option>
+          {members.map((m: any) => (
+            <option key={m.id} value={m.id}>{m.full_name || m.email} — {m.email}</option>
+          ))}
+        </select>
+      </div>
+
+      {!selectedMember && (
+        <div className="bg-white border border-line rounded-xl p-12 text-center">
+          <ScrollText className="w-8 h-8 text-muted/50 mx-auto mb-2" />
+          <p className="text-[13px] text-muted">Select a team member to view their activity report</p>
+        </div>
+      )}
+
+      {selectedMember && reportLoading && (
+        <div className="bg-white border border-line rounded-xl p-8 text-center">
+          <p className="text-[13px] text-muted animate-pulse">Loading report…</p>
+        </div>
+      )}
+
+      {selectedMember && report && (
+        <>
+          {/* Member summary */}
+          <div className="bg-white border border-line rounded-xl p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-ficium/10 flex items-center justify-center text-[14px] font-bold text-ficium">
+              {(report.member.full_name ?? report.member.email ?? "?").split(" ").map((n: string) => n[0]).join("").slice(0,2).toUpperCase()}
+            </div>
+            <div className="flex-1">
+              <div className="font-display font-bold text-[15px] text-ink">{report.member.full_name || report.member.email}</div>
+              <div className="text-[12px] text-muted">{report.member.email}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-[11px] text-muted uppercase tracking-wider">Logins</div>
+              <div className="text-[22px] font-display font-bold text-ink">{report.logins.length}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-[11px] text-muted uppercase tracking-wider">Actions</div>
+              <div className="text-[22px] font-display font-bold text-ink">{report.actions.length}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-[11px] text-muted uppercase tracking-wider">Approvals</div>
+              <div className="text-[22px] font-display font-bold text-ink">{report.governance.length}</div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1 border-b border-line">
+            {(["logins", "actions", "governance"] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-4 py-2.5 text-[12px] font-semibold capitalize border-b-2 -mb-px transition-colors ${
+                  tab === t ? "border-ficium text-ficium" : "border-transparent text-muted hover:text-ink"
+                }`}
+              >
+                {t === "logins" ? "Login history" : t === "actions" ? "Portal actions" : "Approvals"}{" "}
+                <span className="ml-1 text-[10px] bg-ink/8 text-muted px-1.5 py-0.5 rounded-full">
+                  {t === "logins" ? report.logins.length : t === "actions" ? report.actions.length : report.governance.length}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Login history */}
+          {tab === "logins" && (
+            <div className="bg-white border border-line rounded-xl overflow-hidden">
+              {report.logins.length === 0 ? (
+                <p className="text-[13px] text-muted text-center py-10">No login events recorded.</p>
+              ) : (
+                <DataTable headers={["Date & time", "Outcome", "IP address", "Location", "Device"]} caption="Login history">
+                  {report.logins.map((l: any) => {
+                    const { date, time } = fmtDate(l.occurred_at);
+                    return (
+                      <DataRow key={l.id}>
+                        <Td>
+                          <span className="text-[12px] font-mono text-ink">{date}</span>
+                          <span className="text-[11px] text-muted ml-2">{time}</span>
+                        </Td>
+                        <Td>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                            l.outcome === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-red-50 text-red-600 border border-red-200"
+                          }`}>
+                            {OUTCOME_ICON[l.outcome] ?? "○"} {l.outcome}
+                          </span>
+                          {l.failure_reason && <span className="text-[10px] text-muted ml-2">{l.failure_reason}</span>}
+                        </Td>
+                        <Td><code className="text-[11px] text-muted font-mono">{l.ip ?? "—"}</code></Td>
+                        <Td className="text-[12px] text-muted">{[l.city, l.country].filter(Boolean).join(", ") || "—"}</Td>
+                        <Td className="text-[11px] text-muted max-w-[200px] truncate">{l.user_agent?.split(" ")[0] ?? "—"}</Td>
+                      </DataRow>
+                    );
+                  })}
+                </DataTable>
+              )}
+            </div>
+          )}
+
+          {/* Portal actions */}
+          {tab === "actions" && (
+            <div className="bg-white border border-line rounded-xl overflow-hidden">
+              {report.actions.length === 0 ? (
+                <p className="text-[13px] text-muted text-center py-10">No portal actions recorded.</p>
+              ) : (
+                <DataTable headers={["Date & time", "Action", "Resource", "Outcome", "IP"]} caption="Portal actions">
+                  {report.actions.map((a: any) => {
+                    const { date, time } = fmtDate(a.occurred_at);
+                    return (
+                      <DataRow key={a.id}>
+                        <Td>
+                          <span className="text-[12px] font-mono text-ink">{date}</span>
+                          <span className="text-[11px] text-muted ml-2">{time}</span>
+                        </Td>
+                        <Td className="text-[12px] font-medium text-ink">{a.action?.replace(/_/g, " ") ?? "—"}</Td>
+                        <Td>
+                          <span className="text-[11px] text-muted">{a.resource_type ?? "—"}</span>
+                          {a.resource_label && <span className="text-[11px] text-ink ml-1 font-medium">{a.resource_label}</span>}
+                        </Td>
+                        <Td>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                            a.outcome === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-red-50 text-red-600 border border-red-200"
+                          }`}>
+                            {a.outcome}
+                          </span>
+                        </Td>
+                        <Td><code className="text-[11px] text-muted font-mono">{a.actor_ip ?? "—"}</code></Td>
+                      </DataRow>
+                    );
+                  })}
+                </DataTable>
+              )}
+            </div>
+          )}
+
+          {/* Governance */}
+          {tab === "governance" && (
+            <div className="bg-white border border-line rounded-xl overflow-hidden">
+              {report.governance.length === 0 ? (
+                <p className="text-[13px] text-muted text-center py-10">No approval actions recorded.</p>
+              ) : (
+                <DataTable headers={["Date", "Action", "Resource", "Status", "Their role"]} caption="Approval actions">
+                  {report.governance.map((g: any) => {
+                    const { date } = fmtDate(g.created_at);
+                    const isMaker = g.maker_role != null;
+                    return (
+                      <DataRow key={g.id}>
+                        <Td><span className="text-[12px] font-mono text-ink">{date}</span></Td>
+                        <Td className="text-[12px] font-medium text-ink">{g.category?.replace(/_/g, " ") ?? "—"}</Td>
+                        <Td className="text-[11px] text-muted">{g.resource_type ?? "—"}{g.resource_label ? ` · ${g.resource_label}` : ""}</Td>
+                        <Td>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                            g.status === "approved" ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : g.status === "rejected" ? "bg-red-50 text-red-600 border border-red-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
+                          }`}>
+                            {g.status}
+                          </span>
+                        </Td>
+                        <Td>
+                          <span className="text-[11px] text-muted">{isMaker ? "Maker" : "Checker"}</span>
+                        </Td>
+                      </DataRow>
+                    );
+                  })}
+                </DataTable>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function InstitutionAudit() {
+  const [activeTab, setActiveTab] = useState<"log" | "users">("log");
   const [limit,    setLimit]    = useState(50);
   const [outcome,  setOutcome]  = useState<OutcomeKey>("all");
   const [category, setCategory] = useState<CategoryKey>("all");
@@ -136,19 +345,37 @@ export default function InstitutionAudit() {
   return (
     <main className="p-6 lg:p-8 max-w-[1440px] mx-auto">
       <SectionHeader
-        title="Audit log"
-        subtitle={`${filtered.length} event${filtered.length !== 1 ? "s" : ""} · append-only · WORM compliant`}
+        title="Audit"
+        subtitle="Immutable activity log · append-only · WORM compliant"
         actions={
-          <Btn
-            variant="secondary"
-            size="sm"
-            icon={Download}
-            onClick={handleExport}
-          >
-            Export CSV
-          </Btn>
+          activeTab === "log" ? (
+            <Btn variant="secondary" size="sm" icon={Download} onClick={handleExport}>
+              Export CSV
+            </Btn>
+          ) : undefined
         }
       />
+
+      {/* Page tabs */}
+      <div className="flex gap-1 border-b border-line mb-6">
+        {([["log", "Audit log", ScrollText], ["users", "User reports", Users]] as const).map(([key, label, Icon]) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key as "log" | "users")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors ${
+              activeTab === key ? "border-ficium text-ficium" : "border-transparent text-muted hover:text-ink"
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "users" && <UserAuditReport />}
+
+      {activeTab === "log" && (
+        <>
 
       {/* Compliance banner */}
       <div className="bg-ink/[0.025] border border-ink/[0.07] rounded-xl px-5 py-3 flex items-center gap-3 mb-6">
