@@ -136,7 +136,7 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
 const NAV_SECTIONS = [
   { label: 'Home',        keys: ['inst:dashboard', 'admin:dashboard'] },
   { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
-  { label: 'Manage',      keys: ['inst:team', 'inst:products', 'inst:webhooks', 'inst:settings'] },
+  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:webhooks', 'inst:settings'] },
   { label: 'Operations',  keys: ['inst:audit'] },
   { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
   { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
@@ -272,7 +272,7 @@ function Drawer({
                 </p>
                 {section.modules.map(mod => {
                   const Icon  = resolveIcon(mod.iconKey)
-                  const badge = (mod.key === 'inst:bid_approval' || mod.key === 'admin:dual_control')
+                  const badge = (mod.key === 'inst:bid_approval' || mod.key === 'inst:dual_control' || mod.key === 'admin:dual_control')
                     ? pendingCount : 0
                   const delay = 40 + itemIndex++ * 30
                   return (

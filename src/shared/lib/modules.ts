@@ -71,6 +71,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'A',
   },
   {
+    key:         'inst:dual_control',
+    label:       'Dual Control',
+    description: 'Four-eyes approval queue for internal actions (groups, users, settings)',
+    category:    'institution',
+    path:        '/approvals',
+    iconKey:     'GitMerge',
+    shortcut:    'Q',
+  },
+  {
     key:         'inst:products',
     label:       'Products',
     description: 'Manage product catalogue and rate configs',
