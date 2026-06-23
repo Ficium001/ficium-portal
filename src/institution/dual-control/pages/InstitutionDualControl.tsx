@@ -331,7 +331,7 @@ export default function InstitutionDualControl() {
             try {
               const result = await portalApi.post<{
                 ok: boolean; created: boolean;
-                email: string; full_name: string; temp_password: string;
+                email: string; full_name: string; temp_password: string; username?: string;
               }>(`/approvals/${actionId}/provision-user`, {});
               if (result.created) {
                 setProvisionResult({
