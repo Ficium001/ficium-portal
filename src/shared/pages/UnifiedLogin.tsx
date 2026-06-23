@@ -148,7 +148,7 @@ export default function UnifiedLogin() {
   const location  = useLocation()
   const from      = (location.state as { from?: Location })?.from?.pathname
 
-  const [email,        setEmail]       = useState('')
+  const [username,     setUsername]    = useState('')
   const [password,     setPassword]    = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]     = useState(false)
@@ -184,17 +184,17 @@ export default function UnifiedLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.trim() || !password) return
+    if (!username.trim() || !password) return
     setError(null)
     setLoading(true)
 
     const { tokens, error: authErr } = await ficiumSignIn(
-      email.trim().toLowerCase(),
+      username.trim().toLowerCase(),
       password,
     )
 
     if (authErr || !tokens) {
-      setError(authErr ?? 'Incorrect email or password.')
+      setError(authErr ?? 'Incorrect username or password.')
       setLoading(false)
       return
     }
@@ -244,15 +244,15 @@ export default function UnifiedLogin() {
 
           <form onSubmit={handleSubmit} className='space-y-4' noValidate>
             <div>
-              <label htmlFor='email' className='block text-[13px] font-semibold text-ink mb-1.5'>
-                Email address
+              <label htmlFor='username' className='block text-[13px] font-semibold text-ink mb-1.5'>
+                Username
               </label>
               <input
-                id='email'
-                type='email'
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder='you@yourinstitution.mu'
+                id='username'
+                type='text'
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder='jane_smith'
                 autoComplete='username'
                 required
                 className={inputCls()}
