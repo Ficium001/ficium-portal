@@ -267,20 +267,26 @@ function UserDrawer({
   const isActive = member.active !== false;
 
   const updateMut = useMutation({
-    mutationFn: (body: object) => portalApi.patch(`/members/${member.id}`, body),
-    onSuccess: () => { setEditName(false); setEditRole(false); setFlash("Saved."); onRefresh(); },
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Update failed"),
+    mutationFn: (body: object) => portalApi.post("/approvals/submit", body),
+    onSuccess: () => { setEditName(false); setEditEmail(false); setEditRole(false); setFlash("Change submitted for approval."); onRefresh(); },
+    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Submission failed"),
   });
 
   const deactivateMut = useMutation({
-    mutationFn: () => portalApi.post(`/members/${member.id}/deactivate`, {}),
-    onSuccess: () => { setConfirming(null); setFlash("User deactivated."); onRefresh(); },
+    mutationFn: () => portalApi.post("/approvals/submit", {
+      action_category: "user.deactivate", resource_type: "institution_members", resource_id: member.id,
+      payload: { member_id: member.id, email: member.email },
+    }),
+    onSuccess: () => { setConfirming(null); setFlash("Deactivation submitted for approval."); onRefresh(); },
     onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed"),
   });
 
   const reactivateMut = useMutation({
-    mutationFn: () => portalApi.post(`/members/${member.id}/reactivate`, {}),
-    onSuccess: () => { setConfirming(null); setFlash("User reactivated."); onRefresh(); },
+    mutationFn: () => portalApi.post("/approvals/submit", {
+      action_category: "user.reactivate", resource_type: "institution_members", resource_id: member.id,
+      payload: { member_id: member.id, email: member.email },
+    }),
+    onSuccess: () => { setConfirming(null); setFlash("Reactivation submitted for approval."); onRefresh(); },
     onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed"),
   });
 
@@ -333,10 +339,16 @@ function UserDrawer({
               )}
             </div>
             {editName ? (
-              <div className="flex gap-2">
-                <input value={fullName} onChange={e => setFullName(e.target.value)} className={`${inputCls} flex-1`} />
-                <Btn size="sm" variant="primary" loading={updateMut.isPending} onClick={() => updateMut.mutate({ full_name: fullName })}>Save</Btn>
-                <Btn size="sm" variant="ghost" onClick={() => setEditName(false)}>Cancel</Btn>
+              <div className="space-y-2">
+                <input value={fullName} onChange={e => setFullName(e.target.value)} className={`${inputCls} w-full`} />
+                <div className="flex gap-2">
+                  <Btn size="sm" variant="primary" loading={updateMut.isPending} onClick={() => updateMut.mutate({
+                    action_category: "user.update", resource_type: "institution_members", resource_id: member.id,
+                    payload: { member_id: member.id, field: "full_name", value: fullName },
+                  })}>Submit for approval</Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => setEditName(false)}>Cancel</Btn>
+                </div>
+                <p className="text-[10px] text-muted">Requires checker approval.</p>
               </div>
             ) : (
               <p className="text-[13px] text-ink font-medium">{member.full_name || "—"}</p>
@@ -354,10 +366,16 @@ function UserDrawer({
               )}
             </div>
             {editEmail ? (
-              <div className="flex gap-2">
-                <input value={email} onChange={e => setEmail(e.target.value)} type="email" className={`${inputCls} flex-1`} />
-                <Btn size="sm" variant="primary" loading={updateMut.isPending} onClick={() => updateMut.mutate({ email })}>Save</Btn>
-                <Btn size="sm" variant="ghost" onClick={() => { setEditEmail(false); setEmail(member.email ?? ""); }}>Cancel</Btn>
+              <div className="space-y-2">
+                <input value={email} onChange={e => setEmail(e.target.value)} type="email" className={`${inputCls} w-full`} />
+                <div className="flex gap-2">
+                  <Btn size="sm" variant="primary" loading={updateMut.isPending} onClick={() => updateMut.mutate({
+                    action_category: "user.update", resource_type: "institution_members", resource_id: member.id,
+                    payload: { member_id: member.id, field: "email", value: email },
+                  })}>Submit for approval</Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => { setEditEmail(false); setEmail(member.email ?? ""); }}>Cancel</Btn>
+                </div>
+                <p className="text-[10px] text-muted">Email changes affect login — requires checker approval.</p>
               </div>
             ) : (
               <p className="text-[13px] text-ink font-medium">{member.email || "—"}</p>
@@ -375,12 +393,18 @@ function UserDrawer({
               )}
             </div>
             {editRole ? (
-              <div className="flex gap-2">
-                <select value={memberRole} onChange={e => setMemberRole(e.target.value)} className={`${inputCls} flex-1`}>
+              <div className="space-y-2">
+                <select value={memberRole} onChange={e => setMemberRole(e.target.value)} className={`${inputCls} w-full`}>
                   {["maker","checker","analyst","viewer"].map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
-                <Btn size="sm" variant="primary" loading={updateMut.isPending} onClick={() => updateMut.mutate({ member_role: memberRole })}>Save</Btn>
-                <Btn size="sm" variant="ghost" onClick={() => setEditRole(false)}>Cancel</Btn>
+                <div className="flex gap-2">
+                  <Btn size="sm" variant="primary" loading={updateMut.isPending} onClick={() => updateMut.mutate({
+                    action_category: "user.update", resource_type: "institution_members", resource_id: member.id,
+                    payload: { member_id: member.id, field: "member_role", value: memberRole },
+                  })}>Submit for approval</Btn>
+                  <Btn size="sm" variant="ghost" onClick={() => setEditRole(false)}>Cancel</Btn>
+                </div>
+                <p className="text-[10px] text-muted">Requires checker approval.</p>
               </div>
             ) : (
               <RoleBadge role={member.member_role ?? member.role ?? "viewer"} />
@@ -453,17 +477,18 @@ function UserDrawer({
               {confirming === "deactivate" ? (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
                   <p className="text-[12px] text-red-700 font-semibold">Deactivate {member.full_name ?? member.email}?</p>
-                  <p className="text-[11px] text-red-600">They will lose portal access immediately.</p>
+                  <p className="text-[11px] text-red-600">This will be submitted for checker approval before taking effect.</p>
                   <div className="flex gap-2">
-                    <Btn variant="danger" size="sm" loading={deactivateMut.isPending} onClick={() => deactivateMut.mutate()}>Confirm</Btn>
+                    <Btn variant="danger" size="sm" loading={deactivateMut.isPending} onClick={() => deactivateMut.mutate()}>Submit for approval</Btn>
                     <Btn variant="ghost" size="sm" onClick={() => setConfirming(null)}>Cancel</Btn>
                   </div>
                 </div>
               ) : confirming === "reactivate" ? (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-3">
                   <p className="text-[12px] text-emerald-700 font-semibold">Reactivate {member.full_name ?? member.email}?</p>
+                  <p className="text-[11px] text-emerald-600">This will be submitted for checker approval before taking effect.</p>
                   <div className="flex gap-2">
-                    <Btn variant="primary" size="sm" loading={reactivateMut.isPending} onClick={() => reactivateMut.mutate()}>Confirm</Btn>
+                    <Btn variant="primary" size="sm" loading={reactivateMut.isPending} onClick={() => reactivateMut.mutate()}>Submit for approval</Btn>
                     <Btn variant="ghost" size="sm" onClick={() => setConfirming(null)}>Cancel</Btn>
                   </div>
                 </div>

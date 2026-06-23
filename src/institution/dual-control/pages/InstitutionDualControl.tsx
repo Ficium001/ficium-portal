@@ -35,7 +35,10 @@ const DUAL_CONTROL_CATEGORIES = new Set([
   "group.update_modules",
   "group.delete",
   "user.create",
+  "user.update",
   "user.assign_group",
+  "user.deactivate",
+  "user.reactivate",
   "user.role_change",
   "user.remove",
   "user.invite",
@@ -55,7 +58,10 @@ const ACTION_META: Record<string, { icon: string; label: string; risk: "low" | "
   "group.update_modules":       { icon: "◈",  label: "Group modules updated",  risk: "medium" },
   "group.delete":               { icon: "◈",  label: "Group deleted",          risk: "high"   },
   "user.create":                { icon: "👤", label: "User created",           risk: "medium" },
+  "user.update":                { icon: "✏️", label: "User updated",           risk: "low"    },
   "user.assign_group":          { icon: "🔄", label: "Group assignment",       risk: "medium" },
+  "user.deactivate":            { icon: "🔒", label: "User deactivated",       risk: "high"   },
+  "user.reactivate":            { icon: "🔓", label: "User reactivated",       risk: "medium" },
   "user.role_change":           { icon: "🔄", label: "Role changed",           risk: "high"   },
   "user.remove":                { icon: "✕",  label: "User removed",           risk: "high"   },
   "user.invite":                { icon: "👤", label: "User invited",           risk: "medium" },
@@ -330,6 +336,24 @@ export default function InstitutionDualControl() {
               }
             } catch (err) {
               console.error("Provision failed:", err);
+            }
+          } else if (action?.action_category === "user.update") {
+            try {
+              await portalApi.post(`/approvals/${actionId}/execute-update`, {});
+            } catch (err) {
+              console.error("Execute update failed:", err);
+            }
+          } else if (action?.action_category === "user.deactivate") {
+            try {
+              await portalApi.post(`/members/${(action.payload as any)?.member_id}/deactivate`, {});
+            } catch (err) {
+              console.error("Deactivate failed:", err);
+            }
+          } else if (action?.action_category === "user.reactivate") {
+            try {
+              await portalApi.post(`/members/${(action.payload as any)?.member_id}/reactivate`, {});
+            } catch (err) {
+              console.error("Reactivate failed:", err);
             }
           }
         },
