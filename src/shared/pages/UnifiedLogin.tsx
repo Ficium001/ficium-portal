@@ -61,10 +61,6 @@ function Blade({ className, both = true }: { className: string; both?: boolean }
 
 type UserType = 'admin' | 'institution' | 'unknown'
 
-interface MeResponse {
-  user_type: 'admin' | 'institution'
-}
-
 async function detectUserType(): Promise<UserType> {
   // Trust the JWT payload entirely — zero network call on redirect.
   // The token is RS256-signed by ficium-auth; role is set at login time
