@@ -59,7 +59,7 @@ export function useAdminUsers(statusFilter?: string) {
       const qs = (statusFilter && statusFilter !== 'all') ? `?status=${encodeURIComponent(statusFilter)}` : ''
       return await portalApi.get<AdminUser[]>(`/admin/users${qs}`)
     },
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
@@ -78,7 +78,7 @@ export function useAdminSessions(activeOnly = false) {
       return await portalApi.get<AdminSession[]>(`/admin/sessions?active_only=${activeOnly}`)
     },
     refetchInterval: 30 * 1000,
-    staleTime: 15 * 1000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
@@ -89,7 +89,7 @@ export function useDualControlActions(statusFilter = 'pending') {
       return await portalApi.get<DualControlAction[]>(`/admin/dual-control?status=${encodeURIComponent(statusFilter)}`)
     },
     refetchInterval: 30 * 1000,
-    staleTime: 15 * 1000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
@@ -102,7 +102,7 @@ export function useAdminAudit(limit = 100, outcomeFilter?: string, categoryFilte
       if (categoryFilter && categoryFilter !== 'all') params.set('category', categoryFilter)
       return await portalApi.get<AdminAuditEntry[]>(`/admin/audit?${params.toString()}`)
     },
-    staleTime: 15 * 1000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
@@ -136,7 +136,7 @@ export function useSystemMetrics() {
       ] as SystemMetric[]
     },
     refetchInterval: 60 * 1000,
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
@@ -370,7 +370,7 @@ export function useAdminGroups() {
     queryFn:  async () => {
       return await portalApi.get('/admin/user-groups')
     },
-    staleTime: 30_000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
@@ -393,7 +393,7 @@ export function useMyGroup() {
   return useQuery<MyGroup | null>({
     queryKey: ['admin', 'my-group'],
     queryFn:  () => portalApi.get<MyGroup | null>('/members/my-group'),
-    staleTime: 30_000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
@@ -439,7 +439,7 @@ export function useInstitutions() {
     queryFn:  async () => {
       return await portalApi.get<Institution[]>('/admin/institutions')
     },
-    staleTime: 30_000,
+    staleTime: 2 * 60 * 1000,
   })
 }
 
