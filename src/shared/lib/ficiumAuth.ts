@@ -25,7 +25,7 @@ export interface AuthError {
 export async function signIn(
   username: string,
   password: string,
-): Promise<{ tokens: AuthTokens; error: null } | { tokens: null; error: string }> {
+): Promise<{ tokens: AuthTokens; must_change_password: boolean; error: null } | { tokens: null; must_change_password: false; error: string }> {
   try {
     const res = await fetch(`${AUTH_URL}/auth/login`, {
       method:      'POST',
