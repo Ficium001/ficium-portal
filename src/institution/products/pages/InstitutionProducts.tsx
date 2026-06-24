@@ -11,7 +11,7 @@
  * @owner Ficium Engineering
  */
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Package, Check, ChevronDown, ChevronUp, Lock,
   Gift, Plus, Shield, Star, Zap, Tag, Percent,
@@ -26,7 +26,7 @@ import type { Product, Benefit } from "../../types/institution";
 import { institutionSupabase } from "../../lib/institutionSupabase";
 import {
   SectionHeader, FilterPills, EmptyState, InlineAlert,
-  FormField, inputCls, Btn, Modal, SkeletonRow,
+  FormField, inputCls, Btn, Modal,
 } from "../../components/primitives";
 
 // ─── Helpers ──────────────────────────────────────────────────
