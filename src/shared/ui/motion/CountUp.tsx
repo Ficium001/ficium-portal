@@ -40,10 +40,10 @@ export default function CountUp({
 
   useEffect(() => {
     if (!inView && !reduced) return
-    if (reduced) { setDisplay(value); return }
+    if (reduced) { setTimeout(() => setDisplay(value), 0); return }
 
     // First sight: animate. Subsequent data refreshes: snap.
-    if (animated.current) { setDisplay(value); return }
+    if (animated.current) { setTimeout(() => setDisplay(value), 0); return }
     animated.current = true
 
     const t0 = performance.now()
