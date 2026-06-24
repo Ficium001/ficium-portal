@@ -51,11 +51,5 @@
         }
       ]
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/keepalive",
-      "schedule": "*/2 * * * *"
-    }
   ]
 }
