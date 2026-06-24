@@ -3,46 +3,33 @@
  * @route /documents
  * @module inst:documents
  * @description
- *   Institution compliance document management. Displays required document
- *   types with current upload status. Members upload files to Supabase Storage
- *   then register metadata via portal-api.
- *
- *   Compliance gate:
- *     All mandatory docs must be in 'approved' state before institution can bid.
- *     Status computed via institution.compliance view, surfaced on this page
- *     and consumed by the bid submission flow.
- *
- *   Bank-grade guarantees:
- *     - institution_id always from JWT (never body)
- *     - RLS on institution.doc (institution-scoped)
- *     - Admin review via service session (cross-institution, role-checked)
- *     - One row per institution+doc_type (UNIQUE constraint), re-upload resets to pending
+ *   Institution compliance document management. Required docs checklist
+ *   with file upload per row. Compliance gate surfaced via banner.
  *
  * @owner Ficium Engineering
  */
 
 import { useRef, useState } from 'react'
 import {
-  FolderCheck, Upload, CheckCircle2, XCircle,
-  Clock, AlertCircle, ExternalLink, ShieldCheck, ShieldAlert,
+  Upload, CheckCircle2, XCircle, Clock,
+  AlertCircle, ExternalLink, ShieldCheck, ShieldAlert,
 } from 'lucide-react'
 import {
   useDocuments, useDocTypes, useCompliance, useRegisterDocument,
 } from '../../hooks/useInstitution'
 import type { DocType, InstitutionDoc } from '../../types/institution'
 import {
-  SectionHeader, InlineAlert, Btn, StatusBadge, SkeletonRow,
+  SectionHeader, InlineAlert, Btn, SkeletonRow,
 } from '../../components/primitives'
 import { portalApi } from '../../../shared/lib/portalApi'
 
-// ─── Helpers ──────────────────────────────────────────────────
-
+// ─── Status config ─────────────────────────────────────────────
 const STATUS_CONFIG = {
-  approved:       { label: 'Approved',        color: 'green',  Icon: CheckCircle2  },
-  pending:        { label: 'Pending review',  color: 'yellow', Icon: Clock         },
-  rejected:       { label: 'Rejected',        color: 'red',    Icon: XCircle       },
-  expired:        { label: 'Expired',         color: 'red',    Icon: AlertCircle   },
-  not_uploaded:   { label: 'Not uploaded',    color: 'grey',   Icon: AlertCircle   },
+  approved:     { label: 'Approved',       Icon: CheckCircle2, cls: 'text-emerald-600' },
+  pending:      { label: 'Pending review', Icon: Clock,        cls: 'text-amber-500'   },
+  rejected:     { label: 'Rejected',       Icon: XCircle,      cls: 'text-red-500'     },
+  expired:      { label: 'Expired',        Icon: AlertCircle,  cls: 'text-red-500'     },
+  not_uploaded: { label: 'Not uploaded',   Icon: AlertCircle,  cls: 'text-ink/30'      },
 } as const
 
 // ─── ComplianceBanner ─────────────────────────────────────────
@@ -50,8 +37,7 @@ function ComplianceBanner() {
   const { data, isLoading } = useCompliance()
 
   if (isLoading) return <SkeletonRow cols={1} />
-
-  if (!data) return null
+  if (!data)     return null
 
   if (data.can_bid) {
     return (
@@ -60,7 +46,7 @@ function ComplianceBanner() {
         <div>
           <p className="text-[13px] font-bold text-emerald-800">Compliance verified</p>
           <p className="text-[12px] text-emerald-700">
-            All required documents are approved. Your institution can submit bids.
+            All required documents approved. Your institution can submit bids.
           </p>
         </div>
       </div>
@@ -76,7 +62,8 @@ function ComplianceBanner() {
           {data.missing_docs.length > 0
             ? `Missing: ${data.missing_docs.join(', ')}.`
             : 'Some documents are pending review or require re-upload.'
-          } Bid submission is disabled until all mandatory documents are approved.
+          }{' '}
+          Bid submission is disabled until all mandatory documents are approved.
         </p>
       </div>
     </div>
@@ -90,17 +77,15 @@ function DocRow({
   onUpload,
   uploading,
 }: {
-  docType:  DocType
-  doc:      InstitutionDoc | undefined
-  onUpload: (docTypeId: string, file: File) => Promise<void>
+  docType:   DocType
+  doc:       InstitutionDoc | undefined
+  onUpload:  (docTypeId: string, file: File) => Promise<void>
   uploading: string | null
 }) {
-  const fileRef = useRef<HTMLInputElement>(null)
+  const fileRef    = useRef<HTMLInputElement>(null)
   const isUploading = uploading === docType.id
-
-  const status     = doc?.status ?? 'not_uploaded'
-  const cfg        = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.not_uploaded
-  const StatusIcon = cfg.Icon
+  const status      = (doc?.status ?? 'not_uploaded') as keyof typeof STATUS_CONFIG
+  const { label, Icon, cls } = STATUS_CONFIG[status]
 
   return (
     <div className="flex items-start gap-4 px-5 py-4 border-b border-ink/[0.05] last:border-0">
@@ -117,15 +102,8 @@ function DocRow({
         {doc && (
           <div className="mt-2 space-y-1">
             <div className="flex items-center gap-1.5">
-              <StatusIcon
-                size={13}
-                className={
-                  status === 'approved' ? 'text-emerald-600' :
-                  status === 'pending'  ? 'text-amber-500' :
-                  'text-red-500'
-                }
-              />
-              <span className="text-[11px] text-muted">{cfg.label}</span>
+              <Icon size={13} className={cls} />
+              <span className="text-[11px] text-muted">{label}</span>
               {doc.uploaded_at && (
                 <span className="text-[11px] text-muted">
                   · Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
@@ -155,6 +133,12 @@ function DocRow({
             </div>
           </div>
         )}
+        {!doc && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <Icon size={13} className={cls} />
+            <span className="text-[11px] text-muted">{label}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex-shrink-0">
@@ -173,9 +157,8 @@ function DocRow({
           variant={doc?.status === 'approved' ? 'ghost' : 'secondary'}
           loading={isUploading}
           onClick={() => fileRef.current?.click()}
-          className="text-[12px]"
         >
-          <Upload size={13} className="mr-1.5" />
+          <Upload size={13} />
           {doc ? 'Re-upload' : 'Upload'}
         </Btn>
       </div>
@@ -189,19 +172,20 @@ export default function InstitutionDocuments() {
   const { data: docs = [],     isLoading: docsLoading  } = useDocuments()
   const registerDoc = useRegisterDocument()
 
-  const [uploading, setUploading] = useState<string | null>(null)
-  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploading,    setUploading]    = useState<string | null>(null)
+  const [uploadError,  setUploadError]  = useState<string | null>(null)
 
-  const docMap = Object.fromEntries(docs.map(d => [d.doc_type_id, d]))
   const isLoading = typesLoading || docsLoading
+  const docMap    = Object.fromEntries(docs.map(d => [d.doc_type_id, d]))
+  const mandatory = docTypes.filter(dt => dt.is_mandatory)
+  const optional  = docTypes.filter(dt => !dt.is_mandatory)
 
   const handleUpload = async (docTypeId: string, file: File) => {
     setUploadError(null)
     setUploading(docTypeId)
     try {
-      // 1. Upload file to Supabase Storage via signed upload URL
       const { upload_url, storage_path } = await portalApi.post<{
-        upload_url: string
+        upload_url:   string
         storage_path: string
       }>('/documents/upload-url', {
         doc_type_id: docTypeId,
@@ -215,22 +199,18 @@ export default function InstitutionDocuments() {
         headers: { 'Content-Type': file.type },
       })
 
-      // 2. Register metadata row
       await registerDoc.mutateAsync({
         doc_type_id:  docTypeId,
         storage_path,
         file_name:    file.name,
         mime_type:    file.type,
       })
-    } catch (e: any) {
-      setUploadError(e?.message ?? 'Upload failed. Please try again.')
+    } catch (e: unknown) {
+      setUploadError(e instanceof Error ? e.message : 'Upload failed. Please try again.')
     } finally {
       setUploading(null)
     }
   }
-
-  const mandatory  = docTypes.filter(dt => dt.is_mandatory)
-  const optional   = docTypes.filter(dt => !dt.is_mandatory)
 
   return (
     <div className="space-y-6">
@@ -242,7 +222,9 @@ export default function InstitutionDocuments() {
       <ComplianceBanner />
 
       {uploadError && (
-        <InlineAlert type="error" message={uploadError} onDismiss={() => setUploadError(null)} />
+        <InlineAlert variant="error" onDismiss={() => setUploadError(null)}>
+          {uploadError}
+        </InlineAlert>
       )}
 
       {isLoading && (
@@ -253,7 +235,6 @@ export default function InstitutionDocuments() {
 
       {!isLoading && (
         <>
-          {/* Mandatory documents */}
           <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
             <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/[0.01]">
               <h3 className="text-[13px] font-bold text-ink">Required documents</h3>
@@ -272,7 +253,6 @@ export default function InstitutionDocuments() {
             ))}
           </div>
 
-          {/* Optional documents */}
           {optional.length > 0 && (
             <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
               <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/[0.01]">

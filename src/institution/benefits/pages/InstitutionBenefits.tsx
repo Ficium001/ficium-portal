@@ -30,19 +30,19 @@ import {
 import type { Benefit } from '../../types/institution'
 import {
   SectionHeader, EmptyState, Modal, FormField,
-  inputCls, Btn, InlineAlert, StatusBadge, SkeletonRow,
+  inputCls, Btn, InlineAlert, SkeletonRow,
 } from '../../components/primitives'
 
 // ─── Icon map for benefit categories ──────────────────────────
 const CAT_ICONS: Record<string, React.ElementType> = {
-  fee_waiver:      Tag,
-  rate_discount:   Percent,
-  insurance:       Shield,
+  fee_waiver:       Tag,
+  rate_discount:    Percent,
+  insurance:        Shield,
   relationship_mgr: Users,
-  fast_track:      Zap,
-  reward:          Gift,
-  bundled_product: Package,
-  other:           Star,
+  fast_track:       Zap,
+  reward:           Gift,
+  bundled_product:  Package,
+  other:            Star,
 }
 
 // ─── BenefitCard ──────────────────────────────────────────────
@@ -134,7 +134,7 @@ interface BenefitFormProps {
 }
 
 function BenefitForm({ initial, onSubmit, loading, error, onClose }: BenefitFormProps) {
-  const { data: cats = [] } = useBenefitCategories()
+  const { data: cats = [] }     = useBenefitCategories()
   const { data: products = [] } = useProducts()
 
   const [form, setForm] = useState({
@@ -153,7 +153,7 @@ function BenefitForm({ initial, onSubmit, loading, error, onClose }: BenefitForm
 
   return (
     <div className="space-y-4">
-      {error && <InlineAlert type="error" message={error} />}
+      {error && <InlineAlert variant="error">{error}</InlineAlert>}
 
       <FormField label="Category *">
         <select
@@ -261,25 +261,23 @@ function BenefitForm({ initial, onSubmit, loading, error, onClose }: BenefitForm
       </div>
 
       {form.is_guaranteed && (
-        <InlineAlert
-          type="info"
-          message="This benefit will be submitted for checker approval before it appears on bids."
-        />
+        <InlineAlert variant="info">
+          This benefit will be submitted for checker approval before it appears on bids.
+        </InlineAlert>
       )}
 
       <div className="flex gap-2 pt-2">
-        <Btn variant="ghost" onClick={onClose} className="flex-1">Cancel</Btn>
+        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
         <Btn
           variant="primary"
           loading={loading}
           onClick={() => onSubmit({
             ...form,
-            product_id: form.product_id || undefined,
-            valid_from: form.valid_from || undefined,
+            product_id:  form.product_id  || undefined,
+            valid_from:  form.valid_from  || undefined,
             valid_until: form.valid_until || undefined,
-            conditions: form.conditions || undefined,
+            conditions:  form.conditions  || undefined,
           })}
-          className="flex-1"
         >
           {initial?.id ? 'Save changes' : 'Add benefit'}
         </Btn>
@@ -295,9 +293,9 @@ export default function InstitutionBenefits() {
   const updateBenefit     = useUpdateBenefit()
   const deactivateBenefit = useDeactivateBenefit()
 
-  const [showForm, setShowForm]   = useState(false)
-  const [editing, setEditing]     = useState<Benefit | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
+  const [showForm, setShowForm]         = useState(false)
+  const [editing, setEditing]           = useState<Benefit | null>(null)
+  const [formError, setFormError]       = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
 
   const active   = benefits.filter(b => b.is_active)
@@ -308,19 +306,15 @@ export default function InstitutionBenefits() {
     setFormError(null)
     try {
       if (editing) {
-        const res = await updateBenefit.mutateAsync({ id: editing.id, ...data })
-        if (res.pending) {
-          setShowForm(false)
-          setEditing(null)
-          return
-        }
+        const res = await updateBenefit.mutateAsync({ id: editing.id, ...data }) as { pending?: boolean }
+        if (res.pending) { setShowForm(false); setEditing(null); return }
       } else {
         await createBenefit.mutateAsync(data)
       }
       setShowForm(false)
       setEditing(null)
-    } catch (e: any) {
-      setFormError(e?.message ?? 'Something went wrong.')
+    } catch (e: unknown) {
+      setFormError(e instanceof Error ? e.message : 'Something went wrong.')
     }
   }
 
@@ -332,14 +326,18 @@ export default function InstitutionBenefits() {
     }
   }
 
+  const openCreate = () => { setEditing(null); setShowForm(true) }
+  const closeForm  = () => { setShowForm(false); setEditing(null); setFormError(null) }
+
   return (
     <div className="space-y-6">
       <SectionHeader
         title="Benefits"
         subtitle="Define perks shown to clients on your bid cards. Guaranteed benefits require checker approval."
-        action={
-          <Btn variant="primary" onClick={() => { setEditing(null); setShowForm(true) }}>
-            <Plus size={14} className="mr-1.5" /> Add benefit
+        actions={
+          <Btn variant="primary" onClick={openCreate}>
+            <Plus size={14} />
+            Add benefit
           </Btn>
         }
       />
@@ -357,11 +355,7 @@ export default function InstitutionBenefits() {
           icon={Gift}
           title="No benefits yet"
           description="Add perks to differentiate your bids — free insurance, rate discounts, relationship manager access, and more."
-          action={
-            <Btn variant="primary" onClick={() => { setEditing(null); setShowForm(true) }}>
-              <Plus size={14} className="mr-1.5" /> Add first benefit
-            </Btn>
-          }
+          action={<Btn variant="primary" onClick={openCreate}><Plus size={14} /> Add first benefit</Btn>}
         />
       )}
 
@@ -388,17 +382,13 @@ export default function InstitutionBenefits() {
         </button>
       )}
 
-      <Modal
-        open={showForm}
-        title={editing ? 'Edit benefit' : 'Add benefit'}
-        onClose={() => { setShowForm(false); setEditing(null); setFormError(null) }}
-      >
+      <Modal open={showForm} title={editing ? 'Edit benefit' : 'Add benefit'} onClose={closeForm}>
         <BenefitForm
           initial={editing ?? undefined}
           onSubmit={handleSubmit}
           loading={createBenefit.isPending || updateBenefit.isPending}
           error={formError}
-          onClose={() => { setShowForm(false); setEditing(null); setFormError(null) }}
+          onClose={closeForm}
         />
       </Modal>
     </div>
