@@ -232,7 +232,7 @@ export default function UnifiedLogin() {
       try {
         await ficiumAuthFetch('/auth/password/force-change', {
           method: 'POST',
-          body: JSON.stringify({ current_password: password, new_password: newPassword }),
+          body: JSON.stringify({ new_password: newPassword }),
         })
         const userType = await detectUserType()
         navigate(userType === 'admin' ? '/admin/dashboard' : (from ?? '/dashboard'), { replace: true })
