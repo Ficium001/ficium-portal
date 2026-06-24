@@ -144,7 +144,7 @@ export default function UnifiedLogin() {
   const [password,     setPassword]    = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]     = useState(false)
-  const [detecting,    setDetecting]   = useState(false)
+  const [detecting,    _setDetecting]  = useState(false) // unused — detection is now instant
   const [error,        setError]       = useState<string | null>(null)
 
   const inputCls = (invalid?: boolean) => [
@@ -162,13 +162,10 @@ export default function UnifiedLogin() {
     if (!hasSession()) return
 
     let cancelled = false
-    setDetecting(true)
     detectUserType().then(userType => {
       if (cancelled) return
       if (userType === 'admin' || userType === 'institution') {
         navigate(from ?? '/dashboard', { replace: true })
-      } else {
-        setDetecting(false)
       }
     })
     return () => { cancelled = true }
