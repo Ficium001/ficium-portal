@@ -2,9 +2,11 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
     "src/app/**/*.{ts,tsx}",
-    "supabase/functions/**/index.ts"
+    "supabase/functions/**/index.ts",
+    "api/**/*.{js,ts}"
   ],
   "project": [
-    "src/**/*.{ts,tsx}"
+    "src/**/*.{ts,tsx}",
+    "api/**/*.{js,ts}"
   ]
 }
