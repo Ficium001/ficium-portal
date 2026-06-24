@@ -36,7 +36,7 @@ export async function signIn(
     const data = await res.json()
     if (!res.ok) {
       const msg = data?.message ?? data?.detail ?? 'Incorrect email or password.'
-      return { tokens: null, error: msg }
+      return { tokens: null, must_change_password: false, error: msg }
     }
     // Store access token in memory (sessionStorage — never localStorage)
     sessionStorage.setItem('ficium_at', data.access_token)
