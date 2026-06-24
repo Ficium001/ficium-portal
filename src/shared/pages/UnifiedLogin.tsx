@@ -20,7 +20,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
-import { signIn as ficiumSignIn, getTokenPayload, hasSession, signOut as ficiumSignOut } from '../lib/ficiumAuth'
+import { ficiumAuthFetch, signIn as ficiumSignIn, getTokenPayload, hasSession, signOut as ficiumSignOut } from '../lib/ficiumAuth'
 import FiciumLogo from '../ui/FiciumLogo'
 import { GradText } from '../ui/dashboard/Hero'
 
