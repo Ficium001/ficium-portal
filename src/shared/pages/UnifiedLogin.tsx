@@ -144,7 +144,6 @@ export default function UnifiedLogin() {
   const [password,     setPassword]    = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]     = useState(false)
-  const [detecting,    _setDetecting]  = useState(false) // unused — detection is now instant
   const [error,        setError]       = useState<string | null>(null)
 
   const inputCls = (invalid?: boolean) => [
@@ -188,7 +187,6 @@ export default function UnifiedLogin() {
       return
     }
 
-    setDetecting(true)
     const userType = await detectUserType()
 
     if (userType === 'admin' || userType === 'institution') {
@@ -196,12 +194,11 @@ export default function UnifiedLogin() {
     } else {
       await ficiumSignOut()
       setError('Your account has not been provisioned for portal access. Contact your administrator.')
-      setDetecting(false)
       setLoading(false)
     }
   }
 
-  if (detecting) {
+  if (false) {
     return (
       <div className='min-h-screen bg-paper flex items-center justify-center'>
         <div className='text-center'>
