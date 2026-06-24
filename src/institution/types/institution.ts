@@ -298,7 +298,7 @@ export interface InstitutionDoc {
   uploaded_at:         string
 }
 
-export interface ComplianceStatus {
+export interface ComplianceGate {
   institution_id: string
   is_approved:    boolean
   is_compliant:   boolean

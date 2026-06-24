@@ -20,6 +20,7 @@ import type {
   Institution, InstitutionUser, InstitutionBid,
   MarketplaceRequest, PendingAction, InstitutionWebhook,
   Product, AuditEvent, BidPayload,
+  BenefitCategory, Benefit, DocType, InstitutionDoc, ComplianceGate,
 } from '../types/institution'
 
 export const QK = {
@@ -249,7 +250,7 @@ export function useDocuments() {
 export function useCompliance() {
   return useQuery({
     queryKey: QK.compliance,
-    queryFn:  () => portalApi.get<ComplianceStatus>('/documents/compliance'),
+    queryFn:  () => portalApi.get<ComplianceGate>('/documents/compliance'),
     staleTime: 2 * 60 * 1000,
   })
 }
