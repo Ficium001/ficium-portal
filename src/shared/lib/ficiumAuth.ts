@@ -112,6 +112,7 @@ export function getTokenPayload(): Record<string, unknown> | null {
 // Used for endpoints that require a valid access token (e.g. force-change-password).
 export async function ficiumAuthFetch(path: string, init: RequestInit = {}): Promise<unknown> {
   const token = await getValidAccessToken()
+  console.log('[ficiumAuthFetch] token present:', !!token, 'path:', path)
   if (!token) throw new Error('Not authenticated')
   const res = await fetch(`${AUTH_URL}${path}`, {
     ...init,
@@ -123,6 +124,7 @@ export async function ficiumAuthFetch(path: string, init: RequestInit = {}): Pro
     },
   })
   const data = await res.json().catch(() => ({}))
+  console.log('[ficiumAuthFetch] response:', res.status, JSON.stringify(data))
   if (!res.ok) throw new Error(data?.detail ?? data?.message ?? `HTTP ${res.status}`)
   return data
 }
