@@ -38,8 +38,6 @@ const InstitutionMarketplace = lazy(() => import('../institution/marketplace/pag
 const InstitutionBids        = lazy(() => import('../institution/bids/pages/InstitutionBids'))
 const InstitutionApprovals   = lazy(() => import('../institution/approvals/pages/InstitutionApprovals'))
 const InstitutionProducts    = lazy(() => import('../institution/products/pages/InstitutionProducts'))
-const InstitutionBenefits    = lazy(() => import('../institution/benefits/pages/InstitutionBenefits'))
-const InstitutionDocuments   = lazy(() => import('../institution/documents/pages/InstitutionDocuments'))
 const InstitutionWebhooks    = lazy(() => import('../institution/webhooks/pages/InstitutionWebhooks'))
 const InstitutionAudit       = lazy(() => import('../institution/audit/pages/InstitutionAudit'))
 const InstitutionSettings    = lazy(() => import('../institution/settings/pages/InstitutionSettings'))
@@ -166,8 +164,6 @@ export const router = createBrowserRouter([
           { path: '/bids',         element: <RequireModule moduleKey="inst:bids"><S><InstitutionBids /></S></RequireModule> },
           { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
           { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
-          { path: '/benefits',     element: <RequireModule moduleKey="inst:benefits"><S><InstitutionBenefits /></S></RequireModule> },
-          { path: '/documents',    element: <RequireModule moduleKey="inst:documents"><S><InstitutionDocuments /></S></RequireModule> },
           { path: '/webhooks',     element: <RequireModule moduleKey="inst:webhooks"><S><InstitutionWebhooks /></S></RequireModule> },
           { path: '/audit',        element: <RequireModule moduleKey="inst:audit"><S><InstitutionAudit /></S></RequireModule> },
           { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },
