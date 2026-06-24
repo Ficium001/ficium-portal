@@ -41,9 +41,9 @@ export async function signIn(
     // Store access token in memory (sessionStorage — never localStorage)
     sessionStorage.setItem('ficium_at', data.access_token)
     sessionStorage.setItem('ficium_at_exp', String(Date.now() + data.expires_in * 1000))
-    return { tokens: data, error: null }
+    return { tokens: data, must_change_password: !!data.must_change_password, error: null }
   } catch {
-    return { tokens: null, error: 'Unable to reach the authentication service. Try again.' }
+    return { tokens: null, must_change_password: false, error: 'Unable to reach the authentication service. Try again.' }
   }
 }
 
