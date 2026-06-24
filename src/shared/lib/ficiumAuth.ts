@@ -34,6 +34,7 @@ export async function signIn(
       body:        JSON.stringify({ username, password }),
     })
     const data = await res.json()
+    console.log('[ficiumAuth.signIn] raw response:', JSON.stringify(data))
     if (!res.ok) {
       const msg = data?.message ?? data?.detail ?? 'Incorrect email or password.'
       return { tokens: null, must_change_password: false, error: msg }
@@ -41,6 +42,7 @@ export async function signIn(
     // Store access token in memory (sessionStorage — never localStorage)
     sessionStorage.setItem('ficium_at', data.access_token)
     sessionStorage.setItem('ficium_at_exp', String(Date.now() + data.expires_in * 1000))
+    console.log('[ficiumAuth.signIn] must_change_password:', data.must_change_password)
     return { tokens: data, must_change_password: !!data.must_change_password, error: null }
   } catch {
     return { tokens: null, must_change_password: false, error: 'Unable to reach the authentication service. Try again.' }
