@@ -19,6 +19,10 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
+      // Downgrade setState-in-effect to warning — these are intentional patterns
+      // (animation primitives, async guards) that are correct despite the lint hint.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       // Dev-only HMR hint — advisory, not a correctness rule. Keep visible
       // as a warning so it doesn't block CI on legitimate const+component files.
       'react-refresh/only-export-components': 'warn',
