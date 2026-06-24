@@ -145,6 +145,10 @@ export default function UnifiedLogin() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]     = useState(false)
   const [error,        setError]       = useState<string | null>(null)
+  const [forceChange,  setForceChange] = useState(false)
+  const [newPassword,  setNewPassword] = useState('')
+  const [newPwError,   setNewPwError]  = useState<string | null>(null)
+  const [newPwLoading, setNewPwLoading]= useState(false)
 
   const inputCls = (invalid?: boolean) => [
     'w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none transition-all bg-white text-ink',
@@ -176,7 +180,7 @@ export default function UnifiedLogin() {
     setError(null)
     setLoading(true)
 
-    const { tokens, error: authErr } = await ficiumSignIn(
+    const { tokens, must_change_password, error: authErr } = await ficiumSignIn(
       username.trim().toLowerCase(),
       password,
     )
@@ -184,6 +188,13 @@ export default function UnifiedLogin() {
     if (authErr || !tokens) {
       setError(authErr ?? 'Incorrect username or password.')
       setLoading(false)
+      return
+    }
+
+    // Forced password change — intercept before navigation
+    if (must_change_password) {
+      setLoading(false)
+      setForceChange(true)
       return
     }
 
@@ -208,6 +219,63 @@ export default function UnifiedLogin() {
       </div>
     )
   }
+
+  // ── Forced password change modal ──────────────────────────
+  if (forceChange) {
+    const handleForceChange = async () => {
+      if (newPassword.length < 12) {
+        setNewPwError('Password must be at least 12 characters.')
+        return
+      }
+      setNewPwError(null)
+      setNewPwLoading(true)
+      try {
+        await ficiumAuthFetch('/auth/password/force-change', {
+          method: 'POST',
+          body: JSON.stringify({ current_password: password, new_password: newPassword }),
+        })
+        const userType = await detectUserType()
+        navigate(userType === 'admin' ? '/admin/dashboard' : (from ?? '/dashboard'), { replace: true })
+      } catch (e: any) {
+        setNewPwError(e?.message ?? 'Failed to update password.')
+        setNewPwLoading(false)
+      }
+    }
+
+    return (
+      <div className='min-h-screen bg-[#f5f4f8] flex items-center justify-center p-6'>
+        <div className='bg-white rounded-2xl border border-line shadow-card p-8 w-full max-w-sm'>
+          <div className='text-[22px] font-display font-bold text-ink mb-1'>Set a new password</div>
+          <p className='text-[13px] text-muted mb-6'>
+            Your password was reset by an administrator. You must set a new password before continuing.
+          </p>
+          {newPwError && (
+            <div className='bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[13px] text-red-700 mb-4'>{newPwError}</div>
+          )}
+          <div className='mb-4'>
+            <label className='block text-[13px] font-semibold text-ink mb-1.5'>New password</label>
+            <input
+              type='password'
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              className='w-full rounded-xl border border-line px-4 py-3.5 text-[15px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all'
+              placeholder='Minimum 12 characters'
+              autoFocus
+            />
+            <p className='text-[11px] text-muted mt-1'>Min. 12 characters</p>
+          </div>
+          <button
+            onClick={handleForceChange}
+            disabled={newPwLoading || !newPassword}
+            className='w-full disabled:opacity-50 text-white font-bold py-3.5 rounded-[14px] text-[15px] transition-all bg-gradient-to-r from-ficium to-purple-500 hover:-translate-y-0.5 hover:shadow-ficium'
+          >
+            {newPwLoading ? 'Updating…' : 'Set password & continue →'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
 
   return (
     <div className='min-h-screen flex overflow-hidden'>
