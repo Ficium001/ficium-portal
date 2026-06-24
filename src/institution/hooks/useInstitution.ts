@@ -31,6 +31,11 @@ export const QK = {
   webhooks:         ['webhooks'] as const,
   products:         ['products'] as const,
   audit:            ['audit'] as const,
+  benefitCats:      ['benefit-categories'] as const,
+  benefits:         ['benefits'] as const,
+  docTypes:         ['doc-types'] as const,
+  documents:        ['documents'] as const,
+  compliance:       ['compliance'] as const,
 } as const
 
 // ─── useMyInstitution ─── portal-api /institutions/me ────────
@@ -165,5 +170,104 @@ export function useInstitutionUsers() {
   return useQuery<InstitutionUser[]>({
     queryKey: QK.institutionUsers,
     queryFn: () => portalApi.get<InstitutionUser[]>('/members'),
+  })
+}
+
+// ─── useBenefitCategories ─── portal-api /benefits/categories ─
+export function useBenefitCategories() {
+  return useQuery({
+    queryKey: QK.benefitCats,
+    queryFn:  () => portalApi.get<BenefitCategory[]>('/benefits/categories'),
+    staleTime: 24 * 60 * 60 * 1000, // reference data — 24h
+  })
+}
+
+// ─── useBenefits ─── portal-api /benefits ─────────────────────
+export function useBenefits() {
+  return useQuery({
+    queryKey: QK.benefits,
+    queryFn:  () => portalApi.get<Benefit[]>('/benefits'),
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+// ─── useCreateBenefit ─────────────────────────────────────────
+export function useCreateBenefit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: Partial<Benefit>) =>
+      portalApi.post<{ pending?: boolean; id?: string }>('/benefits', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.benefits })
+      qc.invalidateQueries({ queryKey: QK.pendingActions })
+    },
+  })
+}
+
+// ─── useUpdateBenefit ─────────────────────────────────────────
+export function useUpdateBenefit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...payload }: Partial<Benefit> & { id: string }) =>
+      portalApi.put<{ pending?: boolean; id?: string }>(`/benefits/${id}`, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.benefits })
+      qc.invalidateQueries({ queryKey: QK.pendingActions })
+    },
+  })
+}
+
+// ─── useDeactivateBenefit ─────────────────────────────────────
+export function useDeactivateBenefit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      portalApi.delete<{ ok: boolean }>(`/benefits/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.benefits }),
+  })
+}
+
+// ─── useDocTypes ─── portal-api /documents/types ──────────────
+export function useDocTypes() {
+  return useQuery({
+    queryKey: QK.docTypes,
+    queryFn:  () => portalApi.get<DocType[]>('/documents/types'),
+    staleTime: 24 * 60 * 60 * 1000,
+  })
+}
+
+// ─── useDocuments ─── portal-api /documents ───────────────────
+export function useDocuments() {
+  return useQuery({
+    queryKey: QK.documents,
+    queryFn:  () => portalApi.get<InstitutionDoc[]>('/documents'),
+    staleTime: 60 * 1000,
+  })
+}
+
+// ─── useCompliance ─── portal-api /documents/compliance ───────
+export function useCompliance() {
+  return useQuery({
+    queryKey: QK.compliance,
+    queryFn:  () => portalApi.get<ComplianceStatus>('/documents/compliance'),
+    staleTime: 2 * 60 * 1000,
+  })
+}
+
+// ─── useRegisterDocument ─────────────────────────────────────
+export function useRegisterDocument() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: {
+      doc_type_id: string
+      storage_path: string
+      file_name: string
+      mime_type?: string
+      expiry_date?: string
+    }) => portalApi.post<InstitutionDoc>('/documents', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.documents })
+      qc.invalidateQueries({ queryKey: QK.compliance })
+    },
   })
 }

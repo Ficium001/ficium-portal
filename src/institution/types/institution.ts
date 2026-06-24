@@ -237,3 +237,71 @@ export type PortalSection =
   | 'webhooks'
   | 'audit'
   | 'settings'
+
+// ─── Benefits ─────────────────────────────────────────────────
+export interface BenefitCategory {
+  id:         string
+  code:       string
+  label:      string
+  icon_key:   string | null
+  sort_order: number
+}
+
+export interface Benefit {
+  id:             string
+  institution_id: string
+  product_id:     string | null
+  cat_id:         string
+  cat_code:       string
+  cat_label:      string
+  cat_icon:       string | null
+  product_code:   string | null
+  product_label:  string | null
+  title:          string
+  description:    string | null
+  value_display:  string | null
+  is_guaranteed:  boolean
+  conditions:     string | null
+  valid_from:     string | null
+  valid_until:    string | null
+  is_active:      boolean
+  created_at:     string
+  updated_at:     string
+}
+
+// ─── Documents ────────────────────────────────────────────────
+export interface DocType {
+  id:           string
+  code:         string
+  label:        string
+  description:  string | null
+  is_mandatory: boolean
+  applies_to:   string[] | null
+  sort_order:   number
+}
+
+export interface InstitutionDoc {
+  id:                  string
+  institution_id:      string
+  doc_type_id:         string
+  doc_type_code:       string
+  doc_type_label:      string
+  is_mandatory:        boolean
+  doc_type_description: string | null
+  storage_path:        string
+  file_name:           string
+  mime_type:           string | null
+  status:              'pending' | 'approved' | 'rejected' | 'expired'
+  expiry_date:         string | null
+  rejection_reason:    string | null
+  reviewed_at:         string | null
+  uploaded_at:         string
+}
+
+export interface ComplianceStatus {
+  institution_id: string
+  is_approved:    boolean
+  is_compliant:   boolean
+  missing_docs:   string[]
+  can_bid:        boolean
+}
