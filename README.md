@@ -4,6 +4,17 @@ The Ficium Portal frontend — a single React SPA serving both institution users
 
 Built with React + Vite + TypeScript + Tailwind. Deployed on Vercel.
 
+### Documentation
+
+| Doc | Scope |
+|-----|-------|
+| `README.md` | This file — orientation, auth flow, local dev, layout |
+| `ARCHITECTURE.md` | Services, auth (RS256/JWKS), request lifecycle, deployment topology |
+| `DATABASE.md` | Current-state v2 schema, tenancy/RLS, maker-checker, portability |
+| `DESIGN.md` | Product/UX, navigation-as-RBAC, design system, client architecture |
+| `INSTALLATION.md` | Setup and environment configuration |
+| `supabase/SCHEMA_DESIGN.md` | Target-state schema rationale (forward-looking) |
+
 ---
 
 ## Architecture in one paragraph
