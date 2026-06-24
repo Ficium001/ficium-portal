@@ -316,3 +316,22 @@ export const ROLE_LABELS: Record<AdminRoleSlug, string> = {
   auditor:         'Auditor',
   custom:          'Custom',
 }
+
+export interface AdminDoc {
+  id:                 string
+  institution_id:     string
+  institution_name:   string
+  institution_type:   string
+  doc_type_code:      string
+  doc_type_label:     string
+  is_mandatory:       boolean
+  file_name:          string
+  storage_path:       string
+  mime_type:          string | null
+  status:             'pending' | 'approved' | 'rejected' | 'expired'
+  expiry_date:        string | null
+  rejection_reason:   string | null
+  uploaded_at:        string
+  reviewed_at:        string | null
+  uploaded_by_email:  string | null
+}

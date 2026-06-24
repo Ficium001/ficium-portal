@@ -19,6 +19,7 @@ import type {
   ResetPasswordPayload, UnlockUserPayload, ForceLogoutPayload,
   UpdateAdminRolePayload, CreateRolePayload,
   ApproveInstitutionPayload, SuspendInstitutionPayload,
+  AdminDoc,
 } from '../types/admin'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -474,5 +475,25 @@ export function useSuspendInstitution() {
         payload,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.dualControl }),
+  })
+}
+
+// ─── useAdminDocuments ─── portal-api /admin/documents ────────
+export function useAdminDocuments() {
+  return useQuery({
+    queryKey: ['admin', 'documents'],
+    queryFn:  () => portalApi.get<AdminDoc[]>('/admin/documents'),
+    staleTime: 60 * 1000,
+  })
+}
+
+// ─── useReviewDocument ────────────────────────────────────────
+export function useReviewDocument() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, action, rejection_reason }: {
+      id: string; action: 'approve' | 'reject'; rejection_reason?: string
+    }) => portalApi.post<{ ok: boolean }>(`/admin/documents/${id}/review`, { action, rejection_reason }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'documents'] }),
   })
 }
