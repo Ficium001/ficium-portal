@@ -121,6 +121,7 @@ export interface RequestMetadata {
   risk_score?: number | null
   affordability_score?: number | null
   risk_tier?: 'A' | 'B' | 'C' | 'D' | null
+  age?: number | null
   // Employment
   employment_status?: string | null
   employment_type?: string | null
