@@ -92,7 +92,7 @@ function RequestCard({
               {request.product_label ?? request.product_type.replace(/_/g, " ")}
             </div>
             <div className="text-[11px] text-muted font-mono mt-0.5">
-              ref {request.client_ref?.slice(0, 8)}
+              ref {(request.consumer_ref ?? request.client_ref)?.slice(0, 8) ?? "—"}
             </div>
           </div>
           <StatusBadge status={request.status} size="xs" />

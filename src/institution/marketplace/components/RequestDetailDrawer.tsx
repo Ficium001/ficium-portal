@@ -1,20 +1,68 @@
-import { useState }         from "react";
+import { useState }        from "react";
 import { X, FileText, MessageSquare, Download, User, DollarSign, TrendingUp, Zap } from "lucide-react";
-import institutionSupabase  from "@/institution/lib/institutionSupabase";
-import RequestChat          from "@/shared/components/RequestChat";
+import institutionSupabase from "@/institution/lib/institutionSupabase";
+import RequestChat         from "@/shared/components/RequestChat";
 
 import type { MarketplaceRequest } from "@/institution/types/institution";
 import { SectionLabel, DetailStat, ProfileStat } from "./MarketplacePrimitives";
 
 interface RequestDetailDrawerProps {
-  request:  MarketplaceRequest;
-  onClose:  () => void;
-  onBid:    () => void;
+  request: MarketplaceRequest;
+  onClose: () => void;
+  onBid:   () => void;
 }
 
-const fmt      = (v: number) => v >= 1_000_000 ? `MUR ${(v / 1_000_000).toFixed(1)}M` : `MUR ${Number(v).toLocaleString()}`;
-const fmtDate  = (s: string) => new Date(s).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-const fmtMoney = (v: number | null | undefined) => v != null && v > 0 ? fmt(v) : "—";
+const fmt     = (v: number) => v >= 1_000_000 ? `MUR ${(v / 1_000_000).toFixed(1)}M` : `MUR ${Number(v).toLocaleString()}`;
+const fmtDate = (s: string) => new Date(s).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+// Resolve Phase 1 metadata — prefer new path, fall back to legacy flat fields
+function useResolvedFields(request: MarketplaceRequest) {
+  const m = request.metadata;
+  const p = request.params;
+  const ref = request.consumer_ref ?? request.client_ref;
+
+  return {
+    m, p, ref,
+    productLabel:  request.product_label ?? request.product_type,
+    familyLabel:   request.product_family_label ?? request.family_label,
+    loanPurpose:   p?.loan_purpose ?? request.purpose,
+    // Profile — Phase 1 preferred, legacy fallback
+    healthScore:         m?.health_score          ?? request.client_health_score,
+    affordabilityScore:  m?.affordability_score   ?? request.client_affordability_score,
+    riskScore:           m?.risk_score            ?? request.client_risk_score,
+    employmentStatus:    m?.employment_status     ?? request.client_employment_status,
+    incomeBand:          m?.income_band           ?? (request.client_monthly_income ? fmt(request.client_monthly_income) : null),
+    netWorthBand:        m?.net_worth_band        ?? (request.client_net_worth ? fmt(request.client_net_worth) : null),
+    country:             request.country          ?? request.client_country,
+    dsrCurrent:          m?.dsr_current_pct,
+    dsrPost:             m?.dsr_post_pct,
+    riskTier:            m?.risk_tier,
+    kycVerified:         m?.kyc_verified,
+    collateralType:      p?.collateral_type,
+    collateralSub:       p?.collateral_sub,
+    ltvPct:              p?.ltv_pct,
+  };
+}
+
+function accentScore(v: number | null | undefined) {
+  if (v == null) return undefined;
+  return v >= 70 ? "green" : v >= 50 ? "amber" : "red";
+}
+function accentDSR(v: number | null | undefined) {
+  if (v == null) return undefined;
+  return v < 40 ? "green" : v < 55 ? "amber" : "red";
+}
+function accentTier(t: string | null | undefined) {
+  if (!t) return undefined;
+  return t === "A" ? "green" : t === "B" ? "amber" : "red";
+}
+function accentLTV(v: number | null | undefined) {
+  if (v == null) return undefined;
+  return v < 80 ? "green" : v < 90 ? "amber" : "red";
+}
+function fmtCollateral(c: string | null | undefined) {
+  return c ? c.replace(/_/g, " ") : null;
+}
 
 export function RequestDetailDrawer({ request, onClose, onBid }: RequestDetailDrawerProps) {
   const [tab,             setTab]             = useState<"details" | "chat">("details");
@@ -22,37 +70,49 @@ export function RequestDetailDrawer({ request, onClose, onBid }: RequestDetailDr
   const [approverComment, setApproverComment] = useState("");
 
   const isUrgent = new Date(request.bid_window_closes_at).getTime() - Date.now() < 60 * 60 * 1000;
+  const f = useResolvedFields(request);
+  const refDisplay = f.ref?.slice(0, 8) ?? "—";
 
   const downloadPDF = () => {
+    const dsr = f.dsrCurrent != null && f.dsrPost != null
+      ? `${f.dsrCurrent}% → ${f.dsrPost}% (post-loan)` : "—";
+    const ltv  = f.ltvPct  != null ? `${f.ltvPct}%`  : "—";
+    const col  = [fmtCollateral(f.collateralType), f.collateralSub].filter(Boolean).join(" / ") || "—";
+
     const lines = [
       `FICIUM — REQUEST DOSSIER`,
       `Generated: ${new Date().toLocaleString("en-MU")}`,
       `${"─".repeat(48)}`,
-      `Product:        ${request.product_label ?? request.product_type}`,
-      `Family:         ${request.family_label ?? "—"}`,
+      `Product:        ${f.productLabel}`,
+      `Family:         ${f.familyLabel ?? "—"}`,
       `Status:         Open`,
       `Amount:         ${fmt(Number(request.amount))}`,
       `Term:           ${request.term_months ? `${request.term_months} months` : "—"}`,
       `Submitted:      ${fmtDate(request.created_at)}`,
       `Bid window:     ${fmtDate(request.bid_window_closes_at)}`,
-      `Ref:            #${request.client_ref?.slice(0, 8)}`,
-      ...(request.purpose ? [`Purpose:        ${request.purpose}`] : []),
+      `Ref:            #${refDisplay}`,
+      ...(f.loanPurpose ? [`Purpose:        ${f.loanPurpose}`] : []),
       `${"─".repeat(48)}`,
       `ANONYMOUS CLIENT PROFILE`,
-      `Credit Score:   ${request.client_health_score != null ? `${request.client_health_score}/100` : "—"}`,
-      `Affordability:  ${request.client_affordability_score != null ? `${request.client_affordability_score}/100` : "—"}`,
-      `Risk Score:     ${request.client_risk_score != null ? `${request.client_risk_score}/100` : "—"}`,
-      `Monthly Income: ${fmtMoney(request.client_monthly_income)}`,
-      `Net Worth:      ${fmtMoney(request.client_net_worth)}`,
-      `Country:        ${request.client_country ?? "—"}`,
-      `Employment:     ${request.client_employment_status?.replace(/_/g, " ") ?? "—"}`,
+      `KYC:            ${f.kycVerified ? "Verified" : "—"}`,
+      `Risk tier:      ${f.riskTier ?? "—"}`,
+      `Credit score:   ${f.healthScore != null ? `${f.healthScore}/100` : "—"}`,
+      `Affordability:  ${f.affordabilityScore != null ? `${f.affordabilityScore}/100` : "—"}`,
+      `Risk score:     ${f.riskScore != null ? `${f.riskScore}/100` : "—"}`,
+      `Employment:     ${f.employmentStatus?.replace(/_/g, " ") ?? "—"}`,
+      `Income band:    ${f.incomeBand ?? "—"} MUR/month`,
+      `Net worth:      ${f.netWorthBand ?? "—"} MUR`,
+      `DSR:            ${dsr}`,
+      `Collateral:     ${col}`,
+      `LTV:            ${ltv}`,
       ...(markerComment   ? [`\nMarker note:    ${markerComment}`]   : []),
       ...(approverComment ? [`Approver note:  ${approverComment}`] : []),
       `${"─".repeat(48)}`,
       `CONFIDENTIAL — For internal use only. Client identity not disclosed.`,
     ];
+
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-      <title>Ficium Request Dossier #${request.client_ref?.slice(0, 8)}</title>
+      <title>Ficium Request Dossier #${refDisplay}</title>
       <style>body{font-family:'Courier New',monospace;font-size:13px;padding:40px;max-width:680px;margin:0 auto;color:#1a1a2e}.logo{font-size:22px;font-weight:900;letter-spacing:-0.5px;color:#2563eb;margin-bottom:4px}.subtitle{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:32px}pre{white-space:pre-wrap;word-break:break-word;background:#f8f7f4;padding:24px;border-radius:8px;border:1px solid #e5e5e0}.footer{margin-top:24px;font-size:11px;color:#aaa;border-top:1px solid #e5e5e0;padding-top:12px}@media print{body{padding:20px}}</style>
     </head><body>
       <div class="logo">Ficium</div>
@@ -75,8 +135,8 @@ export function RequestDetailDrawer({ request, onClose, onBid }: RequestDetailDr
         {/* Header */}
         <div className="flex items-start justify-between px-8 py-6 border-b border-ink/[0.07] flex-shrink-0">
           <div>
-            <div className="text-[11px] font-bold text-ficium uppercase tracking-widest mb-1">{request.family_label ?? "Financial product"}</div>
-            <h2 className="font-display font-bold text-[24px] text-ink leading-tight">{request.product_label ?? request.product_type}</h2>
+            <div className="text-[11px] font-bold text-ficium uppercase tracking-widest mb-1">{f.familyLabel ?? "Financial product"}</div>
+            <h2 className="font-display font-bold text-[24px] text-ink leading-tight">{f.productLabel}</h2>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <button onClick={downloadPDF} title="Download dossier"
@@ -106,10 +166,12 @@ export function RequestDetailDrawer({ request, onClose, onBid }: RequestDetailDr
         {tab === "details" ? (
           <div className="flex-1 overflow-y-auto">
             <div className="px-8 py-6 space-y-7">
+
+              {/* Meta row */}
               <div className="grid grid-cols-3 gap-3">
                 <DetailStat label="Status"><span className="bg-green-50 text-green-700 border border-green-200 text-[11px] font-semibold px-2.5 py-1 rounded-full">Open</span></DetailStat>
                 <DetailStat label="Submitted" value={fmtDate(request.created_at)} />
-                <DetailStat label="Ref" value={`#${request.client_ref?.slice(0, 8)}`} />
+                <DetailStat label="Ref" value={`#${refDisplay}`} />
                 <DetailStat label="Amount" value={fmt(Number(request.amount))} bold />
                 {request.term_months && <DetailStat label="Term" value={`${request.term_months} months`} bold />}
                 {request.bid_window_closes_at && (
@@ -117,31 +179,65 @@ export function RequestDetailDrawer({ request, onClose, onBid }: RequestDetailDr
                 )}
               </div>
 
-              {request.purpose && (
+              {/* Purpose */}
+              {f.loanPurpose && (
                 <div>
                   <SectionLabel icon={<FileText className="w-3.5 h-3.5" />} text="Purpose" />
-                  <p className="text-[14px] text-ink/80 bg-cream rounded-xl px-4 py-3 leading-relaxed">{request.purpose}</p>
+                  <p className="text-[14px] text-ink/80 bg-cream rounded-xl px-4 py-3 leading-relaxed">{f.loanPurpose}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-6">
+                {/* Client Profile */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <SectionLabel icon={<User className="w-3.5 h-3.5" />} text="Client Profile" />
                     <span className="text-[10px] text-muted bg-ink/5 px-2 py-1 rounded-full">Anonymised</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <ProfileStat label="Credit Score"   value={request.client_health_score != null ? `${request.client_health_score}/100` : "—"} accent={request.client_health_score != null ? (request.client_health_score >= 70 ? "green" : request.client_health_score >= 50 ? "amber" : "red") : undefined} />
-                    <ProfileStat label="Affordability"  value={request.client_affordability_score != null ? `${request.client_affordability_score}/100` : "—"} accent={request.client_affordability_score != null ? (request.client_affordability_score >= 70 ? "green" : request.client_affordability_score >= 50 ? "amber" : "red") : undefined} />
-                    <ProfileStat label="Risk Score"     value={request.client_risk_score != null ? `${request.client_risk_score}/100` : "—"} />
-                    <ProfileStat label="Monthly Income" value={fmtMoney(request.client_monthly_income)} />
-                    <ProfileStat label="Net Worth"      value={fmtMoney(request.client_net_worth)} />
-                    <ProfileStat label="Country"        value={request.client_country ?? "—"} />
-                    <ProfileStat label="Employment"     value={request.client_employment_status?.replace(/_/g, " ") ?? "—"} />
+                    <ProfileStat label="KYC"
+                      value={f.kycVerified != null ? (f.kycVerified ? "Verified" : "Pending") : "—"}
+                      accent={f.kycVerified ? "green" : f.kycVerified === false ? "red" : undefined} />
+                    <ProfileStat label="Risk tier"
+                      value={f.riskTier ?? "—"}
+                      accent={accentTier(f.riskTier)} />
+                    <ProfileStat label="Credit score"
+                      value={f.healthScore != null ? `${f.healthScore}/100` : "—"}
+                      accent={accentScore(f.healthScore)} />
+                    <ProfileStat label="Affordability"
+                      value={f.affordabilityScore != null ? `${f.affordabilityScore}/100` : "—"}
+                      accent={accentScore(f.affordabilityScore)} />
+                    <ProfileStat label="Risk score"
+                      value={f.riskScore != null ? `${f.riskScore}/100` : "—"} />
+                    <ProfileStat label="Employment"
+                      value={f.employmentStatus?.replace(/_/g, " ") ?? "—"} />
+                    <ProfileStat label="Income band"
+                      value={f.incomeBand ? `${f.incomeBand} MUR/mo` : "—"} />
+                    <ProfileStat label="Net worth"
+                      value={f.netWorthBand ? `${f.netWorthBand} MUR` : "—"} />
+                    <ProfileStat label="DSR current"
+                      value={f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—"}
+                      accent={accentDSR(f.dsrCurrent)} />
+                    <ProfileStat label="DSR post-loan"
+                      value={f.dsrPost != null ? `${f.dsrPost}%` : "—"}
+                      accent={accentDSR(f.dsrPost)} />
                   </div>
+
+                  {/* Collateral / LTV — only for secured products */}
+                  {(f.collateralType || f.ltvPct != null) && (
+                    <div className="mt-2 pt-2 border-t border-ink/[0.06] grid grid-cols-2 gap-2">
+                      <ProfileStat label="Collateral"
+                        value={[fmtCollateral(f.collateralType), f.collateralSub].filter(Boolean).join(" / ") || "—"} />
+                      <ProfileStat label="LTV"
+                        value={f.ltvPct != null ? `${f.ltvPct}%` : "—"}
+                        accent={accentLTV(f.ltvPct)} />
+                    </div>
+                  )}
+
                   <p className="text-[10px] text-muted mt-2">Client identity not disclosed at this stage.</p>
                 </div>
 
+                {/* Right column */}
                 <div className="space-y-4">
                   <div>
                     <SectionLabel icon={<DollarSign className="w-3.5 h-3.5" />} text="Requested Amount" />

@@ -104,27 +104,59 @@ export interface InstitutionBid {
   product_label?: string | null
 }
 
+// Phase 1 Ficium-attested verified attributes (from metadata column)
+export interface RequestMetadata {
+  ficium_attested?: boolean
+  kyc_verified?: boolean
+  employment_status?: string | null
+  income_band?: string | null
+  income_verified?: boolean
+  dsr_current_pct?: number | null
+  dsr_post_pct?: number | null
+  net_worth_band?: string | null
+  has_existing_loans?: boolean | null
+  health_score?: number | null
+  risk_score?: number | null
+  affordability_score?: number | null
+  risk_tier?: 'A' | 'B' | 'C' | 'D' | null
+}
+
+// Bidding context (from params column) — no PII
+export interface RequestParams {
+  app_product_type?: string
+  max_rate?: number | null
+  loan_purpose?: string | null
+  collateral_type?: string | null
+  collateral_sub?: string | null
+  ltv_pct?: number | null
+}
+
 export interface MarketplaceRequest {
   id: string
-  product_type: string
-  status: 'open' | 'bidding' | 'accepted' | 'cancelled' | 'expired'
-  amount: number
-  currency: string
-  term_months?: number
-  purpose?: string
-  financial_snapshot?: Record<string, unknown> | null
-  bid_window_closes_at: string
-  created_at: string
-  client_ref: string
-  client_type: string
+  consumer_ref?: string | null          // anonymised ref
   product_id?: string | null
+  product_type: string                  // legacy / fallback path
   product_label?: string | null
+  product_family_label?: string | null
+  country?: string | null
+  currency: string
+  amount: number
+  term_months?: number
+  params?: RequestParams | null
+  metadata?: RequestMetadata | null
+  status: 'open' | 'bidding' | 'accepted' | 'cancelled' | 'expired'
+  bid_window_opens_at?: string
+  bid_window_closes_at: string
+  source?: string
+  created_at: string
+  // Legacy flat fields (app-DB fallback path — keep for compatibility)
+  purpose?: string | null
+  client_ref?: string | null
   family_label?: string | null
-  // Anonymous client profile fields (visible to marker/checker only)
   client_country?: string | null
   client_monthly_income?: number | null
   client_net_worth?: number | null
-  client_health_score?: number | null     // used as credit score proxy
+  client_health_score?: number | null
   client_risk_score?: number | null
   client_affordability_score?: number | null
   client_employment_status?: string | null
