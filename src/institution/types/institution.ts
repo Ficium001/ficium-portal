@@ -104,21 +104,42 @@ export interface InstitutionBid {
   product_label?: string | null
 }
 
+export interface LoanRecord {
+  type: string
+  outstanding: number
+  monthly: number
+  bank?: string | null
+  months_left?: number | null
+}
+
 // Phase 1 Ficium-attested verified attributes (from metadata column)
 export interface RequestMetadata {
   ficium_attested?: boolean
+  // KYC & risk
   kyc_verified?: boolean
-  employment_status?: string | null
-  income_band?: string | null
-  income_verified?: boolean
-  dsr_current_pct?: number | null
-  dsr_post_pct?: number | null
-  net_worth_band?: string | null
-  has_existing_loans?: boolean | null
   health_score?: number | null
   risk_score?: number | null
   affordability_score?: number | null
   risk_tier?: 'A' | 'B' | 'C' | 'D' | null
+  // Employment
+  employment_status?: string | null
+  employment_type?: string | null
+  employer?: string | null
+  years_employed?: number | null
+  gross_monthly_income?: number | null
+  income_verified?: boolean
+  // DSR
+  dsr_current_pct?: number | null
+  dsr_post_pct?: number | null
+  // Net worth
+  net_worth_band?: string | null
+  // Existing obligations
+  has_existing_loans?: boolean | null
+  existing_monthly_repayment?: number | null
+  existing_loan_balance?: number | null
+  loan_breakdown?: LoanRecord[] | null
+  // Legacy
+  income_band?: string | null
 }
 
 // Bidding context (from params column) — no PII
