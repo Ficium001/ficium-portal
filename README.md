@@ -1,99 +1,90 @@
 # ficium-portal
 
-The Ficium Portal frontend — a single React SPA serving both institution users (banks, fintechs) and Ficium platform staff. One URL; the portal type is detected automatically from the authenticated user.
+Institution-facing React SPA for the Ficium platform. Serves both institution users (banks, fintechs) and Ficium platform staff. One URL; the portal type is detected from the authenticated user.
 
-Built with React + Vite + TypeScript + Tailwind. Deployed on Vercel.
-
-### Documentation
-
-| Doc | Scope |
-|-----|-------|
-| `README.md` | This file — orientation, auth flow, local dev, layout |
-| `ARCHITECTURE.md` | Services, auth (RS256/JWKS), request lifecycle, deployment topology |
-| `DATABASE.md` | Current-state v2 schema, tenancy/RLS, maker-checker, portability |
-| `DESIGN.md` | Product/UX, navigation-as-RBAC, design system, client architecture |
-| `INSTALLATION.md` | Setup and environment configuration |
-| `supabase/SCHEMA_DESIGN.md` | Target-state schema rationale (forward-looking) |
+**Production:** `ficium-portal.vercel.app` · **Stack:** React + Vite + TypeScript + Tailwind · **Auth:** ficium-auth RS256 JWT
 
 ---
 
-## Architecture in one paragraph
-
-The Portal authenticates against **ficium-auth** (RS256 JWT stored in `sessionStorage`), reads institution‑scoped data from **ficium-portal-api** (which enforces RLS), and reads cross‑project marketplace data directly from the **institution Supabase** project. There is no Supabase Auth in the login path anymore. See the platform‑level `ARCHITECTURE.md` for the full picture, and `ARCHITECTURE.md` in this repo for frontend specifics.
-
----
-
-## Auth flow
-
-1. `UnifiedLogin` posts credentials to ficium‑auth via `src/shared/lib/ficiumAuth.ts` (`signIn`).
-2. On success the RS256 token is stored in `sessionStorage`; the page calls `GET /institutions/me` to detect whether the user is an institution user or a platform admin, then routes accordingly.
-3. `PortalRoute` guards authenticated routes — it checks the local token, then confirms access (and approved/suspended/pending status) via `GET /institutions/me`.
-4. `PortalShell` renders the frame: it reads the display name from the JWT payload, resolves nav modules via `GET /members/my-group`, and signs out through ficium‑auth.
-
-Key files: `src/shared/lib/ficiumAuth.ts` (token lifecycle), `src/shared/lib/portalApi.ts` (authenticated fetch wrapper), `src/shared/pages/UnifiedLogin.tsx`, `src/shared/components/PortalRoute.tsx`, `src/shared/components/PortalShell.tsx`.
-
----
-
-## Data sources by hook
-
-`src/institution/hooks/useInstitution.ts` is split deliberately:
-
-**Via ficium-portal-api** (institution schema, RLS):
-`useMyInstitution`, `useMyRole`, `useInstitutionUsers`, `usePendingActions`, `useApproveAction`, `useRejectAction`, `useSubmitBid`, `useWebhooks`, `useAuditEvents`.
-
-**Via Supabase directly** (cross‑project reads of Ficium App data):
-`useMarketplace`, `useMyBids`, `useProducts`.
-
-The admin hooks in `src/admin/hooks/useAdmin.ts` are still mostly on Supabase; only `useMyGroup` has moved to ficium‑portal‑api so far.
-
----
-
-## Local development
+## Quick start
 
 ```bash
 npm install
-
 cp .env.example .env
 # set VITE_AUTH_URL, VITE_PORTAL_API_URL, VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY
-
 npm run dev
 ```
 
 ### Build
 
 ```bash
-npm run build      # tsc -b && vite build
+npm run build   # tsc -b && vite build
 ```
 
-> `tsc -b` is **stricter** than `tsc --noEmit`. It enforces `noUnusedLocals` and `erasableSyntaxOnly`. This means: no unused imports; no TypeScript parameter properties (`constructor(public x)`); no enums or namespaces. A clean local `--noEmit` can still fail the Vercel build, so always run `npm run build` before pushing.
+> Always run `npm run build` before pushing. `tsc -b` enforces `noUnusedLocals`, `erasableSyntaxOnly`, and `verbatimModuleSyntax` — a clean `--noEmit` can still fail the Vercel build.
+
+> **Git authorship:** commits must use `kishan.jeebun@ficium.net` as author — Vercel rejects other authors.
 
 ---
 
-## Configuration (environment variables)
+## Environment variables
 
 | Variable | Notes |
-|----------|-------|
-| `VITE_AUTH_URL` | ficium‑auth base URL |
-| `VITE_PORTAL_API_URL` | ficium‑portal‑api base URL |
-| `VITE_SUPABASE_URL` | institution Supabase project URL (cross‑project reads) |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key |
+|---|---|
+| `VITE_AUTH_URL` | ficium-auth base URL (`https://ficium-auth-production.up.railway.app`) |
+| `VITE_PORTAL_API_URL` | ficium-portal-api base URL (`https://ficium-portal-api-production.up.railway.app`) |
+| `VITE_SUPABASE_URL` | Institution Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key (for cross-project marketplace reads) |
 
 ---
 
-## Deployment (Vercel)
+## Auth flow
 
-- Auto‑deploys on push to `main`.
-- Build command: `npm run build`. Output: `dist/`.
-- Set the `VITE_*` environment variables in the Vercel project settings.
-- **Git authorship matters:** commits must use `kishan.jeebun@ficium.net` as the author email or Vercel rejects the deployment.
+1. `UnifiedLogin` posts credentials to ficium-auth via `src/shared/lib/ficiumAuth.ts` (`signIn`)
+2. RS256 token stored in `sessionStorage`
+3. `GET /institutions/me` detects whether user is institution member or platform admin
+4. Routed accordingly — institution workspace or admin panel
+5. `PortalRoute` guards all authenticated routes
+6. `PortalShell` reads display name from JWT payload, resolves nav modules via `GET /members/my-group`
+
+Key files: `ficiumAuth.ts` (token lifecycle), `portalApi.ts` (authenticated fetch), `UnifiedLogin.tsx`, `PortalRoute.tsx`, `PortalShell.tsx`.
 
 ---
 
-## Database & migrations
+## Data sources
 
-SQL migrations live in `supabase/migrations/`. They define the `institution` and `portal_admin` schemas, the group model, maker‑checker, and the approval RPCs. Run them in order in the Supabase SQL editor.
+**Via ficium-portal-api** (institution schema, RLS enforced):
+- `useMyInstitution`, `useMyRole`, `useInstitutionUsers`
+- `usePendingActions`, `useApproveAction`, `useRejectAction`
+- `useSubmitBid` (maker), `useWebhooks`, `useAuditEvents`
+- All pipeline and document management hooks
 
-The `supabase/functions/provision-institution-user/` Edge Function handles institution user provisioning (pending migration into ficium‑portal‑api).
+**Via Supabase directly** (cross-project reads from Ficium App DB):
+- `useMarketplace` — open consumer requests
+- `useMyBids` — institution's own bids
+- `useProducts` — product catalogue
+
+---
+
+## Institution bid flow
+
+1. Maker goes to Marketplace → sees open consumer requests
+2. Clicks "Bid" → fills rate, amount, term → `POST /approvals/submit { action: 'bid.submit' }`
+3. Checker goes to Approvals → reviews → `POST /approvals/{id}/approve`
+4. Portal DB `marketplace.bid` row created atomically
+5. `trg_bid_notify` fires → consumer notified via pg_net → Vercel → Resend email
+
+---
+
+## Documentation
+
+| Doc | Scope |
+|---|---|
+| `README.md` | This file |
+| `ARCHITECTURE.md` | **Full platform architecture** (services, flows, data split, security) |
+| `DATABASE.md` | Portal DB schema — institution, marketplace, governance, catalog schemas |
+| `DESIGN.md` | UX, navigation-as-RBAC, design system, component patterns |
+| `INSTALLATION.md` | Environment setup and configuration |
 
 ---
 
@@ -102,26 +93,26 @@ The `supabase/functions/provision-institution-user/` Edge Function handles insti
 ```
 src/
   shared/
-    lib/        ficiumAuth.ts, portalApi.ts, supabase.ts, …
-    pages/      UnifiedLogin.tsx
-    components/ PortalRoute.tsx, PortalShell.tsx, RegisterShell.tsx
-    ui/         design system (Button, Card, Field, dashboard kit, …)
+    lib/          ficiumAuth.ts, portalApi.ts, supabase.ts
+    pages/        UnifiedLogin.tsx
+    components/   PortalRoute.tsx, PortalShell.tsx, RegisterShell.tsx
+    ui/           Button, Card, Field, dashboard kit
   institution/
-    hooks/      useInstitution.ts
-    <feature>/  dashboard, marketplace, bids, approvals, products,
-                webhooks, audit, team, settings, auth (onboarding)
+    hooks/        useInstitution.ts (all data fetching)
+    marketplace/  Request list + bid submission
+    bids/         Bid management
+    approvals/    Maker-checker approval queue
+    pipeline/     Loan pipeline tracker
+    products/     Product catalogue
+    team/         Members + groups
+    settings/     Institution settings
+    auth/         Institution onboarding
   admin/
-    hooks/      useAdmin.ts
-    <feature>/  dashboard, institutions, users, groups, sessions,
-                dual-control, audit, system
-  app/          routes.tsx, query-client.ts
+    hooks/        useAdmin.ts
+    institutions/ Institution management
+    users/        User management
+    audit/        Platform audit log
+  app/            routes.tsx, query-client.ts
 supabase/
-  migrations/   schema + RPCs
-  functions/    provision-institution-user
+  migrations/     Institution schema + RPCs
 ```
-
----
-
-## Migration status
-
-The Portal is mid‑migration from Supabase Auth + PostgREST to ficium‑auth + ficium‑portal‑api. Login, the route guard, the shell, and the institution data hooks are done. Still on Supabase: the admin dashboard tree, and the `GroupsTab` / `InstitutionUsers` settings components (groups CRUD + user provisioning). See the platform `ARCHITECTURE.md` §8 for the staged plan.

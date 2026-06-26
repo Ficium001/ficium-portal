@@ -1,211 +1,265 @@
 # Ficium Platform — Architecture
 
-_Last updated: 15 June 2026_
-
-This document is the system of record for how the Ficium platform fits together: the services, how they authenticate, where data lives, and how a request flows end to end. It reflects the **currently deployed** state, not an aspirational design.
+_Last updated: 27 June 2026 · Reflects currently deployed production state_
 
 ---
 
 ## 1. What Ficium is
 
-Ficium is a **reverse banking marketplace**. Individuals and businesses post financial requests (loans, deposits, FX, trade finance); banks and fintechs compete to fulfil them. There are two distinct products:
+Ficium is a **reverse banking marketplace** for Mauritius and the Indian Ocean region. Individuals and businesses post anonymised financial requests; FSC-licensed banks and fintechs compete with bids. The consumer picks the best offer.
 
-| Product | Audience | Purpose |
-|---------|----------|---------|
-| **Ficium App** | Consumers (public) | Post requests, receive and compare provider bids |
-| **Ficium Portal** | Institutions + Ficium staff | Bid on requests, manage products, run maker‑checker approvals, administer the platform |
+Two distinct products, two separate frontends, two separate data stores:
 
-The App and the Portal are separate frontends backed by separate data stores. They communicate over REST when the Portal needs live marketplace data from the App.
+| Product | Audience | Deployed at |
+|---------|----------|-------------|
+| **Ficium App** | Consumers | `ficium.vercel.app` |
+| **Ficium Portal** | Institutions + Ficium staff | `ficium-portal.vercel.app` |
 
 ---
 
-## 2. Services at a glance
+## 2. Services
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                          FICIUM PORTAL                            │
-│              (React SPA — Vercel — ficium-portal.vercel.app)      │
-│                                                                   │
-│   Auth: ficium-auth (RS256 JWT in sessionStorage)                 │
-│   Data: ficium-portal-api (institution data, RLS)                 │
-│         institution Supabase (cross-project reads: marketplace)   │
-└───────────┬───────────────────────────────┬──────────────────────┘
-            │                               │
-            │ POST /auth/login              │ GET /institutions/me
-            │ (credentials → RS256 JWT)     │ (Bearer JWT → data)
-            ▼                               ▼
-┌────────────────────────┐      ┌──────────────────────────────────┐
-│      ficium-auth       │      │       ficium-portal-api          │
-│  (FastAPI — Railway)   │      │      (FastAPI — Railway)         │
-│                        │      │                                  │
-│  • Argon2id passwords  │      │  • Verifies JWT via JWKS         │
-│  • RS256 JWT issuance  │      │  • Sets request.jwt.claims       │
-│  • JWKS endpoint       │◄─────┤  • Queries with RLS enforced     │
-│  • MFA, sessions       │ JWKS │  • Maker-checker RPCs            │
-│  • Redis (rate limit,  │      │                                  │
-│    session store)      │      │                                  │
-└───────────┬────────────┘      └──────────────┬───────────────────┘
-            │                                  │
-            ▼                                  ▼
-┌────────────────────────┐      ┌──────────────────────────────────┐
-│   auth_portal schema   │      │     institution schema           │
-│   (Supabase Postgres)  │      │     (same Supabase Postgres)     │
-│                        │      │                                  │
-│  • auth_users          │      │  • institutions                  │
-│  • auth_sessions       │      │  • institution_members           │
-│  • mfa_backup_codes     │      │  • groups                        │
-│  • password_reset_*    │      │  • pending_actions               │
-│  • auth_audit_events   │      │  • portal_admin.* (RPCs)         │
-└────────────────────────┘      └──────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        FICIUM APP                                    │
+│              (React SPA · Vercel · ficium.vercel.app)                │
+│  Auth: Supabase Auth (email/password)                                │
+│  Data: Supabase App DB (direct) + Vercel API routes                 │
+└──────────────────────────────────┬──────────────────────────────────┘
+                                   │ REST (X-Service-Secret)
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│              Vercel Serverless (api/*.ts — 12 functions max)         │
+│                                                                      │
+│  /api/kyc            KYC identity verification (Claude + Rekognition)│
+│  /api/accept-bid     Phase 2 PII reveal + atomic acceptance          │
+│  /api/request-bids   Bid list for a single request                   │
+│  /api/request-bids-bulk  Bid list for many requests                  │
+│  /api/request-builder    AI-assisted request drafting                │
+│  /api/request-actions    Request status transitions                  │
+│  /api/internal       Internal pg_net dispatcher (4 actions):         │
+│                        bid-notify, vault-extract,                    │
+│                        request-expiring, request-expired,            │
+│                        bid-accepted                                  │
+│  /api/chat           Claude AI financial coach                       │
+│  /api/intelligence   Market intelligence feed                        │
+│  /api/market         Market data                                     │
+│  /api/rate-applicant Applicant scoring                               │
+│  /api/keepalive      Railway warm-up ping                            │
+└──────────────────────────────────┬──────────────────────────────────┘
+                                   │
+              ┌────────────────────┴─────────────────────┐
+              ▼                                           ▼
+┌─────────────────────────┐             ┌───────────────────────────┐
+│  Supabase App DB        │             │   ficium-portal-api       │
+│  (wixfhjlsjkiwfvqewvmt) │             │   (FastAPI · Railway)     │
+│  region: ap-south-1     │             │                           │
+│                         │◄────────────│  Vercel calls this for    │
+│  public.*               │  app_conn   │  accept-bid Phase 2 PII   │
+│  marketplace_sync.*     │  (direct)   │  and sync-requests        │
+│  vault_extract.*        │             └───────────────────────────┘
+│  bid_notify.*           │
+│  vault.*                │
+└─────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        FICIUM PORTAL                                 │
+│              (React SPA · Vercel · ficium-portal.vercel.app)         │
+│  Auth: ficium-auth (RS256 JWT in sessionStorage)                     │
+│  Data: ficium-portal-api (institution data, RLS-enforced)            │
+│        institution Supabase DB (cross-project: marketplace reads)    │
+└───────────┬─────────────────────────────┬───────────────────────────┘
+            │                             │
+            │ POST /auth/login            │ Bearer <RS256 JWT>
+            ▼                             ▼
+┌────────────────────────┐   ┌────────────────────────────────────────┐
+│     ficium-auth        │   │         ficium-portal-api              │
+│   (FastAPI · Railway)  │   │        (FastAPI · Railway)             │
+│                        │   │                                        │
+│  Argon2id passwords    │   │  Verifies JWT via JWKS (cached)        │
+│  RS256 JWT issuance    │◄──│  set_config(request.jwt.claims)        │
+│  JWKS endpoint         │   │  Queries with RLS enforced             │
+│  MFA (TOTP)            │   │  Maker-checker RPCs                    │
+│  Redis sessions        │   │  Marketplace + bid management          │
+│  Rate limiting         │   │  Phase 2 PII reveal (s2s only)         │
+│  Email (Resend)        │   │  Bid window close (GitHub Actions cron)│
+└────────────┬───────────┘   └──────────────────┬─────────────────────┘
+             │                                  │
+             ▼                                  ▼
+┌────────────────────────┐   ┌────────────────────────────────────────┐
+│  auth_portal schema    │   │   Supabase Institution DB              │
+│  (institution Supabase)│   │   (egwobcajdlragubtkpqp)              │
+│                        │   │   region: ap-southeast-1              │
+│  auth_users            │   │                                        │
+│  auth_sessions         │   │   institution.*                        │
+│  mfa_backup_codes      │   │   marketplace.*  (bid, request,        │
+│  auth_audit_events     │   │     acceptance, pipeline, events)      │
+└────────────────────────┘   │   governance.*   (maker-checker)       │
+                             │   catalog.*      (products, families)  │
+                             │   bid_notify.*   (pg_net dispatcher)   │
+                             └────────────────────────────────────────┘
 ```
 
-**Three deployable services**, all live:
-
-1. **ficium-auth** — authentication service. Issues RS256 JWTs, owns the `auth_portal` schema, runs on Railway with Redis.
-2. **ficium-portal-api** — portable data API. Verifies ficium‑auth tokens against the JWKS, queries the `institution` schema with row‑level security enforced, exposes the maker‑checker RPCs. Runs on Railway.
-3. **ficium-portal** — the React SPA. Deployed on Vercel. Authenticates against ficium‑auth, reads institution data from ficium‑portal‑api, and reads cross‑project marketplace data directly from the institution Supabase project.
-
 ---
 
-## 3. Authentication architecture (RS256 + JWKS)
-
-Authentication moved off Supabase Auth onto a self‑owned service, **ficium-auth**. This is the load‑bearing architectural decision of the platform.
-
-### Why RS256 (asymmetric) and not HS256 (shared secret)
-
-- **ficium-auth** holds the **private key** and is the only service that can mint tokens.
-- **ficium-portal-api** (and any future consumer) verifies tokens with the **public key**, fetched from ficium‑auth's JWKS endpoint. No shared secret ever leaves ficium‑auth.
-- Adding a new token consumer requires zero secret distribution — it just reads the public JWKS.
-
-### The JWKS endpoint
-
-`ficium-auth` exposes its public key at:
+## 3. The marketplace core loop
 
 ```
-GET https://ficium-auth-production.up.railway.app/.well-known/jwks.json
+Consumer (App)                  Portal                    Institution
+──────────────                  ──────                    ───────────
+POST /requests         ──►  marketplace_sync trigger
+  (App DB insert)            └─► pg_net → /api/internal
+                                  { action: 'sync-requests' }
+                                  → portal-api /marketplace/sync-requests
+                                  → marketplace.ingest_app_request()
+
+                              marketplace.request
+                              (status: bidding)       ◄── GET /marketplace/requests
+                                                           (institution sees request)
+
+                                                      ──► POST /approvals/submit
+                                                           { action: bid.submit }
+                                                           (maker)
+
+                                                      ──► POST /approvals/{id}/approve
+                                                           (checker)
+                                                           → marketplace.bid INSERT
+                                                           → trg_bid_notify fires
+                                                           → pg_net → /api/internal
+                                                             { action: 'bid-notify' }
+◄── Notification written
+    (bid_received)
+    + Resend email
+
+GET /requests/:id/bids ──►  public.get_bids_for_request()
+  (consumer sees bid)        (double-blind: no institution name)
+
+POST /accept-bid       ──►  portal-api /public/requests/:id/accept-bid
+                             → marketplace.accept_bid() atomic:
+                               winning bid → accepted
+                               others     → rejected
+                               request    → accepted + winning_bid_id
+                               bid_acceptance PII written
+                               pipeline auto-created
+                             ← { institution_name, contact_*, rate, ... }
+
+                        ──►  App DB: bid_acceptances + requests.status=accepted
+                        ──►  bid_accepted notification written
+◄── Phase2RevealModal
+    (institution revealed)
 ```
 
-Response:
-```json
-{
-  "keys": [{
-    "kty": "RSA", "use": "sig", "alg": "RS256",
-    "kid": "ficium-auth-rs256-v1",
-    "n": "…", "e": "AQAB"
-  }]
-}
+---
+
+## 4. Data split
+
+| What | Where | Why |
+|------|-------|-----|
+| Consumer PII (clients, dossier, financials) | App DB (`public.*`) | Consumer-facing, Supabase Auth RLS |
+| Consumer requests | App DB (`public.requests`) | Consumer creates them |
+| Marketplace requests (anonymised) | Institution DB (`marketplace.request`) | Synced from App DB via pg_net + portal-api; institution never sees App DB |
+| Bids | Institution DB (`marketplace.bid`) | Institution creates them |
+| Bid acceptances + PII reveal | Institution DB (`marketplace.bid_acceptance`) | Portal-api fetches PII from App DB at accept time, stores reveal |
+| Loan pipeline | Institution DB (`marketplace.loan_pipeline`) | Created atomically on acceptance |
+| Institution data | Institution DB (`institution.*`) | Portal-only |
+| Auth sessions | Institution DB (`auth_portal.*`) | ficium-auth owns this |
+| Consumer notifications | App DB (`public.notifications`) | Written by Vercel handlers triggered by institution DB events |
+| Consumer documents (Vault) | App DB (`client_vault_document`) + Supabase Storage (`documents` bucket) | Consumer uploads; Claude Vision extracts |
+
+---
+
+## 5. Notification matrix
+
+Every consumer-facing event triggers an in-app notification (polled every 30s) and a Resend email. All handlers live in `ficium/api/_lib/handlers/` and are dispatched through `ficium/api/internal.ts`.
+
+| Event | Kind | Trigger | Email |
+|-------|------|---------|-------|
+| Request submitted | `request_created` | App DB insert trigger (existing) | No |
+| Institution bids | `bid_received` | `trg_bid_notify` on `marketplace.bid` INSERT | Yes |
+| Bid window closing in 24h | `request_expiring` | pg_cron hourly (`notify_expiring_requests()`) | No |
+| Bid window closed, no bids | `bid_expired` | `close_expired_windows()` on Portal DB | No |
+| Consumer accepts bid | `bid_accepted` | `accept-bid.ts` after successful portal call | No |
+
+---
+
+## 6. Vault — Document enrichment
+
+The Ficium Vault lets consumers store financial documents (payslips, title deeds, bank statements, etc.) which are automatically processed by Claude Vision to extract structured data. Extracted data is attested into `client_financial_snapshot`, making the consumer's profile verifiably accurate.
+
+```
+Consumer uploads file
+  → client_vault_document INSERT (App DB)
+  → trg_vault_extract fires
+  → pg_net → /api/internal { action: 'vault-extract', document_id }
+  → Download from Supabase Storage (documents bucket)
+  → Claude Vision (claude-sonnet-4-6) with doc-type prompt
+  → Structured JSON extraction
+  → Confidence scoring
+  → Attest into:
+      client_financial_snapshot (income_verified, property_verified, liabilities_verified)
+      client_vault_property (per-property records)
+      client_loan_details (per-loan upsert)
+  → client_vault_document.extract_status = 'attested' | 'manual_review' | 'failed'
+
+Documents NEVER sent to institutions.
+Institutions see attested data points in Phase 1 metadata only.
 ```
 
-`ficium-portal-api` fetches and caches this on startup; every incoming token's `kid` header is matched against it to verify the signature.
+---
 
-### Token claims
+## 7. Double-blind identity model
 
-Each access token carries:
+The marketplace preserves mutual anonymity until a consumer accepts a bid:
 
-| Claim | Meaning |
-|-------|---------|
-| `sub` | The user's id (= `auth_users.id` = `institution_members.auth_user_id`) |
-| `iss` | `ficium-auth` |
-| `aud` | `ficium-portal` |
-| `role` | `authenticated` (Supabase‑compatible — lets `auth.uid()` work in RLS) |
-| `user_role` | Application role: `super_admin`, `institution_admin`, etc. |
-| `institution_id` | The user's institution (placeholder UUID for platform admins) |
-| `email` | Used by the Portal shell to display the user's name |
-| `session_id`, `deployment`, `jti`, `iat`, `exp` | Session + standard JWT bookkeeping |
-
-### The Supabase‑compatibility trick
-
-The Portal's entire data‑access security model — RLS policies, `current_member_ctx()`, the maker‑checker functions — resolves the caller through `auth.uid()`, which reads the `request.jwt.claims` GUC. On Supabase, PostgREST sets that GUC. Off PostgREST, **ficium-portal-api sets it itself** per request:
-
-```sql
-SELECT set_config('request.jwt.claims', '<verified JWT payload>', true);
-```
-
-Because the token's `sub` and `role` claims mirror what Supabase Auth would have issued, **every existing RLS policy and SECURITY DEFINER function works unchanged.** This is why the migration required no rewrite of the database security layer.
-
-> Note: `ficium-portal-api` does **not** issue `SET LOCAL ROLE authenticated`. Supabase's transaction pooler (pgbouncer) resets session state between transactions and the pooler user cannot switch roles. RLS policies check `auth.uid()` (which reads the GUC), not `current_role`, so this is correct and matches how PostgREST itself behaves.
+- **Phase 1 (bidding):** Consumer is identified by an anonymised UUID (`_anon_uuid(real_id)` — MD5 of `real_id + ':ficium-anon-v1:'`). Institutions see financial metadata only, never PII or the real consumer ID.
+- **Phase 2 (accept):** `marketplace.accept_bid()` is called with the consumer's real UUID. Portal-api fetches full PII from the App DB and writes it into `marketplace.bid_acceptance`. The institution then sees: full name, email, phone, address, date of birth, NIC number.
+- The institution name is revealed to the consumer at the same moment via `Phase2RevealModal`.
 
 ---
 
-## 4. Request lifecycle (end to end)
+## 8. Sync architecture (App DB → Institution DB)
 
-A user loading their institution dashboard:
+Two mechanisms keep requests in sync:
 
-1. **Login.** The SPA posts credentials to `ficium-auth` `POST /auth/login`. ficium‑auth verifies the Argon2id password hash, issues an RS256 access token (+ refresh cookie), and stores the access token in `sessionStorage`.
-2. **Route guard.** `PortalRoute` reads the token locally, then calls `ficium-portal-api` `GET /institutions/me` with `Authorization: Bearer <token>`.
-3. **Token verification.** ficium‑portal‑api matches the token's `kid` to the cached JWKS, verifies the RS256 signature, and checks `iss` / `aud` / `exp`.
-4. **Gate decision.** For platform admins it returns immediately by role. For institution users it opens a tenant‑scoped DB session, sets `request.jwt.claims`, and queries `institution.institutions` under RLS to return `approved` / `suspended` / `pending` status.
-5. **Shell + nav.** `PortalShell` calls `GET /members/my-group` to resolve the user's module permissions (via the `portal_admin.get_my_group()` SECURITY DEFINER RPC) and renders the navigation accordingly.
-6. **Marketplace data.** `useMarketplace` and `useMyBids` read directly from the institution Supabase project (cross‑project marketplace views), not from ficium‑portal‑api.
+**Event-driven (immediate):** `trg_marketplace_sync` fires on `public.requests` INSERT/UPDATE → `marketplace_sync.dispatch()` → `pg_net` → `ficium-portal-api /marketplace/sync-requests` → `marketplace.ingest_app_request()`.
 
----
+**Safety-net sweep:** `pg_cron` job runs every 5 minutes calling `marketplace_sync.dispatch()` to catch any pg_net misses.
 
-## 5. Data ownership & multi-tenancy
-
-The platform is **multi-tenant SaaS**. Every provider/institution is segregated:
-
-- Every tenant‑scoped table carries `institution_id NOT NULL`.
-- RLS is **enabled and FORCED** on tenant tables, scoped to the caller's institution via `current_member_ctx()`.
-- Composite indexes lead with `institution_id`.
-- A cross‑tenant guard trigger blocks assigning a member to another institution's group, regardless of write path.
-
-### Schema map
-
-| Schema | Owner | Contents |
-|--------|-------|----------|
-| `auth_portal` | ficium-auth | users, sessions, MFA, password‑reset & verification tokens, auth audit |
-| `institution` | ficium-portal-api | institutions, members, groups, pending_actions |
-| `portal_admin` | ficium-portal-api | admin RPCs, dual‑control actions, `get_my_group`, `get_institutions` |
+The pg_net vault secrets (`portal_api_url`, `app_service_secret`) are stored in Supabase Vault on the App DB. Dispatch is fire-and-forget and non-fatal — the consumer's request creation is never blocked.
 
 ---
 
-## 6. Deployment topology
+## 9. Deployment topology
 
-| Service | Platform | URL |
-|---------|----------|-----|
-| ficium-portal | Vercel | `ficium-portal.vercel.app` |
-| ficium-auth | Railway | `ficium-auth-production.up.railway.app` |
-| ficium-portal-api | Railway | `ficium-portal-api-production.up.railway.app` |
-| Postgres + Auth tables | Supabase | project `egwobcajdlragubtkpqp` (institution) |
-| Redis | Railway | private service, attached to ficium-auth |
+| Service | Platform | Region | Repo |
+|---------|----------|--------|------|
+| Ficium App | Vercel (Hobby) | Auto (CDN) | `Ficium001/ficium` |
+| Ficium Portal | Vercel (Hobby) | Auto (CDN) | `Ficium001/ficium-portal` |
+| ficium-portal-api | Railway | ap-southeast-1 | `Ficium001/ficium-portal-api` |
+| ficium-auth | Railway | ap-southeast-1 | `Ficium001/ficium-auth` |
+| App DB | Supabase `wixfhjlsjkiwfvqewvmt` | ap-south-1 | — |
+| Institution DB | Supabase `egwobcajdlragubtkpqp` | ap-southeast-1 | — |
 
-### Deployment models supported
+**Vercel function budget:** Hobby plan allows 12 root-level `api/*.ts` functions. Currently at exactly 12. Upgrade to Pro before adding more functions.
 
-`ficium-portal-api` is built to be **portable** across three models:
-
-1. **SaaS** (current) — Supabase Postgres, shared multi‑tenant.
-2. **Client cloud** — the institution's own managed Postgres.
-3. **On‑premises** — Postgres inside the institution's network.
-
-For non‑Supabase Postgres, the `db/000_auth_shim.sql` script recreates the `auth.uid()` / `auth.jwt()` helpers and the `authenticated` role that Supabase provides natively, so the same RLS policies run unchanged. (On Supabase this shim is skipped — the platform owns those objects.)
+**Railway cold starts:** GitHub Actions keepalive workflow pings `/health` every 5 minutes on both Railway services to prevent spin-down.
 
 ---
 
-## 7. Connection details that matter
+## 10. ADRs
 
-These are the non‑obvious operational facts that have bitten us:
-
-- **Supabase direct connection (port 5432) is blocked** from external IPs on the free plan. `ficium-portal-api` connects via the **transaction pooler (port 6543)** using `psycopg2` (not asyncpg, which requires a direct connection).
-- The pooler host is region‑specific: `aws-1-ap-southeast-1.pooler.supabase.com`. The pooler **username** must be `postgres.<project-ref>`, not plain `postgres`.
-- **Git authorship:** all commits must use `kishan.jeebun@ficium.net` as the author email, or Vercel blocks the deployment.
-- **`tsc -b` strictness:** Vercel's build enforces `noUnusedLocals` and `erasableSyntaxOnly`. No parameter properties, enums, or namespaces; no unused imports. Local `tsc --noEmit` is laxer, so a clean local check can still fail on Vercel.
-- **Vercel Hobby plan** caps serverless functions at 12.
+| ADR | Decision | Status |
+|-----|----------|--------|
+| ADR-001 | Portable portal data layer — ficium-portal-api instead of PostgREST | Implemented |
+| ADR-002 | Identity migration — ficium-auth RS256 replacing Supabase Auth for portal | In progress (`feat/identity-migration-adr002`) |
 
 ---
 
-## 8. Current migration status
+## 11. Security properties
 
-The platform has moved from "all Supabase Auth + PostgREST" to "self‑owned ficium‑auth + ficium‑portal‑api," in stages:
-
-| Stage | Scope | Status |
-|-------|-------|--------|
-| 1–2 | ficium-auth (RS256, JWKS), ficium-portal-api scaffolding | ✅ Done |
-| 3 | PortalRoute + useMyInstitution → portal-api | ✅ Done |
-| 4 | Institution hooks → portal-api | ✅ Done |
-| 4b | Login, shell, useMyGroup → ficium-auth; marketplace/bids/products kept on Supabase (cross‑project) | ✅ Done |
-| 4c | `GroupsTab`, `InstitutionUsers` (groups CRUD + user provisioning) → portal-api | ⏳ Pending |
-| 5 | Admin dashboard tree → portal-api | ⏳ Pending |
-
-### Why marketplace/bids/products stay on Supabase
-
-These read data that lives in the **Ficium App's** Supabase project (consumer requests, live bids), not the institution project. They are cross‑project reads and correctly use the Supabase client directly; they were never meant to route through ficium‑portal‑api.
+- **Tenant isolation:** Every institution-scoped table has `institution_id NOT NULL`, RLS `ENABLE` + `FORCE`, composite indexes leading with `institution_id`.
+- **Auth:** Consumer app uses Supabase Auth (email/password). Portal uses ficium-auth (RS256/Argon2id). The two auth systems are independent.
+- **Service-to-service auth:** Shared secret (`APP_SERVICE_SECRET`) validated via `hmac.compare_digest`. Stored in Supabase Vault for pg_net calls.
+- **PII protection:** Consumer PII never stored on Institution DB except inside `marketplace.bid_acceptance` at accept time.
+- **Audit trail:** `client_vault_access_log` on every document access. `audit_events` on bid actions. `auth_audit_events` in ficium-auth.
+- **Retention:** `client_vault_document.retain_until` = 5 years from upload (AML/CFT requirement). Soft-delete pattern.
