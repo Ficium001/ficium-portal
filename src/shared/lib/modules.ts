@@ -107,6 +107,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'O',
   },
   {
+    key:         'inst:pipeline',
+    label:       'Pipelines',
+    description: 'Manage post-acceptance loan processing pipelines',
+    category:    'institution',
+    path:        '/pipelines',
+    iconKey:     'GitBranch',
+    shortcut:    'N',
+  },
+  {
     key:         'inst:webhooks',
     label:       'Webhooks',
     description: 'Configure outbound webhook endpoints',
