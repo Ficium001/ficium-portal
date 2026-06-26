@@ -3,6 +3,7 @@
  * Data: usePipelines hook. Rendering: PipelineCard component.
  */
 import { SkeletonCard, EmptyState } from "../../components/primitives";
+import { GitBranch }    from "lucide-react";
 import { PipelineCard } from "../components/PipelineCard";
 import { usePipelines } from "../hooks/usePipeline";
 
@@ -19,7 +20,7 @@ export function InstitutionPipelines() {
         <div className="space-y-3">{Array.from({length:3}).map((_,i)=><SkeletonCard key={i}/>)}</div>
       ) : pipelines.length === 0 ? (
         <EmptyState
-          icon="pipeline"
+          icon={GitBranch}
           title="No active pipelines"
           description="Pipelines are created automatically when a borrower accepts a bid."
         />
