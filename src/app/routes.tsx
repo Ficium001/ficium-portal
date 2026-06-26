@@ -164,8 +164,8 @@ export const router = createBrowserRouter([
           // Institution pages
           { path: '/marketplace',  element: <RequireModule moduleKey="inst:marketplace"><S><InstitutionMarketplace /></S></RequireModule> },
           { path: '/bids',         element: <RequireModule moduleKey="inst:bids"><S><InstitutionBids /></S></RequireModule> },
-          { path: '/pipelines',    element: <RequireModule moduleKey="inst:marketplace"><S><InstitutionPipelines /></S></RequireModule> },
-          { path: '/pipelines/:id',element: <RequireModule moduleKey="inst:marketplace"><S><PipelineDetail /></S></RequireModule> },
+          { path: '/pipelines',    element: <RequireModule moduleKey="inst:pipeline"><S><InstitutionPipelines /></S></RequireModule> },
+          { path: '/pipelines/:id',element: <RequireModule moduleKey="inst:pipeline"><S><PipelineDetail /></S></RequireModule> },
           { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
           { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
           { path: '/webhooks',     element: <RequireModule moduleKey="inst:webhooks"><S><InstitutionWebhooks /></S></RequireModule> },
