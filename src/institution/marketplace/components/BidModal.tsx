@@ -43,7 +43,22 @@ export function BidModal({ request, onClose, onSubmit, isSubmitting, error }: Bi
               {request.term_months ? ` · ${request.term_months}m` : ""}
             </p>
           </div>
-          <button onClick={onClose} className="text-muted hover:text-ink transition-colors"><X className="w-5 h-5" /></button>
+          <div className="flex flex-col items-end gap-1">
+            <button onClick={onClose} className="text-muted hover:text-ink transition-colors"><X className="w-5 h-5" /></button>
+            {request.bid_window_closes_at && (() => {
+              const ms = new Date(request.bid_window_closes_at).getTime() - Date.now();
+              const urgent = ms < 2 * 3_600_000;
+              const label = ms <= 0 ? "Closed" : ms < 3_600_000
+                ? `${Math.floor(ms / 60_000)}m left`
+                : `${Math.floor(ms / 3_600_000)}h ${Math.floor((ms % 3_600_000) / 60_000)}m left`;
+              return (
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                  urgent ? "bg-red-50 text-red-600" : "bg-ink/[0.05] text-muted"
+                }`}>
+                  ⏱ {label}
+                </span>
+              );
+            })()}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">

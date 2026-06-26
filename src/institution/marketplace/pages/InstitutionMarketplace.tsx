@@ -75,13 +75,20 @@ function RequestCard({
   onOpen: () => void;
   onBid:  () => void;
 }) {
-  const closing    = timeUntil(request.bid_window_closes_at);
-  const isUrgent   = new Date(request.bid_window_closes_at).getTime() - Date.now() < 2 * 3_600_000;
-  const healthScore = request.client_health_score;
+  const windowMs     = new Date(request.bid_window_closes_at).getTime() - Date.now();
+  const windowClosed = windowMs <= 0 || request.status === 'closed';
+  const closing      = windowClosed ? "Closed" : timeUntil(request.bid_window_closes_at);
+  const isUrgent     = !windowClosed && windowMs < 2 * 3_600_000;
+  const bidCount     = request.bid_count ?? 0;
+  const healthScore  = request.client_health_score;
 
   return (
     <article
-      className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden hover:border-ficium/30 hover:shadow-md transition-all"
+      className={`bg-white rounded-xl border overflow-hidden transition-all ${
+        windowClosed
+          ? "border-ink/[0.05] opacity-75"
+          : "border-ink/[0.07] hover:border-ficium/30 hover:shadow-md"
+      }`}
       aria-label={`${request.product_label ?? request.product_type} request — ${fmtMUR(Number(request.amount))}`}
     >
       {/* Header */}
@@ -95,7 +102,20 @@ function RequestCard({
               ref {(request.consumer_ref ?? request.client_ref)?.slice(0, 8) ?? "—"}
             </div>
           </div>
-          <StatusBadge status={request.status} size="xs" />
+          <div className="flex flex-col items-end gap-1">
+            {windowClosed ? (
+              <span className="text-[10px] font-semibold bg-ink/[0.06] text-muted px-2 py-0.5 rounded-full">
+                Window closed
+              </span>
+            ) : (
+              <StatusBadge status={request.status} size="xs" />
+            )}
+            {bidCount > 0 && (
+              <span className="text-[10px] text-muted">
+                {bidCount} bid{bidCount !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -164,9 +184,9 @@ function RequestCard({
 
         {/* Bid window */}
         <div className={`flex items-center justify-between text-[12px] mb-4 ${
-          isUrgent ? "text-red-500 font-semibold" : "text-muted"
+          windowClosed ? "text-muted" : isUrgent ? "text-red-500 font-semibold" : "text-muted"
         }`}>
-          <span>Bid window closes</span>
+          <span>{windowClosed ? "Bidding closed" : "Bid window closes"}</span>
           <span>{closing}</span>
         </div>
 
@@ -179,7 +199,7 @@ function RequestCard({
           >
             View details
           </button>
-          {canBid && (
+          {canBid && !windowClosed && (
             <button
               onClick={onBid}
               className="flex-1 text-[12px] font-bold bg-ficium text-white rounded-lg py-2 hover:bg-ficium-deep transition-colors"

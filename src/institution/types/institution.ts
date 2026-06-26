@@ -169,6 +169,7 @@ export interface MarketplaceRequest {
   status: 'open' | 'bidding' | 'accepted' | 'cancelled' | 'expired'
   bid_window_opens_at?: string
   bid_window_closes_at: string
+  bid_count?: number
   source?: string
   created_at: string
   // Legacy flat fields (app-DB fallback path — keep for compatibility)
