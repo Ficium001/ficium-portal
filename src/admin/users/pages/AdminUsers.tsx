@@ -32,14 +32,14 @@ import {
   useCreateAdminUser, useSuspendAdminUser, useUnlockAdminUser,
   useResetAdminPassword, useForceLogout, useChangeAdminRole,
   useDeactivateAdminUser,
-} from '../../hooks/useAdmin'
-import type { AdminUser, AdminRoleSlug } from '../../types/admin'
-import { ROLE_LABELS } from '../../types/admin'
+} from '@/admin/hooks/useAdmin'
+import type { AdminUser, AdminRoleSlug } from '@/admin/types/admin'
+import { ROLE_LABELS } from '@/admin/types/admin'
 import {
   ASectionHeader, ADataTable, ATr, ATd, AStatusBadge, RiskBadge,
   ASkeletonRow, AEmptyState, AFilterPills, ABtn, AAlert,
   AModal, AConfirmModal, AFormField, aInputCls,
-} from '../../components/primitives'
+} from '@/admin/components/primitives'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants

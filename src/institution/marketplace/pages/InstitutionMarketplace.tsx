@@ -33,14 +33,14 @@ import {
   useMarketplace, useProducts, useSubmitBid, useMyInstitution,
 } from "@/institution/hooks/useInstitution";
 import { useIntelligence } from "@/shared/lib/intelligence";
-import { RequestDetailDrawer }  from "../components/RequestDetailDrawer";
-import { BidModal }             from "../components/BidModal";
-import type { BidForm }         from "../components/BidModal";
+import { RequestDetailDrawer }  from "@/institution/marketplace/components/RequestDetailDrawer";
+import { BidModal }             from "@/institution/marketplace/components/BidModal";
+import type { BidForm }         from "@/institution/marketplace/components/BidModal";
 import type { MarketplaceRequest } from "@/institution/types/institution";
 import {
   SectionHeader, LiveBadge, InlineAlert, FilterPills,
   Btn, SkeletonCard, EmptyState, StatusBadge,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

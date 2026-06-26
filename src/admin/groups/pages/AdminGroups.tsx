@@ -23,17 +23,17 @@ import {
   CheckSquare, Square,
 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import adminDb from '../../lib/adminSupabase'
+import adminDb from '@/admin/lib/adminSupabase'
 import {
   MODULE_CATALOGUE, INSTITUTION_MODULE_LIST, ADMIN_MODULE_LIST,
   type PortalModule,
-} from '../../../shared/lib/modules'
-import type { UserGroup, CreateGroupPayload } from '../../../shared/lib/groups'
+} from '@/shared/lib/modules'
+import type { UserGroup, CreateGroupPayload } from '@/shared/lib/groups'
 import {
   ASectionHeader, ABtn, AAlert, AModal, AFormField, aInputCls,
   ASkeletonRow, AEmptyState,
-} from '../../components/primitives'
-import { useAdminMe, useCreateAdminGroup, useUpdateGroupModules } from '../../hooks/useAdmin'
+} from '@/admin/components/primitives'
+import { useAdminMe, useCreateAdminGroup, useUpdateGroupModules } from '@/admin/hooks/useAdmin'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Icon resolver — keeps lucide out of the module catalogue

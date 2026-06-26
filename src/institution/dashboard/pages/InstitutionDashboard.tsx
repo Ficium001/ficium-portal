@@ -23,13 +23,13 @@ import {
 } from 'lucide-react'
 import {
   useMyInstitution, useMyBids, usePendingActions, useMarketplace,
-} from '../../hooks/useInstitution'
+} from '@/institution/hooks/useInstitution'
 import {
   Hero, HeroButton, GradText, type HeroStat,
   Reveal, SectionHead, Panel, PanelHead, HoverCard, CardIcon,
   StatMini, Feed, FeedItem, DarkCallout, Tag, statusTone, ProgressBar,
   LineChart, type ChartPoint, SkeletonBlock,
-} from '../../../shared/ui/dashboard'
+} from '@/shared/ui/dashboard'
 
 // ─── Helpers ──────────────────────────────────────────────────
 

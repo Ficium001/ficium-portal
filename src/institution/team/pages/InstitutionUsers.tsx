@@ -10,14 +10,14 @@ import {
   UserX, UserCheck, KeyRound, ChevronRight,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { portalApi } from "../../../shared/lib/portalApi";
-import { useMyGroup } from "../../../admin/hooks/useAdmin";
-import type { InstitutionUser, PendingAction } from "../../types/institution";
-import type { InstitutionGroup } from "../../settings/components/GroupsTab";
+import { portalApi } from "@/shared/lib/portalApi";
+import { useMyGroup } from "@/admin/hooks/useAdmin";
+import type { InstitutionUser, PendingAction } from "@/institution/types/institution";
+import type { InstitutionGroup } from "@/institution/settings/components/GroupsTab";
 import {
   SectionHeader, InlineAlert, DataTable, DataRow, Td,
   Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─── Data hooks ───────────────────────────────────────────────
 

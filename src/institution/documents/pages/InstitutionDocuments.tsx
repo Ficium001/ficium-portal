@@ -16,12 +16,12 @@ import {
 } from 'lucide-react'
 import {
   useDocuments, useDocTypes, useCompliance, useRegisterDocument,
-} from '../../hooks/useInstitution'
-import type { DocType, InstitutionDoc } from '../../types/institution'
+} from '@/institution/hooks/useInstitution'
+import type { DocType, InstitutionDoc } from '@/institution/types/institution'
 import {
   SectionHeader, InlineAlert, Btn, SkeletonRow,
-} from '../../components/primitives'
-import { portalApi } from '../../../shared/lib/portalApi'
+} from '@/institution/components/primitives'
+import { portalApi } from '@/shared/lib/portalApi'
 
 // ─── Status config ─────────────────────────────────────────────
 const STATUS_CONFIG = {

@@ -5,7 +5,7 @@
  * via the same Supabase project as institution users but
  * access a different schema with separate RLS policies.
  */
-import { db } from '../../shared/lib/supabase'
+import { db } from '@/shared/lib/supabase'
 
 const adminDb = db('portal_admin')
 export default adminDb

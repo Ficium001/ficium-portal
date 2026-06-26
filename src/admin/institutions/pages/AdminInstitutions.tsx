@@ -19,12 +19,12 @@ import {
   ASectionHeader, ADataTable, ATr, ATd, AStatusBadge,
   AEmptyState, ASkeletonRow, AAlert, ABtn, AConfirmModal,
   AFilterPills, AModal, AFormField, ASpinner,
-} from '../../components/primitives'
+} from '@/admin/components/primitives'
 import {
   useAdminMe, useInstitutions, useApproveInstitution, useSuspendInstitution,
   useAdminDocuments, useReviewDocument,
-} from '../../hooks/useAdmin'
-import type { Institution, AdminDoc } from '../../types/admin'
+} from '@/admin/hooks/useAdmin'
+import type { Institution, AdminDoc } from '@/admin/types/admin'
 
 // ─── Tab definition ───────────────────────────────────────────
 

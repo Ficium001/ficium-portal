@@ -7,8 +7,8 @@
  */
 
 import { MonitorDot, RefreshCw } from 'lucide-react'
-import { useSystemMetrics } from '../../hooks/useAdmin'
-import { ASectionHeader, ALiveBadge, AKpiCard, ASkeletonCard, ABtn } from '../../components/primitives'
+import { useSystemMetrics } from '@/admin/hooks/useAdmin'
+import { ASectionHeader, ALiveBadge, AKpiCard, ASkeletonCard, ABtn } from '@/admin/components/primitives'
 
 export default function AdminSystem() {
   const { data: metrics = [], isLoading, refetch } = useSystemMetrics()

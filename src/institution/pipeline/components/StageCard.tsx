@@ -1,8 +1,8 @@
 import { useState }            from "react";
 import { CheckCircle2, Clock, AlertTriangle, Lock, FileText } from "lucide-react";
-import { Button }              from "../../../shared/ui";
-import { useAdvanceStage, useApproveStage } from "../hooks/usePipeline";
-import type { StageInstance, StageStatus } from "../types/pipeline";
+import { Button }              from "@/shared/ui";
+import { useAdvanceStage, useApproveStage } from "@/institution/pipeline/hooks/usePipeline";
+import type { StageInstance, StageStatus } from "@/institution/pipeline/types/pipeline";
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 const fmtDate = (s: string | null) =>

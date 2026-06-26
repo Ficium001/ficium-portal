@@ -24,13 +24,13 @@ import { GitMerge, ShieldCheck, AlertTriangle, ChevronDown, ChevronUp, CheckCirc
 import {
   useDualControlActions, useAdminMe,
   useApproveDualControl, useRejectDualControl,
-} from '../../hooks/useAdmin'
-import type { DualControlAction } from '../../types/admin'
+} from '@/admin/hooks/useAdmin'
+import type { DualControlAction } from '@/admin/types/admin'
 import {
   ASectionHeader, ALiveBadge, AFilterPills, ADataTable, ATr, ATd,
   AStatusBadge, RiskBadge, AEmptyState, ASkeletonRow, AAlert,
   ABtn, aInputCls, AMonoRef,
-} from '../../components/primitives'
+} from '@/admin/components/primitives'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

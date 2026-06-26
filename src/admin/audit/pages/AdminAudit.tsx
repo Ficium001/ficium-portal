@@ -8,12 +8,12 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { ScrollText, Download, Search, X, Filter } from 'lucide-react'
-import { useAdminAudit } from '../../hooks/useAdmin'
-import type { AdminAuditEntry } from '../../types/admin'
+import { useAdminAudit } from '@/admin/hooks/useAdmin'
+import type { AdminAuditEntry } from '@/admin/types/admin'
 import {
   ASectionHeader, ADataTable, ATr, ATd, AStatusBadge, ASkeletonRow,
   AEmptyState, AFilterPills, ABtn, AMonoRef,
-} from '../../components/primitives'
+} from '@/admin/components/primitives'
 
 const OUTCOME_OPTS = [
   { key: 'all',     label: 'All'     },

@@ -1,7 +1,7 @@
 import { useNavigate }         from "react-router-dom";
 import { AlertTriangle, CheckCircle2, ChevronRight, Clock } from "lucide-react";
 import { ProgressBar }         from "./ProgressBar";
-import type { PipelineSummary } from "../types/pipeline";
+import type { PipelineSummary } from "@/institution/pipeline/types/pipeline";
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 const fmtMUR = (v: number) =>

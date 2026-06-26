@@ -16,12 +16,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Users, ShieldCheck, ScrollText, GitMerge, UserPlus, Settings } from 'lucide-react'
 import {
   usePendingActions, useInstitutionUsers, useMyInstitution, useAuditEvents,
-} from '../../hooks/useInstitution'
+} from '@/institution/hooks/useInstitution'
 import {
   Hero, HeroButton, GradText, type HeroStat,
   Reveal, SectionHead, Panel, PanelHead, Feed, FeedItem,
   StatMini, DarkCallout, Tag, SkeletonBlock,
-} from '../../../shared/ui/dashboard'
+} from '@/shared/ui/dashboard'
 
 // ─── Helpers ──────────────────────────────────────────────────
 

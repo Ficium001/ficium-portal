@@ -11,7 +11,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { portalApi } from '../../shared/lib/portalApi'
+import { portalApi } from '@/shared/lib/portalApi'
 import type {
   AdminUser, AdminRole, AdminSession, DualControlAction,
   AdminAuditEntry, SystemMetric, Institution,
@@ -20,7 +20,7 @@ import type {
   UpdateAdminRolePayload, CreateRolePayload,
   ApproveInstitutionPayload, SuspendInstitutionPayload,
   AdminDoc,
-} from '../types/admin'
+} from '@/admin/types/admin'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query key registry

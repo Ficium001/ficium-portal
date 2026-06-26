@@ -33,13 +33,13 @@ import {
   Clock, CheckCircle, XCircle, AlertTriangle, ChevronDown,
   ChevronUp, FileText, User, ShieldCheck,
 } from "lucide-react";
-import { usePendingActions, useApproveAction, useRejectAction } from "../../hooks/useInstitution";
-import { formatDistanceToNow } from "../../lib/utils";
-import type { PendingAction } from "../../types/institution";
+import { usePendingActions, useApproveAction, useRejectAction } from "@/institution/hooks/useInstitution";
+import { formatDistanceToNow } from "@/institution/lib/utils";
+import type { PendingAction } from "@/institution/types/institution";
 import {
   SectionHeader, InlineAlert, EmptyState,
   Btn, inputCls,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Action category metadata

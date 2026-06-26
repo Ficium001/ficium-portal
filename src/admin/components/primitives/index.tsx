@@ -26,7 +26,7 @@ import {
   AlertTriangle, CheckCircle, Info, XCircle, X,
   ShieldAlert,
 } from 'lucide-react'
-import type { ActionRisk } from '../../types/admin'
+import type { ActionRisk } from '@/admin/types/admin'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tokens — keeps Tailwind classes in one place

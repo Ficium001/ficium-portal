@@ -21,7 +21,7 @@
  */
 
 import { useId, type ReactNode } from 'react'
-import CountUp from '../motion/CountUp'
+import CountUp from '@/shared/ui/motion/CountUp'
 
 // ─── Gradient text helper ─────────────────────────────────────
 export function GradText({ children }: { children: ReactNode }) {

@@ -9,8 +9,8 @@ import {
   approveStage,
   fetchPipeline,
   fetchPipelines,
-} from "../api/pipeline";
-import type { PipelineStatus } from "../types/pipeline";
+} from "@/institution/pipeline/api/pipeline";
+import type { PipelineStatus } from "@/institution/pipeline/types/pipeline";
 
 // ── Query keys — pipeline module namespace ────────────────────────────────────
 export const PipelineKeys = {

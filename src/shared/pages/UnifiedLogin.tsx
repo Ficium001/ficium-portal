@@ -20,9 +20,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
-import { ficiumAuthFetch, signIn as ficiumSignIn, getTokenPayload, hasSession, signOut as ficiumSignOut } from '../lib/ficiumAuth'
-import FiciumLogo from '../ui/FiciumLogo'
-import { GradText } from '../ui/dashboard/Hero'
+import { ficiumAuthFetch, signIn as ficiumSignIn, getTokenPayload, hasSession, signOut as ficiumSignOut } from '@/shared/lib/ficiumAuth'
+import FiciumLogo from '@/shared/ui/FiciumLogo'
+import { GradText } from '@/shared/ui/dashboard/Hero'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Drifting background blade (matches the dashboard hero)

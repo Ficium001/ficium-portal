@@ -29,15 +29,15 @@ import {
 import {
   useMyInstitution, useMyRole, useProducts,
   useDocuments, useDocTypes, useCompliance, useRegisterDocument,
-} from "../../hooks/useInstitution";
-import { useMyGroup } from "../../../admin/hooks/useAdmin";
-import type { Institution, DocType, InstitutionDoc } from "../../types/institution";
-import { portalApi } from "../../../shared/lib/portalApi";
+} from "@/institution/hooks/useInstitution";
+import { useMyGroup } from "@/admin/hooks/useAdmin";
+import type { Institution, DocType, InstitutionDoc } from "@/institution/types/institution";
+import { portalApi } from "@/shared/lib/portalApi";
 import {
   SectionHeader, StatusBadge, InlineAlert,
   Modal, FormField, inputCls, Btn,
-} from "../../components/primitives";
-import GroupsTab from "../components/GroupsTab";
+} from "@/institution/components/primitives";
+import GroupsTab from "@/institution/settings/components/GroupsTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab types

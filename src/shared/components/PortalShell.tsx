@@ -35,10 +35,10 @@ import {
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
 } from 'lucide-react'
-import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '../lib/ficiumAuth'
-import { useMyGroup } from '../../admin/hooks/useAdmin'
-import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '../lib/modules'
-import FiciumLogo from '../ui/FiciumLogo'
+import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '@/shared/lib/ficiumAuth'
+import { useMyGroup } from '@/admin/hooks/useAdmin'
+import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '@/shared/lib/modules'
+import FiciumLogo from '@/shared/ui/FiciumLogo'
 
 // ─── Constants ───────────────────────────────────────────────
 const IDLE_WARN_MS   = 4 * 60 * 1000

@@ -35,12 +35,12 @@ import {
   CheckCircle, Upload, FileText, Zap, Building2,
   ArrowRight, ArrowLeft, Globe,
 } from "lucide-react";
-import { useMyInstitution } from "../../hooks/useInstitution";
-import institutionSupabase  from "../../lib/institutionSupabase";
+import { useMyInstitution } from "@/institution/hooks/useInstitution";
+import institutionSupabase  from "@/institution/lib/institutionSupabase";
 import {
   InlineAlert, Btn, FormField, inputCls,
-} from "../../components/primitives";
-import FiciumLogo from "../../../shared/ui/FiciumLogo";
+} from "@/institution/components/primitives";
+import FiciumLogo from "@/shared/ui/FiciumLogo";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

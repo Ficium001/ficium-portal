@@ -28,13 +28,13 @@ import { useState } from "react";
 import {
   Webhook, Plus, CheckCircle, XCircle, Clock, AlertTriangle, Shield,
 } from "lucide-react";
-import { useWebhooks } from "../../hooks/useInstitution";
-import type { InstitutionWebhook } from "../../types/institution";
-import { formatDistanceToNow } from "../../lib/utils";
+import { useWebhooks } from "@/institution/hooks/useInstitution";
+import type { InstitutionWebhook } from "@/institution/types/institution";
+import { formatDistanceToNow } from "@/institution/lib/utils";
 import {
   SectionHeader, InlineAlert, EmptyState, Modal, FormField,
   inputCls, Btn, StatusBadge,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants

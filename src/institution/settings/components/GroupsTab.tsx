@@ -26,13 +26,13 @@
 import { useMemo, useState } from "react";
 import { Plus, Shield, Pencil, Trash2, Clock } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { portalApi } from "../../../shared/lib/portalApi";
-import { INSTITUTION_MODULE_LIST } from "../../../shared/lib/modules";
-import type { PendingAction } from "../../types/institution";
+import { portalApi } from "@/shared/lib/portalApi";
+import { INSTITUTION_MODULE_LIST } from "@/shared/lib/modules";
+import type { PendingAction } from "@/institution/types/institution";
 import {
   InlineAlert, DataTable, DataRow, Td,
   Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

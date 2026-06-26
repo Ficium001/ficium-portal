@@ -31,14 +31,14 @@
 import { useState, useMemo, useCallback } from "react";
 import { ScrollText, Download, Search, X, Filter, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuditEvents } from "../../hooks/useInstitution";
-import { portalApi } from "../../../shared/lib/portalApi";
-import type { AuditEvent } from "../../types/institution";
+import { useAuditEvents } from "@/institution/hooks/useInstitution";
+import { portalApi } from "@/shared/lib/portalApi";
+import type { AuditEvent } from "@/institution/types/institution";
 import {
   SectionHeader, DataTable, DataRow, Td, StatusBadge,
   KpiCard, FilterPills, EmptyState,
   SkeletonRow, Btn, inputCls,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants

@@ -8,8 +8,8 @@
 
 import { useState } from 'react'
 import { Radio, MonitorOff, RefreshCw } from 'lucide-react'
-import { useAdminSessions, useAdminMe, useTerminateSession } from '../../hooks/useAdmin'
-import { ASectionHeader, ALiveBadge, AFilterPills, ADataTable, ATr, ATd, AStatusBadge, ASkeletonRow, AEmptyState, ABtn, AConfirmModal, AMonoRef, AAlert } from '../../components/primitives'
+import { useAdminSessions, useAdminMe, useTerminateSession } from '@/admin/hooks/useAdmin'
+import { ASectionHeader, ALiveBadge, AFilterPills, ADataTable, ATr, ATd, AStatusBadge, ASkeletonRow, AEmptyState, ABtn, AConfirmModal, AMonoRef, AAlert } from '@/admin/components/primitives'
 
 const OPTS = [{ key: 'true', label: 'Active' }, { key: 'false', label: 'All' }]
 

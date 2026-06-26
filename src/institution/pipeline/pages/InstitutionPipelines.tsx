@@ -2,10 +2,10 @@
  * InstitutionPipelines.tsx — pipeline list page (thin shell).
  * Data: usePipelines hook. Rendering: PipelineCard component.
  */
-import { SkeletonCard, EmptyState } from "../../components/primitives";
+import { SkeletonCard, EmptyState } from "@/institution/components/primitives";
 import { GitBranch }    from "lucide-react";
-import { PipelineCard } from "../components/PipelineCard";
-import { usePipelines } from "../hooks/usePipeline";
+import { PipelineCard } from "@/institution/pipeline/components/PipelineCard";
+import { usePipelines } from "@/institution/pipeline/hooks/usePipeline";
 
 export function InstitutionPipelines() {
   const { data: pipelines = [], isLoading } = usePipelines();

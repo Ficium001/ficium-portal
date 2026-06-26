@@ -11,5 +11,5 @@ export {
   StatMini, Feed, FeedItem, DarkCallout,
   Tag, statusTone, ProgressBar, SkeletonBlock,
 } from './kit'
-export { default as Reveal } from '../motion/Reveal'
-export { default as CountUp } from '../motion/CountUp'
+export { default as Reveal } from '@/shared/ui/motion/Reveal'
+export { default as CountUp } from '@/shared/ui/motion/CountUp'

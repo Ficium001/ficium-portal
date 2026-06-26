@@ -26,12 +26,12 @@ import {
 import {
   useBenefits, useCreateBenefit, useUpdateBenefit,
   useDeactivateBenefit, useBenefitCategories, useProducts,
-} from '../../hooks/useInstitution'
-import type { Benefit } from '../../types/institution'
+} from '@/institution/hooks/useInstitution'
+import type { Benefit } from '@/institution/types/institution'
 import {
   SectionHeader, EmptyState, Modal, FormField,
   inputCls, Btn, InlineAlert, SkeletonRow,
-} from '../../components/primitives'
+} from '@/institution/components/primitives'
 
 // ─── Icon map for benefit categories ──────────────────────────
 const CAT_ICONS: Record<string, React.ElementType> = {

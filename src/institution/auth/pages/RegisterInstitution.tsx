@@ -5,9 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
-import { signUpInstitution } from "../../../shared/lib/auth";
-import { RegisterShell } from "../../../shared/components/RegisterShell";
-import { Button, Field } from "../../../shared/ui";
+import { signUpInstitution } from "@/shared/lib/auth";
+import { RegisterShell } from "@/shared/components/RegisterShell";
+import { Button, Field } from "@/shared/ui";
 
 // ── Step schemas ──────────────────────────────────────────────
 const step1Schema = z.object({

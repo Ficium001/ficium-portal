@@ -21,7 +21,7 @@
 import { type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-import { useInView, usePrefersReducedMotion } from '../motion/Reveal'
+import { useInView, usePrefersReducedMotion } from '@/shared/ui/motion/Reveal'
 
 // ─── SectionHead ──────────────────────────────────────────────
 export function SectionHead({

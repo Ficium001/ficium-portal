@@ -5,11 +5,11 @@
  */
 import { useParams, useNavigate }  from "react-router-dom";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
-import { SkeletonCard }            from "../../components/primitives";
-import { DealSummaryPanel }        from "../components/DealSummaryPanel";
-import { BorrowerIdentityPanel }   from "../components/BorrowerIdentityPanel";
-import { StageCard }               from "../components/StageCard";
-import { usePipeline }             from "../hooks/usePipeline";
+import { SkeletonCard }            from "@/institution/components/primitives";
+import { DealSummaryPanel }        from "@/institution/pipeline/components/DealSummaryPanel";
+import { BorrowerIdentityPanel }   from "@/institution/pipeline/components/BorrowerIdentityPanel";
+import { StageCard }               from "@/institution/pipeline/components/StageCard";
+import { usePipeline }             from "@/institution/pipeline/hooks/usePipeline";
 
 const fmtDate = (s: string | null) =>
   s ? new Date(s).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric" }) : "—";

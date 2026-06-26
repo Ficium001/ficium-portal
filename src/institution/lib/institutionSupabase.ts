@@ -4,7 +4,7 @@
 // import path for institution-feature code; all clients share the
 // one auth session defined in shared/lib/supabase.ts.
 // =============================================================
-import { institutionDb, supabase } from "../../shared/lib/supabase";
+import { institutionDb, supabase } from "@/shared/lib/supabase";
 
 /** institution.* schema client (shares the global auth session). */
 export const institutionSupabase = institutionDb;

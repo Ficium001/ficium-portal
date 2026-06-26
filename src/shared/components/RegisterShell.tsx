@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Shield, Zap, Globe } from "lucide-react";
-import FiciumLogo from "../ui/FiciumLogo";
+import FiciumLogo from "@/shared/ui/FiciumLogo";
 
 type Props = {
   back?: { label: string; to: string };

@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { useInView, usePrefersReducedMotion } from '../motion/Reveal'
+import { useInView, usePrefersReducedMotion } from '@/shared/ui/motion/Reveal'
 
 export type ChartPoint = { label: string; value: number }
 

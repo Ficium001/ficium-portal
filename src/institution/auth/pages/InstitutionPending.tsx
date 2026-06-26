@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Clock, CheckCircle, Building2, FileText, Zap, ArrowRight } from "lucide-react";
-import { useMyInstitution } from "../../hooks/useInstitution";
+import { useMyInstitution } from "@/institution/hooks/useInstitution";
 
 const STAGES = [
   { key: "registered",          label: "Application received",    desc: "Your application has been received."                      },

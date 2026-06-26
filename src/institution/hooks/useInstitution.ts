@@ -15,13 +15,13 @@
 //   useAuditEvents                                     → /audit
 // =============================================================
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { portalApi } from '../../shared/lib/portalApi'
+import { portalApi } from '@/shared/lib/portalApi'
 import type {
   Institution, InstitutionUser, InstitutionBid,
   MarketplaceRequest, PendingAction, InstitutionWebhook,
   Product, AuditEvent, BidPayload,
   BenefitCategory, Benefit, DocType, InstitutionDoc, ComplianceGate,
-} from '../types/institution'
+} from '@/institution/types/institution'
 
 export const QK = {
   institution:      ['institution'] as const,

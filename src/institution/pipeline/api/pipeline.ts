@@ -3,12 +3,12 @@
  * Raw API calls for the pipeline module.
  * All calls go through portalApi — no direct fetch() calls in components.
  */
-import { portalApi } from "../../../shared/lib/portalApi";
+import { portalApi } from "@/shared/lib/portalApi";
 import type {
   PipelineSummary,
   PipelineDetail,
   AdvanceStageResult,
-} from "../types/pipeline";
+} from "@/institution/pipeline/types/pipeline";
 
 export async function fetchPipelines(
   status = "active",

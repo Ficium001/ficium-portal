@@ -108,7 +108,7 @@ function S({ children }: { children: ReactNode }) {
 }
 
 // ─── Dashboard router — resolves correct dashboard by user type
-import { useMyGroup } from '../admin/hooks/useAdmin'
+import { useMyGroup } from '@/admin/hooks/useAdmin'
 
 const InstitutionAdminDashboard = lazy(() => import('../institution/dashboard/pages/InstitutionAdminDashboard'))
 

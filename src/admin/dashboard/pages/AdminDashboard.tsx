@@ -23,13 +23,13 @@ import {
 } from 'lucide-react'
 import {
   useAdminMe, useSystemMetrics, useDualControlActions, useAdminAudit, useAdminSessions,
-} from '../../hooks/useAdmin'
+} from '@/admin/hooks/useAdmin'
 import {
   Hero, HeroButton, GradText, type HeroStat,
   Reveal, SectionHead, Panel, PanelHead, HoverCard, CardIcon,
   StatMini, Feed, FeedItem, DarkCallout, Tag,
   LineChart, type ChartPoint, SkeletonBlock,
-} from '../../../shared/ui/dashboard'
+} from '@/shared/ui/dashboard'
 
 // ─── Helpers ──────────────────────────────────────────────────
 

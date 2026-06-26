@@ -21,13 +21,13 @@ import {
   useProducts, useMyInstitution,
   useBenefits, useCreateBenefit, useUpdateBenefit,
   useDeactivateBenefit, useBenefitCategories,
-} from "../../hooks/useInstitution";
-import type { Product, Benefit } from "../../types/institution";
-import { institutionSupabase } from "../../lib/institutionSupabase";
+} from "@/institution/hooks/useInstitution";
+import type { Product, Benefit } from "@/institution/types/institution";
+import { institutionSupabase } from "@/institution/lib/institutionSupabase";
 import {
   SectionHeader, FilterPills, EmptyState, InlineAlert,
   FormField, inputCls, Btn, Modal,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─── Helpers ──────────────────────────────────────────────────
 

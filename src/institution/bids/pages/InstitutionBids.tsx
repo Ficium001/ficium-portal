@@ -24,13 +24,13 @@
 
 import { useState, useCallback } from "react";
 import { FileText, ChevronDown, ChevronUp, XCircle, CheckCircle, AlertTriangle, Clock } from "lucide-react";
-import type { InstitutionBid } from "../../types/institution";
-import { useMyBids, useMyInstitution, useSubmitBid } from "../../hooks/useInstitution";
-import { formatDistanceToNow, formatRate, formatAmount } from "../../lib/utils";
+import type { InstitutionBid } from "@/institution/types/institution";
+import { useMyBids, useMyInstitution, useSubmitBid } from "@/institution/hooks/useInstitution";
+import { formatDistanceToNow, formatRate, formatAmount } from "@/institution/lib/utils";
 import {
   SectionHeader, KpiCard, FilterPills, DataTable, DataRow, Td,
   StatusBadge, ConfirmModal, EmptyState, SkeletonRow, MonoRef, InlineAlert,
-} from "../../components/primitives";
+} from "@/institution/components/primitives";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants

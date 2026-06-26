@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Navigate, Outlet, useLocation } from "react-router-dom"
-import { getTokenPayload, getValidAccessToken } from "../lib/ficiumAuth"
-import { portalApi, PortalApiError } from "../lib/portalApi"
+import { getTokenPayload, getValidAccessToken } from "@/shared/lib/ficiumAuth"
+import { portalApi, PortalApiError } from "@/shared/lib/portalApi"
 
 // Shape returned by GET /institutions/me
 interface MeResponse {
