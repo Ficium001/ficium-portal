@@ -5,8 +5,7 @@
  */
 import { useParams, useNavigate }  from "react-router-dom";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
-import { Spinner }                 from "@/shared/components/Spinner";
-import { PageShell }               from "@/shared/components/PageShell";
+import { SkeletonCard }            from "../../components/primitives";
 import { DealSummaryPanel }        from "../components/DealSummaryPanel";
 import { BorrowerIdentityPanel }   from "../components/BorrowerIdentityPanel";
 import { StageCard }               from "../components/StageCard";
@@ -21,14 +20,10 @@ export function PipelineDetail() {
   const { data: pipeline, isLoading } = usePipeline(id!);
 
   if (isLoading) return (
-    <PageShell title="Pipeline">
-      <div className="flex justify-center py-16"><Spinner /></div>
-    </PageShell>
+    <div className="px-4 py-6"><div className="space-y-3">{Array.from({length:3}).map((_,i)=><SkeletonCard key={i}/>)}</div></div>
   );
   if (!pipeline) return (
-    <PageShell title="Pipeline">
-      <p className="text-center text-muted py-16">Pipeline not found.</p>
-    </PageShell>
+    <div className="px-4 py-16 text-center text-muted">Pipeline not found.</div>
   );
 
   const activeStageId = pipeline.stages.find(
@@ -36,15 +31,16 @@ export function PipelineDetail() {
   )?.id;
 
   return (
-    <PageShell
-      title="Loan Pipeline"
-      subtitle={`${pipeline.product_label} · ref ${pipeline.consumer_ref}`}
-      headerLeft={
+    <div className="px-4 py-6 space-y-5">
+      <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="text-muted hover:text-ink transition-colors">
           <ChevronLeft size={20} />
         </button>
-      }
-    >
+        <div>
+          <h1 className="font-display font-bold text-[20px] text-ink">Loan Pipeline</h1>
+          <p className="text-[12px] text-muted">{pipeline.product_label} · ref {pipeline.consumer_ref}</p>
+        </div>
+      </div>
       <div className="space-y-5">
         <DealSummaryPanel
           amount={pipeline.deal_amount}
@@ -88,6 +84,6 @@ export function PipelineDetail() {
           </div>
         )}
       </div>
-    </PageShell>
+    </div>
   );
 }

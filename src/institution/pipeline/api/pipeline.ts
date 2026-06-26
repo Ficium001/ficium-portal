@@ -3,7 +3,7 @@
  * Raw API calls for the pipeline module.
  * All calls go through portalApi — no direct fetch() calls in components.
  */
-import { portalApi } from "@/shared/lib/portal-api";
+import { portalApi } from "../../../shared/lib/portalApi";
 import type {
   PipelineSummary,
   PipelineDetail,

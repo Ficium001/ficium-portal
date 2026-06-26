@@ -2,9 +2,7 @@
  * InstitutionPipelines.tsx — pipeline list page (thin shell).
  * Data: usePipelines hook. Rendering: PipelineCard component.
  */
-import { Spinner }      from "@/shared/components/Spinner";
-import { EmptyState }   from "@/shared/components/EmptyState";
-import { PageShell }    from "@/shared/components/PageShell";
+import { SkeletonCard, EmptyState } from "../../components/primitives";
 import { PipelineCard } from "../components/PipelineCard";
 import { usePipelines } from "../hooks/usePipeline";
 
@@ -12,9 +10,13 @@ export function InstitutionPipelines() {
   const { data: pipelines = [], isLoading } = usePipelines();
 
   return (
-    <PageShell title="Loan Pipelines" subtitle="Active post-acceptance workflows">
+    <div className="px-4 py-6 space-y-4">
+      <div>
+        <h1 className="font-display font-bold text-[22px] text-ink">Loan Pipelines</h1>
+        <p className="text-[13px] text-muted mt-0.5">Active post-acceptance workflows</p>
+      </div>
       {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner /></div>
+        <div className="space-y-3">{Array.from({length:3}).map((_,i)=><SkeletonCard key={i}/>)}</div>
       ) : pipelines.length === 0 ? (
         <EmptyState
           icon="pipeline"
@@ -28,6 +30,6 @@ export function InstitutionPipelines() {
           ))}
         </div>
       )}
-    </PageShell>
+    </div>
   );
 }
