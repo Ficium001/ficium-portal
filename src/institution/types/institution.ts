@@ -166,7 +166,7 @@ export interface MarketplaceRequest {
   term_months?: number
   params?: RequestParams | null
   metadata?: RequestMetadata | null
-  status: 'open' | 'bidding' | 'accepted' | 'cancelled' | 'expired'
+  status: 'open' | 'bidding' | 'closed' | 'accepted' | 'cancelled' | 'expired'
   bid_window_opens_at?: string
   bid_window_closes_at: string
   bid_count?: number
