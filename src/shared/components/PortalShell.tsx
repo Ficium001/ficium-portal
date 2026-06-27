@@ -34,11 +34,13 @@ import {
   Webhook, Package, ScrollText, Settings,
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
+  BarChart2, Gift, FolderCheck, GitBranch,
 } from 'lucide-react'
 import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '@/shared/lib/ficiumAuth'
 import { useMyGroup } from '@/admin/hooks/useAdmin'
 import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '@/shared/lib/modules'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
+import { usePortalUnreadCount } from '@/institution/notifications/hooks/usePortalNotifications'
 
 // ─── Constants ───────────────────────────────────────────────
 const IDLE_WARN_MS   = 4 * 60 * 1000
@@ -49,6 +51,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Store, FileText, Clock, Package,
   Webhook, ScrollText, Settings, Shield, Users,
   GitMerge, Radio, MonitorDot, Building2,
+  BarChart2, Bell, Gift, FolderCheck, GitBranch,
 }
 function resolveIcon(key: string): React.ElementType {
   return ICON_MAP[key] ?? LayoutDashboard
@@ -136,6 +139,7 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
 const NAV_SECTIONS = [
   { label: 'Home',        keys: ['inst:dashboard', 'admin:dashboard'] },
   { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
+  { label: 'Insights',    keys: ['inst:analytics', 'inst:notifications'] },
   { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:webhooks', 'inst:settings'] },
   { label: 'Operations',  keys: ['inst:audit'] },
   { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
@@ -398,10 +402,11 @@ function TopBar({
         <span className='capitalize'>{connStatus}</span>
       </div>
 
-      {/* Bell */}
-      <button
+      {/* Bell — navigates to notifications page */}
+      <Link
+        to='/notifications'
         className='relative w-[42px] h-[42px] rounded-xl hover:bg-[#EEEEF6] grid place-items-center transition-colors text-ink'
-        aria-label={`Notifications${pendingCount > 0 ? ` — ${pendingCount} pending` : ''}`}
+        aria-label={`Notifications${pendingCount > 0 ? ` — ${pendingCount} unread` : ''}`}
       >
         <Bell className='w-[18px] h-[18px]' aria-hidden />
         {pendingCount > 0 && (
@@ -411,7 +416,7 @@ function TopBar({
             aria-hidden
           />
         )}
-      </button>
+      </Link>
 
       {/* Avatar */}
       <div
@@ -476,7 +481,8 @@ export default function PortalShell() {
 
   const [drawerOpen,   setDrawerOpen]   = useState(false)
   const [userName,     setUserName]     = useState('')
-  const [pendingCount] = useState(0)
+  const { data: notifUnread = 0 } = usePortalUnreadCount()
+  const pendingCount = notifUnread
 
   // User display name from the verified ficium-auth JWT payload (no network).
   useEffect(() => {

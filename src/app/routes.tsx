@@ -46,7 +46,8 @@ const InstitutionSettings    = lazy(() => import('../institution/settings/pages/
 const InstitutionUsers       = lazy(() => import('../institution/team/pages/InstitutionUsers'))
 const InstitutionDualControl = lazy(() => import('../institution/dual-control/pages/InstitutionDualControl'))
 
-// ─── Admin pages ──────────────────────────────────────────────
+const InstitutionAnalytics     = lazy(() => import('../institution/analytics/pages/InstitutionAnalytics'))
+const InstitutionNotifications = lazy(() => import('../institution/notifications/pages/InstitutionNotifications'))
 const AdminUsers       = lazy(() => import('../admin/users/pages/AdminUsers'))
 const AdminGroups      = lazy(() => import('../admin/groups/pages/AdminGroups'))
 const AdminInstitutions = lazy(() => import('../admin/institutions/pages/AdminInstitutions'))
@@ -173,6 +174,9 @@ export const router = createBrowserRouter([
           { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },
           { path: '/team/users',        element: <RequireModule moduleKey="inst:team"><S><InstitutionUsers /></S></RequireModule> },
           { path: '/inst-dual-control', element: <RequireModule moduleKey="inst:dual_control"><S><InstitutionDualControl /></S></RequireModule> },
+
+          { path: '/analytics',    element: <RequireModule moduleKey="inst:analytics"><S><InstitutionAnalytics /></S></RequireModule> },
+          { path: '/notifications',element: <RequireModule moduleKey="inst:notifications"><S><InstitutionNotifications /></S></RequireModule> },
 
           // Admin pages
           { path: '/users',        element: <RequireModule moduleKey="admin:users"><S><AdminUsers /></S></RequireModule> },
