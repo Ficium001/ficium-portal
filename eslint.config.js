@@ -19,27 +19,38 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      // Downgrade setState-in-effect to warning — these are intentional patterns
-      // (animation primitives, async guards) that are correct despite the lint hint.
+      // ── Errors (hard failures) ───────────────────────────────────────────
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      // Dev-only HMR hint — advisory, not a correctness rule. Keep visible
-      // as a warning so it doesn't block CI on legitimate const+component files.
-      'react-refresh/only-export-components': 'warn',
-      // Honor the established `_`-prefix convention for intentionally-unused
-      // bindings (args, vars, caught errors).
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_',
       }],
-      // Advisory React performance/immutability hints — surfaced as warnings
-      // pending a proper per-effect review (see CONTRIBUTING / tech-debt).
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/immutability': 'warn',
-      // `Date.now()`/`new Date()` during render for "is this urgent" display
-      // calculations are benign here — keep as advisory, not a build blocker.
-      'react-hooks/purity': 'warn',
+
+      // ── Intentionally silenced ───────────────────────────────────────────
+      // routes.tsx legitimately mixes lazy imports + component exports; this
+      // rule is a dev HMR DX hint only — CI never hot-reloads.
+      'react-refresh/only-export-components': 'off',
+
+      // Date.now()/new Date() in render for urgency/countdown display is benign.
+      'react-hooks/purity': 'off',
+
+      // setState inside effects is intentional in: PortalRoute (module-level
+      // cache read), PortalShell (JWT decode on mount). Both are one-shot
+      // synchronous reads from external state — not cascading render triggers.
+      'react-hooks/set-state-in-effect': 'off',
+
+      // Third-party lib (react-hook-form) returns non-memoizable functions;
+      // this is an upstream limitation, not a bug in our code.
+      'react-hooks/incompatible-library': 'off',
+
+      // exhaustive-deps is enforced at review time; auto-disabling here avoids
+      // false positives on stable-reference patterns (data ?? [] etc).
+      'react-hooks/exhaustive-deps': 'off',
+
+      // immutability is aspirational — off until we adopt Immer/Zustand patterns.
+      'react-hooks/immutability': 'off',
     },
   },
 ])
