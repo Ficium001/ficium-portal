@@ -352,13 +352,13 @@ export default function InstitutionDualControl() {
             }
           } else if (action?.action_category === "user.deactivate") {
             try {
-              await portalApi.post(`/members/${(action.payload as any)?.member_id}/deactivate`, {});
+              await portalApi.post(`/members/${(action.payload as Record<string, unknown>)?.member_id as string | undefined}/deactivate`, {});
             } catch (err) {
               console.error("Deactivate failed:", err);
             }
           } else if (action?.action_category === "user.reactivate") {
             try {
-              await portalApi.post(`/members/${(action.payload as any)?.member_id}/reactivate`, {});
+              await portalApi.post(`/members/${(action.payload as Record<string, unknown>)?.member_id as string | undefined}/reactivate`, {});
             } catch (err) {
               console.error("Reactivate failed:", err);
             }
