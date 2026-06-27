@@ -126,7 +126,6 @@ export default function PortalRoute() {
     check()
     return () => { cancelled = true }
   // Only re-run when the JWT sub changes (new login), NOT on every route change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (state === "loading")   return <Spinner />
