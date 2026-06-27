@@ -17,7 +17,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { portalApi } from '@/shared/lib/portalApi'
 import type {
-  Institution, InstitutionUser, InstitutionBid,
+  Institution, InstitutionUser, InstitutionMember, InstitutionBid,
   MarketplaceRequest, PendingAction, InstitutionWebhook,
   Product, AuditEvent, BidPayload,
   BenefitCategory, Benefit, DocType, InstitutionDoc, ComplianceGate,
@@ -168,9 +168,9 @@ export function useAuditEvents(limit = 50) {
 
 // ─── useInstitutionUsers ─── portal-api /members ─────────────
 export function useInstitutionUsers() {
-  return useQuery<InstitutionUser[]>({
+  return useQuery<InstitutionMember[]>({
     queryKey: QK.institutionUsers,
-    queryFn: () => portalApi.get<InstitutionUser[]>('/members'),
+    queryFn: () => portalApi.get<InstitutionMember[]>('/members'),
   })
 }
 
