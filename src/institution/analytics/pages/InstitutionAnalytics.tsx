@@ -20,7 +20,7 @@
 import { useMemo } from 'react'
 import {
   BarChart2, TrendingUp, TrendingDown, Award, Zap,
-  Target, DollarSign, Clock,
+  Target, DollarSign,
 } from 'lucide-react'
 import { useAnalytics, usePeriodSelector } from '../hooks/useAnalytics'
 import {
@@ -97,15 +97,6 @@ function BidTrendPanel({ analytics, isLoading, days, setDays, periodOptions }: {
       .map(p => ({ label: p.date, value: p.bids }))
   }, [analytics, days])
 
-  const acceptedData: ChartPoint[] = useMemo(() => {
-    if (!analytics?.bid_trend) return []
-    const skip = days <= 7 ? 1 : days <= 30 ? 3 : 7
-    return analytics.bid_trend
-      .filter((_, i) => i % skip === 0 || i === analytics.bid_trend.length - 1)
-      .map(p => ({ label: p.date, value: p.accepted }))
-  }, [analytics, days])
-
-  const weekTotal   = analytics?.bid_trend.reduce((s, p) => s + p.bids, 0) ?? 0
   const weekAccepted = analytics?.bid_trend.reduce((s, p) => s + p.accepted, 0) ?? 0
 
   return (
