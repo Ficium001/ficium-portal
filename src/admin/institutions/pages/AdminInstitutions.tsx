@@ -98,7 +98,8 @@ function InstitutionsTab() {
 
   const canApprove = me?.permissions?.includes('institutions:approve') || me?.role_slug === 'super_admin'
   const canSuspend = me?.permissions?.includes('institutions:suspend') || me?.role_slug === 'super_admin'
-  const institutions = data ?? []
+  // Stable reference — avoids useMemo deps changing on every render when data is undefined
+  const institutions = useMemo(() => data ?? [], [data])
 
   const filtered = useMemo(() => {
     if (stageFilter === 'all') return institutions
