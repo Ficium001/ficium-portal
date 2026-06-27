@@ -12,7 +12,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { portalApi } from "@/shared/lib/portalApi";
 import { useMyGroup } from "@/admin/hooks/useAdmin";
-import type { InstitutionUser, PendingAction } from "@/institution/types/institution";
+import type { InstitutionUser, PendingAction, ApiError } from "@/institution/types/institution";
 import type { InstitutionGroup } from "@/institution/settings/components/GroupsTab";
 import {
   SectionHeader, InlineAlert, DataTable, DataRow, Td,
@@ -93,7 +93,7 @@ function AssignGroupModal({ member, groups, open, onClose }: {
   const mut = useMutation({
     mutationFn: (body: object) => portalApi.post("/approvals/submit", body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["institution"] }); onClose(); },
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed to submit"),
+    onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Failed to submit"),
   });
 
   const handleSubmit = () => {
@@ -154,7 +154,7 @@ function CreateUserModal({ groups, open, onClose, onSuccess }: {
       setFirstName(""); setLastName(""); setEmail(""); setUsername(""); setGroupId(""); setRole("maker");
       onSuccess(); onClose();
     },
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Submission failed"),
+    onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Submission failed"),
   });
 
   return (
@@ -272,7 +272,7 @@ function UserDrawer({
   const assignGroupMut = useMutation({
     mutationFn: (body: object) => portalApi.post("/approvals/submit", body),
     onSuccess: () => { setEditGroup(false); setFlash("Group change submitted for approval."); onRefresh(); },
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed to submit"),
+    onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Failed to submit"),
   });
 
   const isActive = member.active !== false;
@@ -280,7 +280,7 @@ function UserDrawer({
   const updateMut = useMutation({
     mutationFn: (body: object) => portalApi.post("/approvals/submit", body),
     onSuccess: () => { setEditName(false); setEditEmail(false); setEditRole(false); setFlash("Change submitted for approval."); onRefresh(); },
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Submission failed"),
+    onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Submission failed"),
   });
 
   const deactivateMut = useMutation({
@@ -289,7 +289,7 @@ function UserDrawer({
       payload: { member_id: member.id, email: member.email },
     }),
     onSuccess: () => { setConfirming(null); setFlash("Deactivation submitted for approval."); onRefresh(); },
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed"),
+    onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Failed"),
   });
 
   const reactivateMut = useMutation({
@@ -298,13 +298,13 @@ function UserDrawer({
       payload: { member_id: member.id, email: member.email },
     }),
     onSuccess: () => { setConfirming(null); setFlash("Reactivation submitted for approval."); onRefresh(); },
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed"),
+    onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Failed"),
   });
 
   const resetPwMut = useMutation({
-    mutationFn: () => portalApi.post(`/members/${member.id}/reset-password`, {}),
-    onSuccess: (data: any) => setTempPw(data.temp_password),
-    onError: (e: any) => setError(e?.detail ?? e?.message ?? "Failed"),
+    mutationFn: () => portalApi.post<{ temp_password: string }>(`/members/${member.id}/reset-password`, {}),
+    onSuccess: (data) => setTempPw(data.temp_password),
+    onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Failed"),
   });
 
   const group = member.custom_group_id ? groupMap.get(member.custom_group_id) : null;
