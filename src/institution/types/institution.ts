@@ -360,3 +360,94 @@ export interface ComplianceGate {
   missing_docs:   string[]
   can_bid:        boolean
 }
+
+// ─── API error shape (FastAPI detail pattern) ─────────────────
+export interface ApiError {
+  detail?: string
+  message?: string
+}
+
+// ─── Institution member (extended with portal fields) ─────────
+export interface InstitutionMember extends InstitutionUser {
+  active?: boolean
+  auth_active?: boolean
+  member_role?: string
+  custom_group_id?: string
+}
+
+// ─── Audit report shapes ──────────────────────────────────────
+export interface LoginEvent {
+  id: string
+  occurred_at: string
+  outcome: 'success' | 'failed'
+  failure_reason?: string | null
+  ip?: string | null
+  city?: string | null
+  country?: string | null
+  user_agent?: string | null
+}
+
+export interface PortalActionEvent {
+  id: string
+  occurred_at: string
+  action?: string | null
+  resource_type?: string | null
+  resource_label?: string | null
+  outcome: string
+  actor_ip?: string | null
+}
+
+export interface GovernanceEvent {
+  id: string
+  created_at: string
+  category?: string | null
+  resource_type?: string | null
+  resource_label?: string | null
+  status: string
+  maker_role?: string | null
+  checker_role?: string | null
+}
+
+export interface MemberAuditReport {
+  member: {
+    full_name?: string | null
+    email: string
+  }
+  logins: LoginEvent[]
+  actions: PortalActionEvent[]
+  governance: GovernanceEvent[]
+}
+
+// ─── Dashboard feed shapes ────────────────────────────────────
+export interface DashboardAction {
+  id: string
+  action_category: string
+  action_status: ActionStatus
+  resource_type?: string | null
+  payload: Record<string, unknown>
+  created_at: string
+}
+
+export interface DashboardMember {
+  id: string
+  full_name?: string | null
+  email: string
+  custom_group_id?: string | null
+  created_at: string
+}
+
+export interface DashboardEvent {
+  id: string
+  event_label: string
+  outcome: string
+  created_at: string
+}
+
+export interface CatalogProduct {
+  id: string
+  code: string
+  label: string
+  family_label?: string | null
+  active: boolean
+  currency: string
+}
