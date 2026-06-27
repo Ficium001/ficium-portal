@@ -59,7 +59,7 @@ function AdminHero() {
   const { data: members = [] } = useInstitutionUsers()
 
   const pendingCount   = pending.filter(a => a.action_status === 'pending').length
-  const unassigned     = members.filter((m: any) => !m.custom_group_id).length
+  const unassigned     = members.filter((m) => !m.custom_group_id).length
   const dateLabel      = new Date()
     .toLocaleDateString('en-MU', { weekday: 'short', day: 'numeric', month: 'short' })
     .toUpperCase()
@@ -112,7 +112,7 @@ function DualControlQueue() {
   const { data: actions = [], isLoading } = usePendingActions()
 
   const pending = actions
-    .filter((a: any) => a.action_status === 'pending')
+    .filter((a) => a.action_status === 'pending')
     .slice(0, 5)
 
   return (
@@ -134,8 +134,8 @@ function DualControlQueue() {
         </Panel>
       ) : (
         <div className='space-y-3'>
-          {pending.map((action: any) => {
-            const risk = action.risk ?? action.payload?.risk ?? 'medium'
+          {pending.map((action) => {
+            const risk = (action.payload?.risk as string | undefined) ?? 'medium'
             const expiresMs = new Date(action.expires_at).getTime() - Date.now()
             const urgent = expiresMs < 4 * 3_600_000
             return (
@@ -180,10 +180,10 @@ function TeamOverview() {
   const { data: members = [], isLoading } = useInstitutionUsers()
 
   const recent = [...members].sort(
-    (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   ).slice(0, 5)
 
-  const unassigned = members.filter((m: any) => !m.custom_group_id).length
+  const unassigned = members.filter((m) => !m.custom_group_id).length
 
   return (
     <Reveal as='section' className='mt-12'>
@@ -198,7 +198,7 @@ function TeamOverview() {
       ) : (
         <Panel>
           <div className='divide-y divide-line'>
-            {recent.map((m: any) => {
+            {recent.map((m) => {
               const initials = (m.full_name ?? m.email ?? '?')
                 .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
               return (
@@ -241,7 +241,7 @@ function StatsAndAudit() {
   const { data: pending = [] }    = usePendingActions()
   const { data: events = [], isLoading } = useAuditEvents(8)
 
-  const pendingCount = pending.filter((a: any) => a.action_status === 'pending').length
+  const pendingCount = pending.filter((a) => a.action_status === 'pending').length
   const recent       = events.slice(0, 6)
 
   return (
@@ -263,7 +263,7 @@ function StatsAndAudit() {
             <StatMini
               icon={<ShieldCheck className='w-[18px] h-[18px] text-[#7C3AED]' />}
               label='Groups' value={
-                [...new Set(members.filter((m: any) => m.custom_group_id).map((m: any) => m.custom_group_id))].length
+                [...new Set(members.filter((m) => m.custom_group_id).map((m) => m.custom_group_id))].length
               } to='/settings'
             />
             <StatMini
@@ -283,12 +283,12 @@ function StatsAndAudit() {
               <p className='text-[13px] text-muted text-center py-8'>No activity yet.</p>
             ) : (
               <Feed>
-                {recent.map((e: any, i: number) => (
+                {recent.map((e, i: number) => (
                   <FeedItem
                     key={e.id}
-                    tone={e.outcome === 'success' ? 'good' : e.outcome === 'failure' ? 'bad' : 'blue'}
-                    title={titleCase(e.action ?? e.event_type ?? 'Event')}
-                    detail={e.actor_email ?? e.actor_id?.slice(0, 8) ?? '—'}
+                    tone={e.outcome === 'success' ? 'good' : ['rejected','failed'].includes(e.outcome) ? 'bad' : 'blue'}
+                    title={titleCase(e.action_category ?? e.event_label ?? 'Event')}
+                    detail={e.actor_role ?? e.actor_id?.slice(0, 8) ?? '—'}
                     time={timeAgo(e.created_at)}
                     last={i === recent.length - 1}
                   />
@@ -310,8 +310,8 @@ function AdminCallout() {
   const { data: pending = [] }    = usePendingActions()
   const { data: members = [] }    = useInstitutionUsers()
 
-  const pendingCount = pending.filter((a: any) => a.action_status === 'pending').length
-  const unassigned   = members.filter((m: any) => !m.custom_group_id).length
+  const pendingCount = pending.filter((a) => a.action_status === 'pending').length
+  const unassigned   = members.filter((m) => !m.custom_group_id).length
 
   const callout = pendingCount > 0
     ? {
