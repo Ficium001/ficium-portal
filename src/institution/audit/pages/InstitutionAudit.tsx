@@ -33,7 +33,7 @@ import { ScrollText, Download, Search, X, Filter, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuditEvents } from "@/institution/hooks/useInstitution";
 import { portalApi } from "@/shared/lib/portalApi";
-import type { AuditEvent } from "@/institution/types/institution";
+import type { AuditEvent, InstitutionUser, MemberAuditReport, LoginEvent, PortalActionEvent, GovernanceEvent } from "@/institution/types/institution";
 import {
   SectionHeader, DataTable, DataRow, Td, StatusBadge,
   KpiCard, FilterPills, EmptyState,
@@ -109,13 +109,13 @@ function UserAuditReport() {
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [tab, setTab] = useState<"logins" | "actions" | "governance">("logins");
 
-  const { data: members = [] } = useQuery<any[]>({
+  const { data: members = [] } = useQuery<Pick<InstitutionUser, "id" | "full_name" | "email">[]>({
     queryKey: ["institution", "members"],
     queryFn: () => portalApi.get("/members"),
     staleTime: 30_000,
   });
 
-  const { data: report, isLoading: reportLoading } = useQuery<any>({
+  const { data: report, isLoading: reportLoading } = useQuery<MemberAuditReport>({
     queryKey: ["institution", "member-audit", selectedMember],
     queryFn: () => portalApi.get(`/members/${selectedMember}/audit?limit=100`),
     enabled: !!selectedMember,
@@ -135,7 +135,7 @@ function UserAuditReport() {
           className={`${inputCls} max-w-sm`}
         >
           <option value="">Choose a member…</option>
-          {members.map((m: any) => (
+          {members.map((m) => (
             <option key={m.id} value={m.id}>{m.full_name || m.email} — {m.email}</option>
           ))}
         </select>
@@ -159,7 +159,7 @@ function UserAuditReport() {
           {/* Member summary */}
           <div className="bg-white border border-line rounded-xl p-5 flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-ficium/10 flex items-center justify-center text-[14px] font-bold text-ficium">
-              {(report.member.full_name ?? report.member.email ?? "?").split(" ").map((n: string) => n[0]).join("").slice(0,2).toUpperCase()}
+              {(report.member.full_name ?? report.member.email ?? "?").split(" ").map((n) => n[0]).join("").slice(0,2).toUpperCase()}
             </div>
             <div className="flex-1">
               <div className="font-display font-bold text-[15px] text-ink">{report.member.full_name || report.member.email}</div>
@@ -204,7 +204,7 @@ function UserAuditReport() {
                 <p className="text-[13px] text-muted text-center py-10">No login events recorded.</p>
               ) : (
                 <DataTable headers={["Date & time", "Outcome", "IP address", "Location", "Device"]} caption="Login history">
-                  {report.logins.map((l: any) => {
+                  {report.logins.map((l: LoginEvent) => {
                     const { date, time } = fmtDate(l.occurred_at);
                     return (
                       <DataRow key={l.id}>
@@ -239,7 +239,7 @@ function UserAuditReport() {
                 <p className="text-[13px] text-muted text-center py-10">No portal actions recorded.</p>
               ) : (
                 <DataTable headers={["Date & time", "Action", "Resource", "Outcome", "IP"]} caption="Portal actions">
-                  {report.actions.map((a: any) => {
+                  {report.actions.map((a: PortalActionEvent) => {
                     const { date, time } = fmtDate(a.occurred_at);
                     return (
                       <DataRow key={a.id}>
@@ -276,7 +276,7 @@ function UserAuditReport() {
                 <p className="text-[13px] text-muted text-center py-10">No approval actions recorded.</p>
               ) : (
                 <DataTable headers={["Date", "Action", "Resource", "Status", "Their role"]} caption="Approval actions">
-                  {report.governance.map((g: any) => {
+                  {report.governance.map((g: GovernanceEvent) => {
                     const { date } = fmtDate(g.created_at);
                     const isMaker = g.maker_role != null;
                     return (
