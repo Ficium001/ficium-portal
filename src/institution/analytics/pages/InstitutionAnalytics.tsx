@@ -98,6 +98,7 @@ function BidTrendPanel({ analytics, isLoading, days, setDays, periodOptions }: {
   }, [analytics, days])
 
   const weekAccepted = analytics?.bid_trend.reduce((s, p) => s + p.accepted, 0) ?? 0
+  const weekTotal = analytics?.bid_trend.reduce((s, p) => s + p.bids, 0) ?? 0
 
   return (
     <Panel className="mb-4">
