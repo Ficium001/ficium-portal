@@ -27,7 +27,7 @@ import {
   useBenefits, useCreateBenefit, useUpdateBenefit,
   useDeactivateBenefit, useBenefitCategories, useProducts,
 } from '@/institution/hooks/useInstitution'
-import type { Benefit } from '@/institution/types/institution'
+import type { Benefit, Product } from '@/institution/types/institution'
 import {
   SectionHeader, EmptyState, Modal, FormField,
   inputCls, Btn, InlineAlert, SkeletonRow,
@@ -204,7 +204,7 @@ function BenefitForm({ initial, onSubmit, loading, error, onClose }: BenefitForm
           onChange={e => set('product_id', e.target.value)}
         >
           <option value="">All products</option>
-          {products.map((p: any) => (
+          {products.map((p: Product) => (
             <option key={p.id} value={p.id}>{p.label}</option>
           ))}
         </select>
