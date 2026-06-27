@@ -57,6 +57,9 @@ jobs:
       - name: Typecheck (node)
         run: npx tsc --noEmit -p tsconfig.node.json
 
+      - name: Test
+        run: npm test
+
       - name: Lint (gated — 0 errors; advisory rules surface as warnings)
         run: npm run lint
 
