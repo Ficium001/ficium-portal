@@ -23,6 +23,7 @@ import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
 import { ficiumAuthFetch, signIn as ficiumSignIn, getTokenPayload, hasSession, signOut as ficiumSignOut } from '@/shared/lib/ficiumAuth'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
 import { GradText } from '@/shared/ui/dashboard/Hero'
+import type { ApiError } from '@/institution/types/institution'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Drifting background blade (matches the dashboard hero)
@@ -209,16 +210,7 @@ export default function UnifiedLogin() {
     }
   }
 
-  if (false) {
-    return (
-      <div className='min-h-screen bg-paper flex items-center justify-center'>
-        <div className='text-center'>
-          <div className='w-8 h-8 border-2 border-ficium border-t-transparent rounded-full animate-spin mx-auto mb-3' />
-          <p className='text-[13px] text-muted font-mono'>Detecting portal access…</p>
-        </div>
-      </div>
-    )
-  }
+
 
   // ── Forced password change modal ──────────────────────────
   if (forceChange) {
@@ -236,8 +228,8 @@ export default function UnifiedLogin() {
         })
         const userType = await detectUserType()
         navigate(userType === 'admin' ? '/admin/dashboard' : (from ?? '/dashboard'), { replace: true })
-      } catch (e: any) {
-        setNewPwError(e?.message ?? 'Failed to update password.')
+      } catch (e) {
+        setNewPwError((e as ApiError)?.message ?? 'Failed to update password.')
         setNewPwLoading(false)
       }
     }
