@@ -57,9 +57,8 @@ jobs:
       - name: Typecheck (node)
         run: npx tsc --noEmit -p tsconfig.node.json
 
-      - name: Lint (advisory — warnings only, non-blocking)
+      - name: Lint (gated — 0 errors; advisory rules surface as warnings)
         run: npm run lint
-        continue-on-error: true
 
       - name: Dead-code guard (no orphaned files or unused deps)
         run: npx knip --include files,dependencies
