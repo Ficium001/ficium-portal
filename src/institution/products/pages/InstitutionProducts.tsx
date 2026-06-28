@@ -180,12 +180,16 @@ function BenefitForm({
       <div className="flex gap-2 pt-1">
         <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
         <Btn variant="primary" loading={loading}
-          onClick={() => onSubmit({
-            ...form,
-            product_id:  productId,
-            valid_until: form.valid_until || undefined,
-            conditions:  form.conditions  || undefined,
-          })}
+          disabled={!form.cat_id || !form.title?.trim()}
+          onClick={() => {
+            if (!form.cat_id) return;
+            onSubmit({
+              ...form,
+              product_id:  productId,
+              valid_until: form.valid_until || undefined,
+              conditions:  form.conditions  || undefined,
+            });
+          }}
         >
           Add benefit
         </Btn>
