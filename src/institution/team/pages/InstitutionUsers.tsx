@@ -18,6 +18,7 @@ import {
   SectionHeader, InlineAlert, DataTable, DataRow, Td,
   Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
 } from "@/institution/components/primitives";
+import GroupsTab from "@/institution/settings/components/GroupsTab";
 
 // ─── Data hooks ───────────────────────────────────────────────
 
@@ -534,6 +535,8 @@ function UserDrawer({
 
 // ─── Page ─────────────────────────────────────────────────────
 
+type PageTab = "users" | "groups";
+
 export default function InstitutionUsers() {
   const qc = useQueryClient();
   const { data: myGroup }                  = useMyGroup();
@@ -544,6 +547,7 @@ export default function InstitutionUsers() {
   const isAdmin = !!(myGroup?.module_permissions?.includes("inst:team") &&
     (myGroup?.label?.toLowerCase().includes("admin") || myGroup?.slug?.includes("admin")));
 
+  const [activeTab,    setActiveTab]    = useState<PageTab>("users");
   const [showCreate,   setShowCreate]   = useState(false);
   const [assignTarget, setAssignTarget] = useState<InstitutionUser | null>(null);
   const [drawerMember, setDrawerMember] = useState<MemberExt | null>(null);
@@ -589,7 +593,7 @@ export default function InstitutionUsers() {
   return (
     <main className="p-6 lg:p-8 max-w-[900px] mx-auto">
       <SectionHeader
-        title="Team"
+        title="User Management"
         subtitle="Manage who has access to your institution's portal"
       />
 
@@ -599,8 +603,36 @@ export default function InstitutionUsers() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
+      {/* Tab bar */}
+      <div className="flex gap-1 bg-ink/[0.04] p-1 rounded-xl mb-6 w-fit">
+        <button
+          onClick={() => setActiveTab("users")}
+          className={[
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all",
+            activeTab === "users" ? "bg-white shadow-sm text-ink" : "text-muted hover:text-ink",
+          ].join(" ")}
+        >
+          <Users className="w-3.5 h-3.5" />
+          Members
+        </button>
+        <button
+          onClick={() => setActiveTab("groups")}
+          className={[
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all",
+            activeTab === "groups" ? "bg-white shadow-sm text-ink" : "text-muted hover:text-ink",
+          ].join(" ")}
+        >
+          <Shield className="w-3.5 h-3.5" />
+          Groups
+        </button>
+      </div>
 
+      {/* Groups tab */}
+      {activeTab === "groups" && <GroupsTab isAdmin={isAdmin} />}
+
+      {/* Members tab */}
+      {activeTab === "users" && (
+      <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 border-b border-ink/[0.07]">
           <div className="flex items-center justify-between mb-3">
@@ -612,7 +644,7 @@ export default function InstitutionUsers() {
             </div>
             <div className="flex items-center gap-2">
               {isAdmin && groups.length === 0 && (
-                <span className="text-[11px] text-muted">Create a group in Settings first</span>
+                <span className="text-[11px] text-muted">Create a group in the Groups tab first</span>
               )}
               {isAdmin && groups.length > 0 && (
                 <Btn variant="primary" size="sm" icon={Plus} onClick={() => setShowCreate(true)}>
@@ -728,8 +760,9 @@ export default function InstitutionUsers() {
           </div>
         )}
       </div>
+      )} {/* end activeTab === "users" */}
 
-      {/* Modals */}
+      {/* Modals + drawer — always rendered so state persists across tab switch */}
       <CreateUserModal
         groups={groups}
         open={showCreate}
@@ -743,7 +776,6 @@ export default function InstitutionUsers() {
         onClose={() => setAssignTarget(null)}
       />
 
-      {/* User detail drawer */}
       {drawerMember && (
         <UserDrawer
           member={drawerMember}

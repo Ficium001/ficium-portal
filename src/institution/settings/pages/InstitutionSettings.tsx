@@ -37,17 +37,15 @@ import {
   SectionHeader, StatusBadge, InlineAlert,
   Modal, FormField, inputCls, Btn,
 } from "@/institution/components/primitives";
-import GroupsTab from "@/institution/settings/components/GroupsTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "groups" | "api-keys" | "sla" | "documents";
+type Tab = "profile" | "api-keys" | "sla" | "documents";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "profile",   label: "Profile",   icon: Building2    },
-  { key: "groups",    label: "Groups",    icon: Shield       },
   { key: "api-keys",  label: "API keys",  icon: Key          },
   { key: "sla",       label: "SLA",       icon: Clock        },
   { key: "documents", label: "Documents", icon: FolderCheck  },
@@ -596,7 +594,6 @@ export default function InstitutionSettings() {
 
       {/* Tab content */}
       {tab === "profile"   && institution && <ProfileTab institution={institution} />}
-      {tab === "groups"    && <GroupsTab isAdmin={isAdmin} />}
       {tab === "api-keys"  && <ApiKeysTab isAdmin={isAdmin} />}
       {tab === "sla"       && <SlaTab    isAdmin={isAdmin} />}
       {tab === "documents" && <DocumentsTab />}

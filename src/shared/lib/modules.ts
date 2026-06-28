@@ -153,7 +153,7 @@ const INSTITUTION_MODULES: PortalModule[] = [
   },
   {
     key:         'inst:team',
-    label:       'Team',
+    label:       'User Management',
     description: 'Manage institution users and group assignments',
     category:    'institution',
     path:        '/team/users',
