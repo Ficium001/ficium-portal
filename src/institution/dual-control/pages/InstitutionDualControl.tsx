@@ -50,14 +50,13 @@ const DUAL_CONTROL_CATEGORIES = new Set([
   "api_key.revoke",
   "settings.update",
   "institution.modules_update",
-  // Marketplace
-  "bid.submit",
-  "bid.withdraw",
-  // Products & benefits
+  // Products & benefits (admin-level — approved in Dual Control)
   "benefit.create",
   "benefit.update",
   "benefit.delete",
   "product.update",
+  // NOTE: bid.* intentionally excluded — bids are approved via the
+  // Marketplace approvals screen, not the admin Dual Control queue.
 ]);
 
 // ─── Action metadata ──────────────────────────────────────────────────────────

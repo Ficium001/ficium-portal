@@ -58,7 +58,7 @@ function AdminHero() {
   const { data: pending = [] } = usePendingActions()
   const { data: members = [] } = useInstitutionUsers()
 
-  const pendingCount   = pending.filter(a => a.action_status === 'pending').length
+  const pendingCount   = pending.filter(a => a.action_status === 'pending' && !a.action_category.startsWith('bid.')).length
   const unassigned     = members.filter((m) => !m.custom_group_id).length
   const dateLabel      = new Date()
     .toLocaleDateString('en-MU', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -112,7 +112,7 @@ function DualControlQueue() {
   const { data: actions = [], isLoading } = usePendingActions()
 
   const pending = actions
-    .filter((a) => a.action_status === 'pending')
+    .filter((a) => a.action_status === 'pending' && !a.action_category.startsWith('bid.'))
     .slice(0, 5)
 
   return (
