@@ -29,37 +29,9 @@ import {
 
 // ─── Categories that belong on THIS page (not bid approvals) ─────────────────
 
-const DUAL_CONTROL_CATEGORIES = new Set([
-  // Identity & access
-  "group.create",
-  "group.update",
-  "group.update_modules",
-  "group.delete",
-  "user.create",
-  "user.update",
-  "user.assign_group",
-  "user.deactivate",
-  "user.reactivate",
-  "user.role_change",
-  "user.remove",
-  "user.invite",
-  // Operations
-  "webhook.create",
-  "webhook.delete",
-  "api_key.create",
-  "api_key.revoke",
-  "settings.update",
-  "institution.modules_update",
-  // Products & benefits (admin-level — approved in Dual Control)
-  "benefit.create",
-  "benefit.update",
-  "benefit.delete",
-  "product.update",
-  // NOTE: bid.* intentionally excluded — bids are approved via the
-  // Marketplace approvals screen, not the admin Dual Control queue.
-]);
-
 // ─── Action metadata ──────────────────────────────────────────────────────────
+// Visibility is controlled server-side by module_permissions in the JWT.
+// bid.* is excluded client-side only (those go through Marketplace Approvals).
 
 const ACTION_META: Record<string, { icon: string; label: string; risk: "low" | "medium" | "high" }> = {
   "group.create":               { icon: "◈",  label: "Group created",          risk: "medium" },
@@ -332,8 +304,10 @@ export default function InstitutionDualControl() {
     email: string; fullName: string; tempPassword: string; username?: string;
   } | null>(null);
 
+  // Server already filters by caller's module_permissions via GET /approvals/pending.
+  // Client only needs to exclude bid.* (those go through the Marketplace Approvals screen).
   const pending = actions.filter(
-    a => a.action_status === "pending" && DUAL_CONTROL_CATEGORIES.has(a.action_category)
+    a => a.action_status === "pending" && !a.action_category.startsWith("bid.")
   );
   const urgent = pending.filter(
     a => new Date(a.expires_at).getTime() - Date.now() < 4 * 3_600_000
