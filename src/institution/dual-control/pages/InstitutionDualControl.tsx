@@ -30,6 +30,7 @@ import {
 // ─── Categories that belong on THIS page (not bid approvals) ─────────────────
 
 const DUAL_CONTROL_CATEGORIES = new Set([
+  // Identity & access
   "group.create",
   "group.update",
   "group.update_modules",
@@ -42,12 +43,21 @@ const DUAL_CONTROL_CATEGORIES = new Set([
   "user.role_change",
   "user.remove",
   "user.invite",
+  // Operations
   "webhook.create",
   "webhook.delete",
   "api_key.create",
   "api_key.revoke",
   "settings.update",
   "institution.modules_update",
+  // Marketplace
+  "bid.submit",
+  "bid.withdraw",
+  // Products & benefits
+  "benefit.create",
+  "benefit.update",
+  "benefit.delete",
+  "product.update",
 ]);
 
 // ─── Action metadata ──────────────────────────────────────────────────────────
@@ -71,6 +81,14 @@ const ACTION_META: Record<string, { icon: string; label: string; risk: "low" | "
   "api_key.revoke":             { icon: "🔒", label: "API key revoked",        risk: "high"   },
   "settings.update":            { icon: "⚙",  label: "Settings updated",       risk: "medium" },
   "institution.modules_update": { icon: "◈",  label: "Modules updated",        risk: "high"   },
+  // Marketplace
+  "bid.submit":                 { icon: "📋", label: "Bid submitted",           risk: "medium" },
+  "bid.withdraw":               { icon: "↩",  label: "Bid withdrawn",           risk: "medium" },
+  // Products & benefits
+  "benefit.create":             { icon: "⭐", label: "Benefit added",           risk: "low"    },
+  "benefit.update":             { icon: "✏️", label: "Benefit updated",         risk: "low"    },
+  "benefit.delete":             { icon: "✕",  label: "Benefit removed",         risk: "medium" },
+  "product.update":             { icon: "📦", label: "Product updated",         risk: "medium" },
 };
 
 const RISK_STYLE = {
