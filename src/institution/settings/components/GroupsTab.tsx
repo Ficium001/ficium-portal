@@ -178,7 +178,12 @@ function ModulePicker({
   );
 }
 
-// ─── Product checkbox grid (grouped by family) ──────────────────────────────
+// ─── Product checkbox grid ───────────────────────────────────────────────────
+// Flat, compact grid like ModulePicker. A family header is only shown when
+// that family actually has more than one product — today every family has
+// exactly one (Home Loan, Personal Loan, etc.), so headers would just
+// duplicate the item label and add noise. This scales cleanly once a
+// family ever does have multiple products.
 
 function ProductPicker({
   catalogue, selectable, selected, onToggle,
@@ -189,14 +194,10 @@ function ProductPicker({
   onToggle:   (id: string) => void;
 }) {
   const products = catalogue.filter((p) => selectable.includes(p.id));
-  const byFamily = useMemo(() => {
-    const map = new Map<string, { label: string; items: LicensedProduct[] }>();
-    for (const p of products) {
-      const entry = map.get(p.family_code) ?? { label: p.family_label, items: [] };
-      entry.items.push(p);
-      map.set(p.family_code, entry);
-    }
-    return Array.from(map.values());
+  const familySizes = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const p of products) counts.set(p.family_code, (counts.get(p.family_code) ?? 0) + 1);
+    return counts;
   }, [products]);
 
   if (products.length === 0) {
@@ -204,45 +205,88 @@ function ProductPicker({
   }
 
   return (
-    <div className="space-y-3">
-      {byFamily.map((group) => (
-        <div key={group.label}>
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted mb-1.5">
-            {group.label}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {group.items.map((p) => {
-              const on = selected.includes(p.id);
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => onToggle(p.id)}
-                  aria-pressed={on}
-                  className={[
-                    "flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all",
-                    on
-                      ? "border-ficium/40 bg-ficium/[0.04]"
-                      : "border-ink/[0.08] hover:border-ink/[0.15]",
-                  ].join(" ")}
-                >
-                  <div
-                    className={[
-                      "w-4 h-4 mt-0.5 rounded border flex-shrink-0 flex items-center justify-center",
-                      on ? "bg-ficium border-ficium" : "border-ink/[0.25]",
-                    ].join(" ")}
-                  >
-                    {on && <span className="text-white text-[10px] leading-none">✓</span>}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[12px] font-semibold text-ink">{p.label}</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {products.map((p) => {
+        const on = selected.includes(p.id);
+        const showFamily = (familySizes.get(p.family_code) ?? 0) > 1;
+        return (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => onToggle(p.id)}
+            aria-pressed={on}
+            className={[
+              "flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-all",
+              on
+                ? "border-ficium/40 bg-ficium/[0.04]"
+                : "border-ink/[0.08] hover:border-ink/[0.15]",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center",
+                on ? "bg-ficium border-ficium" : "border-ink/[0.25]",
+              ].join(" ")}
+            >
+              {on && <span className="text-white text-[10px] leading-none">✓</span>}
+            </div>
+            <div className="min-w-0">
+              <div className="text-[12px] font-semibold text-ink truncate">{p.label}</div>
+              {showFamily && (
+                <div className="text-[10px] text-muted truncate">{p.family_label}</div>
+              )}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── All / Specific product access toggle ───────────────────────────────────
+
+function AccessModeToggle({
+  mode, onChange,
+}: {
+  mode:     "all" | "specific";
+  onChange: (mode: "all" | "specific") => void;
+}) {
+  const options: { value: "all" | "specific"; label: string; hint: string }[] = [
+    { value: "all", label: "All licensed products", hint: "Default — works for every product the institution offers" },
+    { value: "specific", label: "Specific products", hint: "Restrict this group to selected products only" },
+  ];
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {options.map((opt) => {
+        const on = mode === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            aria-pressed={on}
+            className={[
+              "flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all",
+              on
+                ? "border-ficium/40 bg-ficium/[0.04]"
+                : "border-ink/[0.08] hover:border-ink/[0.15]",
+            ].join(" ")}
+          >
+            <div
+              className={[
+                "w-4 h-4 mt-0.5 rounded-full border flex-shrink-0 flex items-center justify-center",
+                on ? "border-ficium" : "border-ink/[0.25]",
+              ].join(" ")}
+            >
+              {on && <div className="w-2 h-2 rounded-full bg-ficium" />}
+            </div>
+            <div className="min-w-0">
+              <div className="text-[12px] font-semibold text-ink">{opt.label}</div>
+              <div className="text-[10px] text-muted leading-snug mt-0.5">{opt.hint}</div>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -264,6 +308,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const [description, setDescription] = useState("");
   const [modules,     setModules]     = useState<string[]>([]);
   const [products,    setProducts]    = useState<string[]>([]);
+  const [productMode, setProductMode] = useState<"all" | "specific">("all");
   const [submitting,  setSubmitting]  = useState(false);
   const [flash,       setFlash]       = useState<string | null>(null);
   const [error,       setError]       = useState<string | null>(null);
@@ -287,7 +332,10 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const toggleProduct = (id: string) =>
     setProducts((prev) => prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]);
 
-  const resetForm = () => { setLabel(""); setDescription(""); setModules([]); setProducts([]); setError(null); };
+  const resetForm = () => {
+    setLabel(""); setDescription(""); setModules([]); setProducts([]);
+    setProductMode("all"); setError(null);
+  };
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["institution", "groups"] });
@@ -316,10 +364,14 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
 
   const handleCreate = async () => {
     if (!slug || !label.trim()) return;
+    if (productMode === "specific" && products.length === 0) {
+      setError("Select at least one product, or switch to \"All licensed products\".");
+      return;
+    }
     const ok = await submit("group.create", {
       slug, label: label.trim(), description: description.trim(),
       module_permissions: modules,
-      product_scope: products,   // [] = unrestricted (all licensed products)
+      product_scope: productMode === "all" ? [] : products,
     });
     if (ok) {
       setShowCreate(false);
@@ -330,9 +382,13 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
 
   const handleUpdateModules = async () => {
     if (!editGroup) return;
+    if (productMode === "specific" && products.length === 0) {
+      setError("Select at least one product, or switch to \"All licensed products\".");
+      return;
+    }
     const ok = await submit("group.update_modules", {
       group_id: editGroup.id, module_permissions: modules,
-      product_scope: products,   // [] = unrestricted (all licensed products)
+      product_scope: productMode === "all" ? [] : products,
     });
     if (ok) {
       setEditGroup(null);
@@ -349,7 +405,9 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const openEdit = (g: InstitutionGroup) => {
     setEditGroup(g);
     setModules(g.module_permissions);
-    setProducts(g.product_scope ?? []);
+    const scope = g.product_scope ?? [];
+    setProducts(scope);
+    setProductMode(scope.length === 0 ? "all" : "specific");
     setError(null);
   };
 
@@ -506,17 +564,19 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
           <FormField label="Module access" hint="Members of this group can use the selected modules">
             <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
           </FormField>
-          <FormField
-            label="Product access"
-            hint="Leave empty to grant all products the institution is licensed for. Select specific products to restrict this group — e.g. an Investments team scoped only to deposit/savings products."
-          >
-            <ProductPicker
-              catalogue={licensedProducts}
-              selectable={grantableProducts}
-              selected={products}
-              onToggle={toggleProduct}
-            />
+          <FormField label="Product access">
+            <AccessModeToggle mode={productMode} onChange={setProductMode} />
           </FormField>
+          {productMode === "specific" && (
+            <FormField label="Select products" hint="e.g. an Investments team scoped only to deposit/savings products">
+              <ProductPicker
+                catalogue={licensedProducts}
+                selectable={grantableProducts}
+                selected={products}
+                onToggle={toggleProduct}
+              />
+            </FormField>
+          )}
           <InlineAlert variant="info">
             This group enters the maker-checker queue and is created once approved.
           </InlineAlert>
@@ -545,17 +605,19 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
           <FormField label="Module access">
             <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
           </FormField>
-          <FormField
-            label="Product access"
-            hint="Leave empty to grant all products the institution is licensed for."
-          >
-            <ProductPicker
-              catalogue={licensedProducts}
-              selectable={grantableProducts}
-              selected={products}
-              onToggle={toggleProduct}
-            />
+          <FormField label="Product access">
+            <AccessModeToggle mode={productMode} onChange={setProductMode} />
           </FormField>
+          {productMode === "specific" && (
+            <FormField label="Select products">
+              <ProductPicker
+                catalogue={licensedProducts}
+                selectable={grantableProducts}
+                selected={products}
+                onToggle={toggleProduct}
+              />
+            </FormField>
+          )}
           <InlineAlert variant="info">
             The access change applies once a checker approves it.
           </InlineAlert>
