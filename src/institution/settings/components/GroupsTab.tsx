@@ -43,10 +43,19 @@ export interface InstitutionGroup {
   label:              string;
   description:        string;
   module_permissions: string[];
+  product_scope:      string[];   // [] = unrestricted (all licensed products)
   is_system:          boolean;
   created_by:         string | null;
   created_at:         string;
   updated_at:         string;
+}
+
+export interface LicensedProduct {
+  id:           string;
+  code:         string;
+  label:        string;
+  family_code:  string;
+  family_label: string;
 }
 
 // ─── Data hooks ──────────────────────────────────────────────────────────────
@@ -88,6 +97,32 @@ function useGrantableModules() {
         return ALL_INSTITUTION_KEYS;
       }
     },
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+function useLicensedProducts() {
+  return useQuery<LicensedProduct[]>({
+    queryKey: ["institution", "licensed-products"],
+    queryFn: () => portalApi.get<LicensedProduct[]>("/groups/licensed-products"),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/** Product ids this member may grant. Empty → full licensed catalogue. */
+function useGrantableProducts(allLicensedIds: string[]) {
+  return useQuery<string[]>({
+    queryKey: ["institution", "my-products", allLicensedIds.join(",")],
+    queryFn: async () => {
+      try {
+        const mine = await portalApi.get<string[]>("/groups/my-products");
+        if (mine.length === 0) return allLicensedIds;
+        return allLicensedIds.filter((id) => mine.includes(id));
+      } catch {
+        return allLicensedIds;
+      }
+    },
+    enabled: allLicensedIds.length > 0,
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -143,6 +178,75 @@ function ModulePicker({
   );
 }
 
+// ─── Product checkbox grid (grouped by family) ──────────────────────────────
+
+function ProductPicker({
+  catalogue, selectable, selected, onToggle,
+}: {
+  catalogue:  LicensedProduct[];
+  selectable: string[];
+  selected:   string[];
+  onToggle:   (id: string) => void;
+}) {
+  const products = catalogue.filter((p) => selectable.includes(p.id));
+  const byFamily = useMemo(() => {
+    const map = new Map<string, { label: string; items: LicensedProduct[] }>();
+    for (const p of products) {
+      const entry = map.get(p.family_code) ?? { label: p.family_label, items: [] };
+      entry.items.push(p);
+      map.set(p.family_code, entry);
+    }
+    return Array.from(map.values());
+  }, [products]);
+
+  if (products.length === 0) {
+    return <div className="text-[11px] text-muted">No licensed products available to grant.</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {byFamily.map((group) => (
+        <div key={group.label}>
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted mb-1.5">
+            {group.label}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {group.items.map((p) => {
+              const on = selected.includes(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onToggle(p.id)}
+                  aria-pressed={on}
+                  className={[
+                    "flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all",
+                    on
+                      ? "border-ficium/40 bg-ficium/[0.04]"
+                      : "border-ink/[0.08] hover:border-ink/[0.15]",
+                  ].join(" ")}
+                >
+                  <div
+                    className={[
+                      "w-4 h-4 mt-0.5 rounded border flex-shrink-0 flex items-center justify-center",
+                      on ? "bg-ficium border-ficium" : "border-ink/[0.25]",
+                    ].join(" ")}
+                  >
+                    {on && <span className="text-white text-[10px] leading-none">✓</span>}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-semibold text-ink">{p.label}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── GroupsTab ───────────────────────────────────────────────────────────────
 
 export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
@@ -150,12 +254,16 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const { data: groups = [],  isLoading } = useInstitutionGroups();
   const { data: pending = [] }            = usePendingGroupActions();
   const { data: grantable = [] }          = useGrantableModules();
+  const { data: licensedProducts = [] }   = useLicensedProducts();
+  const licensedProductIds = useMemo(() => licensedProducts.map((p) => p.id), [licensedProducts]);
+  const { data: grantableProducts = [] }  = useGrantableProducts(licensedProductIds);
 
   const [showCreate,  setShowCreate]  = useState(false);
   const [editGroup,   setEditGroup]   = useState<InstitutionGroup | null>(null);
   const [label,       setLabel]       = useState("");
   const [description, setDescription] = useState("");
   const [modules,     setModules]     = useState<string[]>([]);
+  const [products,    setProducts]    = useState<string[]>([]);
   const [submitting,  setSubmitting]  = useState(false);
   const [flash,       setFlash]       = useState<string | null>(null);
   const [error,       setError]       = useState<string | null>(null);
@@ -176,7 +284,10 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const toggleModule = (key: string) =>
     setModules((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]);
 
-  const resetForm = () => { setLabel(""); setDescription(""); setModules([]); setError(null); };
+  const toggleProduct = (id: string) =>
+    setProducts((prev) => prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]);
+
+  const resetForm = () => { setLabel(""); setDescription(""); setModules([]); setProducts([]); setError(null); };
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["institution", "groups"] });
@@ -208,6 +319,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
     const ok = await submit("group.create", {
       slug, label: label.trim(), description: description.trim(),
       module_permissions: modules,
+      product_scope: products,   // [] = unrestricted (all licensed products)
     });
     if (ok) {
       setShowCreate(false);
@@ -220,11 +332,12 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
     if (!editGroup) return;
     const ok = await submit("group.update_modules", {
       group_id: editGroup.id, module_permissions: modules,
+      product_scope: products,   // [] = unrestricted (all licensed products)
     });
     if (ok) {
       setEditGroup(null);
       resetForm();
-      setFlash("Module change submitted for approval.");
+      setFlash("Access change submitted for approval.");
     }
   };
 
@@ -236,6 +349,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const openEdit = (g: InstitutionGroup) => {
     setEditGroup(g);
     setModules(g.module_permissions);
+    setProducts(g.product_scope ?? []);
     setError(null);
   };
 
@@ -263,8 +377,8 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
         </div>
 
         {isLoading ? (
-          <DataTable headers={["Group", "Modules", "Created", ""]} caption="Loading groups…">
-            {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} cols={4} />)}
+          <DataTable headers={["Group", "Modules", "Products", "Created", ""]} caption="Loading groups…">
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} cols={5} />)}
           </DataTable>
         ) : groups.length === 0 && pendingCreates.length === 0 ? (
           <EmptyState
@@ -275,9 +389,12 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
               : "Your institution admin hasn't created any groups yet"}
           />
         ) : (
-          <DataTable headers={["Group", "Modules", "Created", ""]} caption="Institution access groups">
+          <DataTable headers={["Group", "Modules", "Products", "Created", ""]} caption="Institution access groups">
             {groups.map((g) => {
               const pendingCat = pendingByGroupId.get(g.id);
+              const productLabels = (g.product_scope ?? []).length === 0
+                ? null
+                : g.product_scope.map((id) => licensedProducts.find((p) => p.id === id)?.label ?? id);
               return (
                 <DataRow key={g.id}>
                   <Td>
@@ -312,6 +429,19 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                       )}
                     </div>
                   </Td>
+                  <Td>
+                    <div className="flex flex-wrap gap-1 max-w-[220px]">
+                      {productLabels === null ? (
+                        <span className="text-[11px] text-muted">All licensed products</span>
+                      ) : (
+                        productLabels.map((label) => (
+                          <span key={label} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ficium/[0.06] text-ficium border border-ficium/[0.15]">
+                            {label}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </Td>
                   <Td className="text-muted text-[12px]">
                     {new Date(g.created_at).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric" })}
                   </Td>
@@ -320,7 +450,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           onClick={() => openEdit(g)}
-                          aria-label={`Edit modules for ${g.label}`}
+                          aria-label={`Edit access for ${g.label}`}
                           className="p-1.5 rounded-md text-muted hover:text-ink hover:bg-ink/[0.05] transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" aria-hidden />
@@ -376,6 +506,17 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
           <FormField label="Module access" hint="Members of this group can use the selected modules">
             <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
           </FormField>
+          <FormField
+            label="Product access"
+            hint="Leave empty to grant all products the institution is licensed for. Select specific products to restrict this group — e.g. an Investments team scoped only to deposit/savings products."
+          >
+            <ProductPicker
+              catalogue={licensedProducts}
+              selectable={grantableProducts}
+              selected={products}
+              onToggle={toggleProduct}
+            />
+          </FormField>
           <InlineAlert variant="info">
             This group enters the maker-checker queue and is created once approved.
           </InlineAlert>
@@ -393,19 +534,30 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
         </div>
       </Modal>
 
-      {/* Edit modules modal */}
+      {/* Edit access modal */}
       <Modal
         open={!!editGroup}
         onClose={() => setEditGroup(null)}
-        title={editGroup ? `Edit modules — ${editGroup.label}` : ""}
+        title={editGroup ? `Edit access — ${editGroup.label}` : ""}
       >
         <div className="space-y-4">
           {error && <InlineAlert variant="error">{error}</InlineAlert>}
           <FormField label="Module access">
             <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
           </FormField>
+          <FormField
+            label="Product access"
+            hint="Leave empty to grant all products the institution is licensed for."
+          >
+            <ProductPicker
+              catalogue={licensedProducts}
+              selectable={grantableProducts}
+              selected={products}
+              onToggle={toggleProduct}
+            />
+          </FormField>
           <InlineAlert variant="info">
-            The module change applies once a checker approves it.
+            The access change applies once a checker approves it.
           </InlineAlert>
           <div className="flex gap-3 pt-1">
             <Btn variant="primary" onClick={handleUpdateModules} loading={submitting}>
