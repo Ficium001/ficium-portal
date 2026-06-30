@@ -291,7 +291,7 @@ function ProductPicker({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+    <div className="grid grid-cols-2 gap-2">
       {products.map((p) => {
         const on = selected.includes(p.id);
         const showFamily = (familySizes.get(p.family_code) ?? 0) > 1;
@@ -627,42 +627,48 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
       </div>
 
       {/* Create group modal */}
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create access group">
-        <div className="space-y-4">
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create access group" width="max-w-4xl">
+        <div className="max-h-[78vh] overflow-y-auto pr-1 space-y-5">
           {error && <InlineAlert variant="error">{error}</InlineAlert>}
-          <FormField label="Group name">
-            <input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Credit Team"
-              className={inputCls}
-            />
-            {slug && <div className="text-[10px] font-mono text-muted mt-1">slug: {slug}</div>}
-          </FormField>
-          <FormField label="Description" hint="What this group is for — shown to other admins">
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Handles credit product listings and bids"
-              className={inputCls}
-            />
-          </FormField>
-          <FormField label="Module access" hint="Members of this group can use the selected modules">
-            <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
-          </FormField>
-          <FormField label="Product access">
-            <AccessModeToggle mode={productMode} onChange={setProductMode} />
-          </FormField>
-          {productMode === "specific" && (
-            <FormField label="Select products" hint="e.g. an Investments team scoped only to deposit/savings products">
-              <ProductPicker
-                catalogue={licensedProducts}
-                selectable={grantableProducts}
-                selected={products}
-                onToggle={toggleProduct}
-              />
-            </FormField>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <FormField label="Group name">
+                <input
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder="Credit Team"
+                  className={inputCls}
+                />
+                {slug && <div className="text-[10px] font-mono text-muted mt-1">slug: {slug}</div>}
+              </FormField>
+              <FormField label="Description" hint="What this group is for — shown to other admins">
+                <input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Handles credit product listings and bids"
+                  className={inputCls}
+                />
+              </FormField>
+              <FormField label="Module access" hint="Members of this group can use the selected modules">
+                <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
+              </FormField>
+            </div>
+            <div className="space-y-4">
+              <FormField label="Product access">
+                <AccessModeToggle mode={productMode} onChange={setProductMode} />
+              </FormField>
+              {productMode === "specific" && (
+                <FormField label="Select products" hint="e.g. an Investments team scoped only to deposit/savings products">
+                  <ProductPicker
+                    catalogue={licensedProducts}
+                    selectable={grantableProducts}
+                    selected={products}
+                    onToggle={toggleProduct}
+                  />
+                </FormField>
+              )}
+            </div>
+          </div>
           <InlineAlert variant="info">
             This group enters the maker-checker queue and is created once approved.
           </InlineAlert>
@@ -685,25 +691,32 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
         open={!!editGroup}
         onClose={() => setEditGroup(null)}
         title={editGroup ? `Edit access — ${editGroup.label}` : ""}
+        width="max-w-4xl"
       >
-        <div className="space-y-4">
+        <div className="max-h-[78vh] overflow-y-auto pr-1 space-y-5">
           {error && <InlineAlert variant="error">{error}</InlineAlert>}
-          <FormField label="Module access">
-            <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
-          </FormField>
-          <FormField label="Product access">
-            <AccessModeToggle mode={productMode} onChange={setProductMode} />
-          </FormField>
-          {productMode === "specific" && (
-            <FormField label="Select products">
-              <ProductPicker
-                catalogue={licensedProducts}
-                selectable={grantableProducts}
-                selected={products}
-                onToggle={toggleProduct}
-              />
-            </FormField>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <FormField label="Module access">
+                <ModulePicker selectable={grantable} selected={modules} onToggle={toggleModule} />
+              </FormField>
+            </div>
+            <div className="space-y-4">
+              <FormField label="Product access">
+                <AccessModeToggle mode={productMode} onChange={setProductMode} />
+              </FormField>
+              {productMode === "specific" && (
+                <FormField label="Select products">
+                  <ProductPicker
+                    catalogue={licensedProducts}
+                    selectable={grantableProducts}
+                    selected={products}
+                    onToggle={toggleProduct}
+                  />
+                </FormField>
+              )}
+            </div>
+          </div>
           <InlineAlert variant="info">
             The access change applies once a checker approves it.
           </InlineAlert>
