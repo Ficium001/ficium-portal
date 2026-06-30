@@ -39,6 +39,14 @@ async function request<T>(
     },
   })
 
+  if (res.status === 401) {
+    // Token was rejected by the API itself (not just locally expired).
+    // Force a clean logout rather than letting callers retry against
+    // a dead token.
+    await signOut()
+    throw new PortalApiError(401, "Session expired")
+  }
+
   if (!res.ok) {
     let message = `Portal API error ${res.status}`
     try {

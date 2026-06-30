@@ -61,18 +61,48 @@ export async function signOut(): Promise<void> {
 }
 
 // ── Token refresh ─────────────────────────────────────────────
-export async function refreshToken(): Promise<string | null> {
+// Singleton in-flight promise — every caller within the same refresh
+// window awaits the SAME network request instead of firing its own.
+let _refreshInFlight: Promise<string | null> | null = null
+
+// Circuit breaker — once a refresh attempt fails, stop retrying for a
+// cooldown window so a dead/rejected refresh cookie can't flood the
+// auth server with concurrent 401s on every render.
+const REFRESH_COOLDOWN_MS = 10_000
+let _refreshFailedAt: number | null = null
+
+async function doRefresh(): Promise<string | null> {
   try {
     const res = await fetch(`${AUTH_URL}/auth/refresh`, {
       method:      'POST',
       credentials: 'include',   // sends httpOnly refresh cookie
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      _refreshFailedAt = Date.now()
+      return null
+    }
     const data = await res.json()
     sessionStorage.setItem('ficium_at', data.access_token)
     sessionStorage.setItem('ficium_at_exp', String(Date.now() + data.expires_in * 1000))
+    _refreshFailedAt = null
     return data.access_token
-  } catch { return null }
+  } catch {
+    _refreshFailedAt = Date.now()
+    return null
+  }
+}
+
+export async function refreshToken(): Promise<string | null> {
+  // Circuit open — a refresh just failed; don't hammer the auth server
+  // again until the cooldown elapses. Concurrent callers fail fast.
+  if (_refreshFailedAt && Date.now() - _refreshFailedAt < REFRESH_COOLDOWN_MS) {
+    return null
+  }
+  // Dedup concurrent callers onto a single in-flight request.
+  if (!_refreshInFlight) {
+    _refreshInFlight = doRefresh().finally(() => { _refreshInFlight = null })
+  }
+  return _refreshInFlight
 }
 
 // ── Get current access token (auto-refresh if near expiry) ────
