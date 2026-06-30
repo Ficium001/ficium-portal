@@ -69,8 +69,10 @@ type CategoryKey = "all" | "bid" | "webhook" | "user" | "api_key" | "institution
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function fmtDate(iso: string): { date: string; time: string } {
+function fmtDate(iso: string | null | undefined): { date: string; time: string } {
+  if (!iso) return { date: "—", time: "—" };
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return { date: "—", time: "—" };
   return {
     date: d.toLocaleDateString("en-MU", { day: "2-digit", month: "short", year: "numeric" }),
     time: d.toLocaleTimeString("en-MU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
@@ -97,6 +99,167 @@ function exportCSV(events: AuditEvent[], filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AuditEventDrawer — slide-over detail panel
+// ─────────────────────────────────────────────────────────────────────────────
+
+function JsonDiff({
+  label,
+  before,
+  after,
+}: {
+  label: string;
+  before: Record<string, unknown> | null | undefined;
+  after:  Record<string, unknown> | null | undefined;
+}) {
+  if (!before && !after) return null;
+
+  // Collect all keys from both sides
+  const allKeys = Array.from(
+    new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])
+  ).sort();
+
+  return (
+    <div className="space-y-1">
+      <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">{label}</p>
+      <div className="rounded-xl border border-line overflow-hidden text-[12px] font-mono">
+        {/* Header row */}
+        <div className="grid grid-cols-3 bg-ink/[0.03] border-b border-line">
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted uppercase tracking-wider">Field</div>
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-amber-700 uppercase tracking-wider border-l border-line">Before</div>
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-emerald-700 uppercase tracking-wider border-l border-line">After</div>
+        </div>
+        {allKeys.map((key) => {
+          const bVal = before?.[key];
+          const aVal = after?.[key];
+          const changed = JSON.stringify(bVal) !== JSON.stringify(aVal);
+          return (
+            <div
+              key={key}
+              className={`grid grid-cols-3 border-b border-line last:border-0 ${changed ? "bg-amber-50/40" : ""}`}
+            >
+              <div className="px-3 py-1.5 text-muted truncate">{key}</div>
+              <div className={`px-3 py-1.5 border-l border-line truncate ${changed ? "text-amber-700 line-through opacity-70" : "text-ink"}`}>
+                {bVal !== undefined ? String(bVal) : <span className="text-muted/50 italic">—</span>}
+              </div>
+              <div className={`px-3 py-1.5 border-l border-line truncate ${changed ? "text-emerald-700 font-semibold" : "text-ink"}`}>
+                {aVal !== undefined ? String(aVal) : <span className="text-muted/50 italic">—</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AuditEventDrawer({
+  event,
+  onClose,
+}: {
+  event: AuditEvent | null;
+  onClose: () => void;
+}) {
+  if (!event) return null;
+
+  const { date, time } = fmtDate(event.created_at);
+  const hasChanges = event.state_before || event.state_after;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-ink/20 z-40 transition-opacity"
+        onClick={onClose}
+        aria-hidden
+      />
+
+      {/* Drawer */}
+      <aside className="fixed right-0 top-0 h-full w-full max-w-[480px] bg-white z-50 shadow-2xl flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-5 border-b border-line">
+          <div>
+            <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Audit event</p>
+            <code className="text-[13px] font-mono text-ink bg-ink/[0.04] px-2 py-0.5 rounded-lg">
+              {event.event_label || "—"}
+            </code>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-ink/[0.05] transition-colors mt-0.5"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+          {/* Core metadata grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Date",      value: date },
+              { label: "Time",      value: time },
+              { label: "Outcome",   value: (
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                  event.outcome === "success"  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : event.outcome === "failed" || event.outcome === "rejected"
+                                               ? "bg-red-50 text-red-600 border border-red-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                }`}>{event.outcome}</span>
+              )},
+              { label: "Category",  value: event.action_category?.replace(/_/g, " ").replace(/\./g, " › ") ?? "—" },
+              { label: "Actor role", value: event.actor_role ?? "system" },
+              { label: "Actor IP",  value: event.actor_ip ? <code className="font-mono text-[12px]">{event.actor_ip}</code> : "—" },
+              { label: "Resource",  value: event.resource_type ?? "—" },
+              { label: "Resource label", value: event.resource_label ?? "—" },
+              { label: "Resource ID", value: event.resource_id
+                ? <code className="font-mono text-[11px] text-muted break-all">{event.resource_id}</code>
+                : "—"
+              },
+              { label: "Event ID",  value: <code className="font-mono text-[11px] text-muted break-all">{event.id}</code> },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-ink/[0.02] rounded-xl p-3">
+                <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-1">{label}</p>
+                <div className="text-[13px] text-ink">{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Outcome note */}
+          {event.outcome_note && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider mb-1">Note</p>
+              <p className="text-[13px] text-amber-800">{event.outcome_note}</p>
+            </div>
+          )}
+
+          {/* Change diff */}
+          {hasChanges ? (
+            <JsonDiff
+              label="Changes made"
+              before={event.state_before}
+              after={event.state_after}
+            />
+          ) : (
+            <div className="bg-ink/[0.02] border border-line rounded-xl px-4 py-6 text-center">
+              <p className="text-[12px] text-muted">No field-level change data recorded for this event.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-line bg-ink/[0.015]">
+          <p className="text-[11px] text-muted font-mono">
+            WORM-protected · append-only · FSC 7-year retention
+          </p>
+        </div>
+      </aside>
+    </>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -315,6 +478,7 @@ export default function InstitutionAudit() {
   const [outcome,  setOutcome]  = useState<OutcomeKey>("all");
   const [category, setCategory] = useState<CategoryKey>("all");
   const [search,   setSearch]   = useState("");
+  const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
 
   const { data: events = [], isLoading } = useAuditEvents(limit);
 
@@ -344,6 +508,8 @@ export default function InstitutionAudit() {
 
   return (
     <main className="p-6 lg:p-8 max-w-[1440px] mx-auto">
+      {/* Event detail drawer */}
+      <AuditEventDrawer event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       <SectionHeader
         title="Audit"
         subtitle="Immutable activity log · append-only · WORM compliant"
@@ -460,7 +626,11 @@ export default function InstitutionAudit() {
                 {filtered.map((e) => {
                   const { date, time } = fmtDate(e.created_at);
                   return (
-                    <DataRow key={e.id}>
+                    <DataRow
+                      key={e.id}
+                      onClick={() => setSelectedEvent(e)}
+                      className="cursor-pointer hover:bg-ficium/[0.02] transition-colors"
+                    >
                       <Td>
                         <div className="font-semibold text-[13px] whitespace-nowrap">{date}</div>
                         <div className="text-[11px] text-muted font-mono">{time}</div>
@@ -475,9 +645,12 @@ export default function InstitutionAudit() {
                       <Td className="text-muted text-[12px]">{e.actor_role ?? "system"}</Td>
                       <Td><StatusBadge status={e.outcome} size="xs" /></Td>
                       <Td className="text-muted max-w-[200px]">
-                        <span className="block truncate text-[12px]" title={e.outcome_note ?? ""}>
-                          {e.outcome_note ?? "—"}
-                        </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="block truncate text-[12px]" title={e.outcome_note ?? ""}>
+                            {e.outcome_note ?? "—"}
+                          </span>
+                          <span className="text-muted/40 text-[10px] shrink-0">›</span>
+                        </div>
                       </Td>
                     </DataRow>
                   );

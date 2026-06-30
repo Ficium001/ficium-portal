@@ -264,8 +264,9 @@ export interface AuditEvent {
   event_label: string
   resource_type?: string
   resource_id?: string
-  state_before?: Record<string, unknown>
-  state_after?: Record<string, unknown>
+  resource_label?: string
+  state_before?: Record<string, unknown> | null
+  state_after?: Record<string, unknown> | null
   outcome: 'success' | 'rejected' | 'failed' | 'expired' | 'logged'
   outcome_note?: string
   created_at: string
