@@ -24,10 +24,10 @@
  */
 
 import { useMemo, useState } from "react";
-import { Plus, Shield, Pencil, Trash2, Clock } from "lucide-react";
+import { Plus, Shield, Pencil, Trash2, Clock, ChevronDown, ChevronRight } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { portalApi } from "@/shared/lib/portalApi";
-import { INSTITUTION_MODULE_LIST } from "@/shared/lib/modules";
+import { INSTITUTION_MODULE_LIST, type PortalModule } from "@/shared/lib/modules";
 import type { PendingAction } from "@/institution/types/institution";
 import {
   InlineAlert, DataTable, DataRow, Td,
@@ -132,7 +132,19 @@ function useGrantableProducts(allLicensedIds: string[]) {
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40);
 
-// ─── Module checkbox grid ────────────────────────────────────────────────────
+// Mirrors NAV_SECTIONS in PortalShell.tsx so the picker reads exactly like
+// the sidebar the admin already knows. Any module not covered by a named
+// section (e.g. inst:benefits, inst:documents, inst:pipeline — not yet in
+// the live nav) falls into "Other" so nothing is ever silently dropped.
+const MODULE_SECTIONS: { label: string; keys: string[] }[] = [
+  { label: "Home",        keys: ["inst:dashboard"] },
+  { label: "Marketplace", keys: ["inst:marketplace", "inst:bids", "inst:bid_approval"] },
+  { label: "Insights",    keys: ["inst:analytics", "inst:notifications"] },
+  { label: "Manage",      keys: ["inst:dual_control", "inst:team", "inst:products", "inst:webhooks", "inst:settings"] },
+  { label: "Operations",  keys: ["inst:audit", "inst:pipeline"] },
+];
+
+// ─── Module checkbox grid (collapsible, grouped like the sidebar nav) ────────
 
 function ModulePicker({
   selectable, selected, onToggle,
@@ -142,36 +154,110 @@ function ModulePicker({
   onToggle:   (key: string) => void;
 }) {
   const modules = INSTITUTION_MODULE_LIST.filter((m) => selectable.includes(m.key));
+  const byKey = useMemo(
+    () => Object.fromEntries(modules.map((m) => [m.key, m])),
+    [modules],
+  );
+
+  const groups = useMemo(() => {
+    const seen = new Set<string>();
+    const named = MODULE_SECTIONS
+      .map((s) => {
+        const items = s.keys
+          .map((k) => byKey[k])
+          .filter((m): m is PortalModule => !!m);
+        for (const m of items) seen.add(m.key);
+        return { label: s.label, items };
+      })
+      .filter((s) => s.items.length > 0);
+    const other = modules.filter((m) => !seen.has(m.key));
+    return other.length > 0 ? [...named, { label: "Other", items: other }] : named;
+  }, [modules, byKey]);
+
+  // Sections containing an already-selected module start expanded; the
+  // rest start collapsed so the picker reads compactly on open. Recomputed
+  // only on mount (intentionally — toggling a checkbox shouldn't snap a
+  // section open/closed under the admin's cursor).
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(groups.filter((g) => g.items.some((m) => selected.includes(m.key))).map((g) => g.label)),
+  );
+  const toggleSection = (label: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+
+  if (groups.length === 0) {
+    return <div className="text-[11px] text-muted">No modules available to grant.</div>;
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {modules.map((m) => {
-        const on = selected.includes(m.key);
+    <div className="space-y-2">
+      {groups.map((g) => {
+        const isOpen = expanded.has(g.label);
+        const selectedCount = g.items.filter((m) => selected.includes(m.key)).length;
         return (
-          <button
-            key={m.key}
-            type="button"
-            onClick={() => onToggle(m.key)}
-            aria-pressed={on}
-            className={[
-              "flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all",
-              on
-                ? "border-ficium/40 bg-ficium/[0.04]"
-                : "border-ink/[0.08] hover:border-ink/[0.15]",
-            ].join(" ")}
-          >
-            <div
-              className={[
-                "w-4 h-4 mt-0.5 rounded border flex-shrink-0 flex items-center justify-center",
-                on ? "bg-ficium border-ficium" : "border-ink/[0.25]",
-              ].join(" ")}
+          <div key={g.label} className="border border-ink/[0.08] rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection(g.label)}
+              aria-expanded={isOpen}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-ink/[0.015] hover:bg-ink/[0.03] transition-colors text-left"
             >
-              {on && <span className="text-white text-[10px] leading-none">✓</span>}
-            </div>
-            <div className="min-w-0">
-              <div className="text-[12px] font-semibold text-ink">{m.label}</div>
-              <div className="text-[10px] text-muted leading-snug mt-0.5">{m.description}</div>
-            </div>
-          </button>
+              <span className="flex items-center gap-1.5">
+                {isOpen ? (
+                  <ChevronDown className="w-3.5 h-3.5 text-muted" aria-hidden />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5 text-muted" aria-hidden />
+                )}
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-ink">{g.label}</span>
+              </span>
+              {selectedCount > 0 && (
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-ficium/10 text-ficium">
+                  {selectedCount} selected
+                </span>
+              )}
+            </button>
+            {isOpen && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5">
+                {g.items.map((m) => {
+                  const on = selected.includes(m.key);
+                  return (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => onToggle(m.key)}
+                      aria-pressed={on}
+                      className={[
+                        "flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all",
+                        on
+                          ? "border-ficium/40 bg-ficium/[0.04]"
+                          : "border-ink/[0.08] hover:border-ink/[0.15]",
+                      ].join(" ")}
+                    >
+                      <div
+                        className={[
+                          "w-4 h-4 mt-0.5 rounded border flex-shrink-0 flex items-center justify-center",
+                          on ? "bg-ficium border-ficium" : "border-ink/[0.25]",
+                        ].join(" ")}
+                      >
+                        {on && <span className="text-white text-[10px] leading-none">✓</span>}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[12px] font-semibold text-ink">{m.label}</div>
+                        <div className="text-[10px] text-muted leading-snug mt-0.5">{m.description}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
