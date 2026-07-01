@@ -15,7 +15,7 @@
 import { useState } from "react";
 import {
   GitBranch, Plus, Trash2, Pencil, ChevronDown, ChevronUp,
-  Clock, CheckCircle2, Circle, Eye, EyeOff, AlertCircle, Star,
+  Clock, CheckCircle2, Eye, EyeOff, AlertCircle, Star,
 } from "lucide-react";
 import {
   useTemplates, useTemplate,
@@ -91,7 +91,7 @@ function CreateTemplateModal({
   const defaultTaken   = usedProductCodes.includes("__default__");
 
   return (
-    <Modal title="New pipeline template" onClose={onClose}>
+    <Modal open title="New pipeline template" onClose={onClose}>
       <div className="space-y-4 p-1">
         {error && <InlineAlert variant="error">{error}</InlineAlert>}
 
@@ -215,7 +215,7 @@ function StageModal({
   }
 
   return (
-    <Modal title={isEdit ? "Edit stage" : "Add stage"} onClose={onClose}>
+    <Modal open title={isEdit ? "Edit stage" : "Add stage"} onClose={onClose}>
       <div className="space-y-4 p-1">
         {error && <InlineAlert variant="error">{error}</InlineAlert>}
 
@@ -543,7 +543,7 @@ export function PipelineTemplatesTab() {
             <Btn
               variant="primary"
               size="sm"
-              icon={<Plus size={14} />}
+              icon={Plus}
               onClick={() => setShowCreate(true)}
             >
               New template
@@ -580,7 +580,7 @@ export function PipelineTemplatesTab() {
           <Btn
             variant="primary"
             size="sm"
-            icon={<Plus size={14} />}
+            icon={Plus}
             onClick={() => setShowCreate(true)}
             className="mt-4"
           >

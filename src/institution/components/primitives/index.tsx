@@ -613,6 +613,7 @@ export function Btn({
   size = "md",
   icon: Icon,
   type = "button",
+  className = "",
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -622,6 +623,7 @@ export function Btn({
   size?: "sm" | "md";
   icon?: ElementType;
   type?: "button" | "submit";
+  className?: string;
 }) {
   const base =
     "inline-flex items-center gap-2 font-bold rounded-xl transition-all disabled:opacity-50";
@@ -638,7 +640,7 @@ export function Btn({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`${base} ${sizes[size]} ${variants[variant]}`}
+      className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
     >
       {loading ? (
         <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -657,16 +659,19 @@ export function Btn({
 export function FormField({
   label,
   hint,
+  required = false,
   children,
 }: {
   label: string;
   hint?: string;
+  required?: boolean;
   children: ReactNode;
 }) {
   return (
     <div>
       <label className="block text-[12px] font-semibold text-ink mb-1.5">
         {label}
+        {required && <span className="text-red-500 ml-0.5" aria-hidden>*</span>}
       </label>
       {children}
       {hint && <p className="text-[11px] text-muted mt-1">{hint}</p>}
