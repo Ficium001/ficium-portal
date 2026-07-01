@@ -25,6 +25,7 @@ import { useState, useRef } from "react";
 import {
   Building2, Key, Clock, Copy, Check, Plus, Eye, EyeOff, Shield, FolderCheck,
   Upload, CheckCircle2, XCircle, AlertCircle, ExternalLink, ShieldCheck, ShieldAlert,
+  GitBranch,
 } from "lucide-react";
 import {
   useMyInstitution, useMyRole, useProducts,
@@ -37,18 +38,20 @@ import {
   SectionHeader, StatusBadge, InlineAlert,
   Modal, FormField, inputCls, Btn,
 } from "@/institution/components/primitives";
+import { PipelineTemplatesTab } from "@/institution/settings/components/PipelineTemplatesTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "api-keys" | "sla" | "documents";
+type Tab = "profile" | "api-keys" | "sla" | "documents" | "pipeline";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
-  { key: "profile",   label: "Profile",   icon: Building2    },
-  { key: "api-keys",  label: "API keys",  icon: Key          },
-  { key: "sla",       label: "SLA",       icon: Clock        },
-  { key: "documents", label: "Documents", icon: FolderCheck  },
+  { key: "profile",   label: "Profile",    icon: Building2    },
+  { key: "api-keys",  label: "API keys",   icon: Key          },
+  { key: "sla",       label: "SLA",        icon: Clock        },
+  { key: "documents", label: "Documents",  icon: FolderCheck  },
+  { key: "pipeline",  label: "Pipelines",  icon: GitBranch    },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -597,6 +600,7 @@ export default function InstitutionSettings() {
       {tab === "api-keys"  && <ApiKeysTab isAdmin={isAdmin} />}
       {tab === "sla"       && <SlaTab    isAdmin={isAdmin} />}
       {tab === "documents" && <DocumentsTab />}
+      {tab === "pipeline"  && <PipelineTemplatesTab />}
     </main>
   );
 }

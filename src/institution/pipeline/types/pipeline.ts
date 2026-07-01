@@ -94,3 +94,69 @@ export interface AdvanceStageResult {
   pipeline_id?:    string;
   stage_id?:       string;
 }
+
+// ── Template config types ─────────────────────────────────────────────────────
+
+export type ProductType =
+  | "personal_loan"
+  | "sme_loan"
+  | "mortgage"
+  | "auto_loan"
+  | "education_loan"
+  | "general";
+
+export type StageType =
+  | "credit_docs"
+  | "offer_letter"
+  | "legal_review"
+  | "approval_gate"
+  | "custom";
+
+export interface PipelineTemplateStageDef {
+  id:          string;
+  position:    number;
+  name:        string;
+  stage_type:  StageType;
+  description: string | null;
+  is_required: boolean;
+  sla_hours:   number | null;
+  created_at:  string;
+}
+
+export interface PipelineTemplate {
+  id:          string;
+  name:        string;
+  description: string | null;
+  product_type: ProductType;
+  is_active:   boolean;
+  stage_count: number;
+  created_at:  string;
+  updated_at:  string;
+}
+
+export interface PipelineTemplateDetail extends PipelineTemplate {
+  stages: PipelineTemplateStageDef[];
+}
+
+export interface CreateTemplatePayload {
+  name:         string;
+  product_type: ProductType;
+  description?: string;
+  stages?:      CreateStagePayload[];
+}
+
+export interface CreateStagePayload {
+  name:        string;
+  stage_type:  StageType;
+  description?: string;
+  is_required?: boolean;
+  sla_hours?:   number | null;
+}
+
+export interface UpdateStagePayload {
+  name?:        string;
+  stage_type?:  StageType;
+  description?: string;
+  is_required?: boolean;
+  sla_hours?:   number | null;
+}
