@@ -23,9 +23,9 @@
 
 import { useState, useRef } from "react";
 import {
-  Building2, Key, Clock, Copy, Check, Plus, Eye, EyeOff, Shield, FolderCheck,
+  Building2, Key, Clock, Check, FolderCheck,
   Upload, CheckCircle2, XCircle, AlertCircle, ExternalLink, ShieldCheck, ShieldAlert,
-  GitBranch,
+  GitBranch, Webhook,
 } from "lucide-react";
 import {
   useMyInstitution, useMyRole, useProducts,
@@ -36,19 +36,22 @@ import type { Institution, DocType, InstitutionDoc } from "@/institution/types/i
 import { portalApi } from "@/shared/lib/portalApi";
 import {
   SectionHeader, StatusBadge, InlineAlert,
-  Modal, FormField, inputCls, Btn,
+  Btn,
 } from "@/institution/components/primitives";
 import { PipelineTemplatesTab } from "@/institution/settings/components/PipelineTemplatesTab";
+import { ApiKeysTab }           from "@/institution/settings/components/ApiKeysTab";
+import { WebhooksTab }          from "@/institution/settings/components/WebhooksTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "api-keys" | "sla" | "documents" | "pipeline";
+type Tab = "profile" | "api-keys" | "webhooks" | "sla" | "documents" | "pipeline";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "profile",   label: "Profile",    icon: Building2    },
   { key: "api-keys",  label: "API keys",   icon: Key          },
+  { key: "webhooks",  label: "Webhooks",   icon: Webhook      },
   { key: "sla",       label: "SLA",        icon: Clock        },
   { key: "documents", label: "Documents",  icon: FolderCheck  },
   { key: "pipeline",  label: "Pipelines",  icon: GitBranch    },
@@ -115,151 +118,6 @@ function ProfileTab({ institution }: { institution: Institution }) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// ApiKeysTab
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ApiKeysTab({ isAdmin }: { isAdmin: boolean }) {
-  const [showCreate, setShowCreate] = useState(false);
-  const [label,      setLabel]      = useState("");
-  const [createdKey, setCreatedKey] = useState<string | null>(null);
-  const [copied,     setCopied]     = useState(false);
-  const [showKey,    setShowKey]    = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleCreate = async () => {
-    if (!label.trim()) return;
-    setSubmitting(true);
-    const raw = "fk_live_" + Array.from(
-      crypto.getRandomValues(new Uint8Array(24))
-    ).map((b) => b.toString(16).padStart(2, "0")).join("");
-    try {
-      await portalApi.post("/approvals/submit", {
-        action_category: "api_key.create",
-        resource_type:   "institution_api_keys",
-        resource_id:     null,
-        payload:         { label, scopes: ["bids:write", "requests:read"] },
-      });
-      setCreatedKey(raw);
-      setShowCreate(false);
-      setLabel("");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const copyKey = () => {
-    if (!createdKey) return;
-    navigator.clipboard.writeText(createdKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  return (
-    <div className="space-y-4">
-      {createdKey && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Shield className="w-4 h-4 text-amber-700" aria-hidden />
-            <span className="text-[13px] font-bold text-amber-800">
-              Copy this key now — it will never be shown again
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <code className="flex-1 bg-white border border-amber-200 rounded-lg px-3 py-2.5 text-[11px] font-mono text-ink overflow-auto">
-              {showKey ? createdKey : "fk_live_" + "•".repeat(40)}
-            </code>
-            <button
-              onClick={() => setShowKey((s) => !s)}
-              className="text-amber-600 hover:text-amber-800 transition-colors flex-shrink-0"
-              aria-label={showKey ? "Hide key" : "Reveal key"}
-            >
-              {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={copyKey}
-              className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 hover:text-amber-900 flex-shrink-0"
-              aria-label="Copy API key"
-            >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-          <p className="text-[11px] text-amber-700">
-            This key is awaiting maker-checker approval before it becomes active.
-          </p>
-        </div>
-      )}
-
-      <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
-        <div className="px-5 py-4 border-b border-ink/[0.07] flex items-center justify-between">
-          <div>
-            <h2 className="font-display font-bold text-[15px] text-ink">API keys</h2>
-            <p className="text-[11px] text-muted mt-0.5">
-              Keys are never stored in plaintext — raw values shown once only
-            </p>
-          </div>
-          {isAdmin && (
-            <Btn
-              variant="primary"
-              size="sm"
-              icon={Plus}
-              onClick={() => setShowCreate(true)}
-            >
-              Generate key
-            </Btn>
-          )}
-        </div>
-        <div className="px-5 py-14 text-center text-[13px] text-muted">
-          <Key className="w-8 h-8 text-ink/15 mx-auto mb-3" aria-hidden />
-          No active keys visible — plaintext values are never stored or displayed
-        </div>
-      </div>
-
-      {/* Create modal */}
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Generate API key">
-        <div className="space-y-4">
-          <FormField label="Key label" hint="A descriptive name for this key's use case">
-            <input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. Production bidding integration"
-              className={inputCls}
-            />
-          </FormField>
-          <div className="bg-ink/[0.03] border border-ink/[0.07] rounded-xl p-4">
-            <div className="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">Default scopes</div>
-            <div className="flex gap-2">
-              {["bids:write", "requests:read"].map((s) => (
-                <code key={s} className="text-[11px] bg-ficium/8 text-ficium px-2.5 py-1 rounded-full font-mono border border-ficium/15">
-                  {s}
-                </code>
-              ))}
-            </div>
-          </div>
-          <InlineAlert variant="warning">
-            Key generation enters the maker-checker queue. A second admin must approve
-            before the key is activated. Store the key securely immediately — it will
-            not be shown again after this session.
-          </InlineAlert>
-          <div className="flex gap-3 pt-1">
-            <Btn
-              variant="primary"
-              onClick={handleCreate}
-              disabled={!label.trim()}
-              loading={submitting}
-            >
-              Generate + submit
-            </Btn>
-            <Btn variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Btn>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
@@ -597,8 +455,9 @@ export default function InstitutionSettings() {
 
       {/* Tab content */}
       {tab === "profile"   && institution && <ProfileTab institution={institution} />}
-      {tab === "api-keys"  && <ApiKeysTab isAdmin={isAdmin} />}
-      {tab === "sla"       && <SlaTab    isAdmin={isAdmin} />}
+      {tab === "api-keys"  && <ApiKeysTab  isAdmin={isAdmin} />}
+      {tab === "webhooks"  && <WebhooksTab isAdmin={isAdmin} />}
+      {tab === "sla"       && <SlaTab      isAdmin={isAdmin} />}
       {tab === "documents" && <DocumentsTab />}
       {tab === "pipeline"  && <PipelineTemplatesTab />}
     </main>

@@ -102,7 +102,21 @@ function RequestCard({
               ref {(request.consumer_ref ?? request.client_ref)?.slice(0, 8) ?? "—"}
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-1.5">
+            {/* Ficium risk tier badge */}
+            {request.ficium_risk_tier && (
+              <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                request.ficium_risk_tier === "A" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                request.ficium_risk_tier === "B" ? "bg-blue-50   text-blue-700   border-blue-200"    :
+                request.ficium_risk_tier === "C" ? "bg-amber-50  text-amber-700  border-amber-200"   :
+                                                   "bg-red-50    text-red-700    border-red-200"
+              }`}>
+                Tier {request.ficium_risk_tier}
+                {request.ficium_score && (
+                  <span className="opacity-70 font-normal"> · {request.ficium_score}</span>
+                )}
+              </div>
+            )}
             {windowClosed ? (
               <span className="text-[10px] font-semibold bg-ink/[0.06] text-muted px-2 py-0.5 rounded-full">
                 Window closed

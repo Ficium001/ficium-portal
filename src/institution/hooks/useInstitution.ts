@@ -21,6 +21,7 @@ import type {
   MarketplaceRequest, PendingAction, InstitutionWebhook,
   Product, AuditEvent, BidPayload,
   BenefitCategory, Benefit, DocType, InstitutionDoc, ComplianceGate,
+  ApiKey, WebhookDeliveryPage,
 } from '@/institution/types/institution'
 
 export const QK = {
@@ -270,5 +271,113 @@ export function useRegisterDocument() {
       qc.invalidateQueries({ queryKey: QK.documents })
       qc.invalidateQueries({ queryKey: QK.compliance })
     },
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API Key hooks — /api-keys
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const QK_KEYS     = ['api-keys']  as const
+export const QK_WEBHOOKS = ['webhooks']  as const
+
+export function useApiKeys() {
+  return useQuery<ApiKey[]>({
+    queryKey: QK_KEYS,
+    queryFn:  () => portalApi.get<ApiKey[]>('/api-keys'),
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useCreateApiKey() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { label: string; scopes: string[]; expires_days?: number }) =>
+      portalApi.post<ApiKey>('/api-keys', payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK_KEYS }),
+  })
+}
+
+export function useApproveApiKey() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      portalApi.put<{ status: string }>(`/api-keys/${id}/approve`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK_KEYS }),
+  })
+}
+
+export function useRevokeApiKey() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      portalApi.post<{ status: string }>(`/api-keys/${id}/revoke`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK_KEYS }),
+  })
+}
+
+export function useDeleteApiKey() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      portalApi.delete<void>(`/api-keys/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK_KEYS }),
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Webhook hooks — /webhooks
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function useCreateWebhook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: {
+      label: string; endpoint_url: string; event_types: string[]
+      retry_max?: number; timeout_ms?: number
+    }) => portalApi.post<InstitutionWebhook>('/webhooks', payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.webhooks }),
+  })
+}
+
+export function useUpdateWebhook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string; active?: boolean; label?: string; event_types?: string[] }) =>
+      portalApi.put<InstitutionWebhook>(`/webhooks/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.webhooks }),
+  })
+}
+
+export function useDeleteWebhook() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => portalApi.delete<void>(`/webhooks/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.webhooks }),
+  })
+}
+
+export function useTestWebhook() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      portalApi.post<{ status: string }>(`/webhooks/${id}/test`, {}),
+  })
+}
+
+export function useWebhookDeliveries(webhookId: string | null) {
+  return useQuery<WebhookDeliveryPage>({
+    queryKey: ['webhook-deliveries', webhookId],
+    queryFn:  () => portalApi.get<WebhookDeliveryPage>(`/webhooks/${webhookId}/deliveries?limit=25`),
+    enabled:  !!webhookId,
+    staleTime: 10 * 1000,
+  })
+}
+
+export function useResetWebhookFailures() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      portalApi.post<{ status: string }>(`/webhooks/${id}/reset-failures`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.webhooks }),
   })
 }

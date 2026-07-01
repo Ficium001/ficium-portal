@@ -183,6 +183,10 @@ export interface MarketplaceRequest {
   client_risk_score?: number | null
   client_affordability_score?: number | null
   client_employment_status?: string | null
+  // Ficium risk assessment (surfaced from portal DB sync)
+  ficium_risk_tier?: 'A' | 'B' | 'C' | 'D' | null
+  ficium_score?: number | null
+  already_bid?: boolean
 }
 
 export interface PendingAction {
@@ -216,10 +220,54 @@ export interface InstitutionWebhook {
   active: boolean
   retry_max: number
   timeout_ms: number
-  last_fired_at?: string
-  last_status?: string
+  failure_count: number
+  last_fired_at?: string | null
+  last_status?: string | null
   created_at: string
   updated_at: string
+  // Only present on creation response
+  signing_secret?: string
+}
+
+export interface WebhookDelivery {
+  id: string
+  event_type: string
+  event_id: string
+  status: 'delivered' | 'failed' | 'pending'
+  attempts: number
+  last_attempt_at?: string | null
+  response_status?: number | null
+  response_body?: string | null
+  delivered_at?: string | null
+  created_at: string
+}
+
+export interface WebhookDeliveryPage {
+  total: number
+  limit: number
+  offset: number
+  deliveries: WebhookDelivery[]
+}
+
+export type ApiKeyMcStatus = 'pending_approval' | 'approved' | 'rejected'
+
+export interface ApiKey {
+  id: string
+  label: string
+  key_prefix: string
+  scopes: string[]
+  active: boolean
+  mc_status: ApiKeyMcStatus
+  created_at: string
+  expires_at?: string | null
+  last_used_at?: string | null
+  last_used_ip?: string | null
+  revoked_at?: string | null
+  rejection_note?: string | null
+  requested_by_username?: string | null
+  approved_by_username?: string | null
+  // Only present on creation response
+  raw_key?: string
 }
 
 export interface Product {
