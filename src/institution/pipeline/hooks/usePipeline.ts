@@ -1,33 +1,33 @@
 /**
  * institution/pipeline/hooks/usePipeline.ts
- * React Query hooks for the pipeline module — run-time + template config.
+ * React Query hooks — run-time pipelines + template config.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   advanceStage, approveStage, fetchPipeline, fetchPipelines,
   fetchTemplates, fetchTemplate,
   createTemplate, updateTemplate,
-  addStage, updateStageApi, deleteStageApi,
+  addStageDef, updateStageDef, deleteStageDef,
 } from "@/institution/pipeline/api/pipeline";
 import type {
-  PipelineStatus,
-  CreateTemplatePayload, CreateStagePayload, UpdateStagePayload,
+  PipelineStatus, CreateTemplatePayload,
+  CreateStageDefPayload, UpdateStageDefPayload,
 } from "@/institution/pipeline/types/pipeline";
 
-// ── Query key namespaces ──────────────────────────────────────────────────────
-export const PipelineKeys = {
-  all:       ["pipelines"]                                      as const,
-  list:      (status: PipelineStatus | "active") =>
-               ["pipelines", "list", status]                   as const,
-  detail:    (id: string) => ["pipelines", id]                  as const,
-  templates: ["pipelines", "templates"]                         as const,
-  template:  (id: string) => ["pipelines", "template", id]     as const,
-} as const;
+// ── Query keys ────────────────────────────────────────────────────────────────
+export const PK = {
+  all:       ["pipelines"]                                   as const,
+  list:      (s: PipelineStatus | "active") =>
+               ["pipelines", "list", s]                     as const,
+  detail:    (id: string) => ["pipelines", id]              as const,
+  templates: ["pipelines", "templates"]                     as const,
+  template:  (id: string) => ["pipelines", "template", id] as const,
+};
 
-// ── Run-time hooks ────────────────────────────────────────────────────────────
+// ── Run-time ──────────────────────────────────────────────────────────────────
 export function usePipelines(status: PipelineStatus | "active" = "active") {
   return useQuery({
-    queryKey: PipelineKeys.list(status),
+    queryKey: PK.list(status),
     queryFn:  () => fetchPipelines(status),
     staleTime: 30_000,
   });
@@ -35,7 +35,7 @@ export function usePipelines(status: PipelineStatus | "active" = "active") {
 
 export function usePipeline(id: string) {
   return useQuery({
-    queryKey: PipelineKeys.detail(id),
+    queryKey: PK.detail(id),
     queryFn:  () => fetchPipeline(id),
     enabled:  !!id,
     staleTime: 20_000,
@@ -48,8 +48,8 @@ export function useAdvanceStage(pipelineId: string) {
     mutationFn: ({ stageId, notes }: { stageId: string; notes?: string }) =>
       advanceStage(pipelineId, stageId, notes),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PipelineKeys.detail(pipelineId) });
-      qc.invalidateQueries({ queryKey: PipelineKeys.all });
+      qc.invalidateQueries({ queryKey: PK.detail(pipelineId) });
+      qc.invalidateQueries({ queryKey: PK.all });
     },
   });
 }
@@ -60,16 +60,16 @@ export function useApproveStage(pipelineId: string) {
     mutationFn: ({ stageId, notes }: { stageId: string; notes?: string }) =>
       approveStage(pipelineId, stageId, notes),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PipelineKeys.detail(pipelineId) });
-      qc.invalidateQueries({ queryKey: PipelineKeys.all });
+      qc.invalidateQueries({ queryKey: PK.detail(pipelineId) });
+      qc.invalidateQueries({ queryKey: PK.all });
     },
   });
 }
 
-// ── Template config hooks ─────────────────────────────────────────────────────
+// ── Template config ───────────────────────────────────────────────────────────
 export function useTemplates() {
   return useQuery({
-    queryKey: PipelineKeys.templates,
+    queryKey: PK.templates,
     queryFn:  fetchTemplates,
     staleTime: 60_000,
   });
@@ -77,7 +77,7 @@ export function useTemplates() {
 
 export function useTemplate(id: string) {
   return useQuery({
-    queryKey: PipelineKeys.template(id),
+    queryKey: PK.template(id),
     queryFn:  () => fetchTemplate(id),
     enabled:  !!id,
     staleTime: 30_000,
@@ -88,43 +88,43 @@ export function useCreateTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (p: CreateTemplatePayload) => createTemplate(p),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: PipelineKeys.templates }),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: PK.templates }),
   });
 }
 
 export function useUpdateTemplate(templateId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (p: Partial<{ name: string; description: string; is_active: boolean }>) =>
+    mutationFn: (p: Partial<{ name: string; description: string; is_default: boolean; is_active: boolean }>) =>
       updateTemplate(templateId, p),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PipelineKeys.templates });
-      qc.invalidateQueries({ queryKey: PipelineKeys.template(templateId) });
+      qc.invalidateQueries({ queryKey: PK.templates });
+      qc.invalidateQueries({ queryKey: PK.template(templateId) });
     },
   });
 }
 
-export function useAddStage(templateId: string) {
+export function useAddStageDef(templateId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (p: CreateStagePayload) => addStage(templateId, p),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: PipelineKeys.template(templateId) }),
+    mutationFn: (p: CreateStageDefPayload) => addStageDef(templateId, p),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: PK.template(templateId) }),
   });
 }
 
-export function useUpdateStage(templateId: string) {
+export function useUpdateStageDef(templateId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ stageId, payload }: { stageId: string; payload: UpdateStagePayload }) =>
-      updateStageApi(templateId, stageId, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: PipelineKeys.template(templateId) }),
+    mutationFn: ({ stageId, payload }: { stageId: string; payload: UpdateStageDefPayload }) =>
+      updateStageDef(templateId, stageId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PK.template(templateId) }),
   });
 }
 
-export function useDeleteStage(templateId: string) {
+export function useDeleteStageDef(templateId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (stageId: string) => deleteStageApi(templateId, stageId),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: PipelineKeys.template(templateId) }),
+    mutationFn: (stageId: string) => deleteStageDef(templateId, stageId),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: PK.template(templateId) }),
   });
 }

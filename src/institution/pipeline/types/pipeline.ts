@@ -1,8 +1,13 @@
 /**
  * institution/pipeline/types/pipeline.ts
  * All TypeScript types for the pipeline module.
- * No imports from other institution modules — self-contained.
+ * Self-contained — no imports from other institution modules.
+ *
+ * Run-time types  → marketplace.loan_pipeline + marketplace.pipeline_stage_instance
+ * Config-time types → institution.pipeline_template + institution.pipeline_stage_def
  */
+
+// ── Run-time ──────────────────────────────────────────────────────────────────
 
 export type StageKey =
   | "credit_docs"
@@ -78,7 +83,6 @@ export interface PipelineDetail {
   deal_term_months: number;
   product_label:    string;
   consumer_ref:     string;
-  // Phase 2 reveal
   borrower_name:    string | null;
   borrower_email:   string | null;
   borrower_phone:   string | null;
@@ -95,68 +99,68 @@ export interface AdvanceStageResult {
   stage_id?:       string;
 }
 
-// ── Template config types ─────────────────────────────────────────────────────
+// ── Config-time (template management) ────────────────────────────────────────
+// Maps to institution.pipeline_template + institution.pipeline_stage_def
+// product_code = null means "default — applies to all products"
 
-export type ProductType =
-  | "personal_loan"
-  | "sme_loan"
-  | "mortgage"
-  | "auto_loan"
-  | "education_loan"
-  | "general";
-
-export type StageType =
-  | "credit_docs"
-  | "offer_letter"
-  | "legal_review"
-  | "approval_gate"
-  | "custom";
-
-export interface PipelineTemplateStageDef {
-  id:          string;
-  position:    number;
-  name:        string;
-  stage_type:  StageType;
-  description: string | null;
-  is_required: boolean;
-  sla_hours:   number | null;
-  created_at:  string;
+export interface PipelineStageDef {
+  id:                     string;
+  position:               number;
+  stage_key:              StageKey;
+  label:                  string;           // display name shown to bank officers
+  description:            string | null;
+  sla_hours:              number;           // default 48
+  requires_maker_checker: boolean;          // stage needs checker sign-off
+  requires_documents:     boolean;          // stage is gated on documents
+  borrower_label:         string | null;    // what borrower sees in loan tracker
+  borrower_visible:       boolean;          // show this stage to borrower?
+  is_active:              boolean;
+  created_at:             string;
 }
 
 export interface PipelineTemplate {
-  id:          string;
-  name:        string;
-  description: string | null;
-  product_type: ProductType;
-  is_active:   boolean;
-  stage_count: number;
-  created_at:  string;
-  updated_at:  string;
+  id:            string;
+  name:          string;
+  description:   string | null;
+  product_code:  string | null;   // null = default for all products
+  product_label: string | null;   // from catalog.product.label
+  is_default:    boolean;
+  is_active:     boolean;
+  stage_count:   number;
+  created_at:    string;
+  updated_at:    string;
 }
 
 export interface PipelineTemplateDetail extends PipelineTemplate {
-  stages: PipelineTemplateStageDef[];
+  stages: PipelineStageDef[];
 }
 
 export interface CreateTemplatePayload {
-  name:         string;
-  product_type: ProductType;
-  description?: string;
-  stages?:      CreateStagePayload[];
+  name:          string;
+  product_code?: string | null;
+  description?:  string;
+  is_default?:   boolean;
+  stages?:       CreateStageDefPayload[];
 }
 
-export interface CreateStagePayload {
-  name:        string;
-  stage_type:  StageType;
-  description?: string;
-  is_required?: boolean;
-  sla_hours?:   number | null;
+export interface CreateStageDefPayload {
+  label:                   string;
+  stage_key:               StageKey;
+  description?:            string;
+  sla_hours?:              number;
+  requires_maker_checker?: boolean;
+  requires_documents?:     boolean;
+  borrower_label?:         string;
+  borrower_visible?:       boolean;
 }
 
-export interface UpdateStagePayload {
-  name?:        string;
-  stage_type?:  StageType;
-  description?: string;
-  is_required?: boolean;
-  sla_hours?:   number | null;
+export interface UpdateStageDefPayload {
+  label?:                  string;
+  stage_key?:              StageKey;
+  description?:            string;
+  sla_hours?:              number;
+  requires_maker_checker?: boolean;
+  requires_documents?:     boolean;
+  borrower_label?:         string;
+  borrower_visible?:       boolean;
 }
