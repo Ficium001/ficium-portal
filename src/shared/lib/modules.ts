@@ -134,15 +134,6 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'N',
   },
   {
-    key:         'inst:webhooks',
-    label:       'Webhooks',
-    description: 'Configure outbound webhook endpoints',
-    category:    'institution',
-    path:        '/webhooks',
-    iconKey:     'Webhook',
-    shortcut:    'W',
-  },
-  {
     key:         'inst:audit',
     label:       'Audit Trail',
     description: 'Read-only audit trail for institution activity',
@@ -325,7 +316,7 @@ export const SYSTEM_GROUPS: GroupSeed[] = [
     slug:               'it_admin',
     label:              'IT Admin',
     description:        'Technical setup — webhooks, settings, products, benefits',
-    module_permissions: ['inst:dashboard', 'inst:products', 'inst:benefits', 'inst:webhooks', 'inst:settings'],
+    module_permissions: ['inst:dashboard', 'inst:products', 'inst:benefits', 'inst:settings'],
     is_system:          true,
   },
   {

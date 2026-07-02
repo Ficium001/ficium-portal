@@ -140,7 +140,7 @@ const MODULE_SECTIONS: { label: string; keys: string[] }[] = [
   { label: "Home",        keys: ["inst:dashboard"] },
   { label: "Marketplace", keys: ["inst:marketplace", "inst:bids", "inst:bid_approval"] },
   { label: "Insights",    keys: ["inst:analytics", "inst:notifications"] },
-  { label: "Manage",      keys: ["inst:dual_control", "inst:team", "inst:products", "inst:webhooks", "inst:settings"] },
+  { label: "Manage",      keys: ["inst:dual_control", "inst:team", "inst:products", "inst:settings"] },
   { label: "Operations",  keys: ["inst:audit", "inst:pipeline"] },
 ];
 

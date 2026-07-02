@@ -31,7 +31,7 @@ import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   LayoutDashboard, Store, FileText, Clock,
-  Webhook, Package, ScrollText, Settings,
+  Package, ScrollText, Settings,
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
   BarChart2, Gift, FolderCheck, GitBranch,
@@ -49,7 +49,7 @@ const IDLE_LOGOUT_MS = 5 * 60 * 1000
 // ─── Icon resolver ───────────────────────────────────────────
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Store, FileText, Clock, Package,
-  Webhook, ScrollText, Settings, Shield, Users,
+  ScrollText, Settings, Shield, Users,
   GitMerge, Radio, MonitorDot, Building2,
   BarChart2, Bell, Gift, FolderCheck, GitBranch,
 }
@@ -140,7 +140,7 @@ const NAV_SECTIONS = [
   { label: 'Home',        keys: ['inst:dashboard', 'admin:dashboard'] },
   { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
   { label: 'Insights',    keys: ['inst:analytics', 'inst:notifications'] },
-  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:webhooks', 'inst:settings'] },
+  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:settings'] },
   { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit'] },
   { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
   { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
