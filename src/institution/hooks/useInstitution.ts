@@ -105,6 +105,25 @@ export function useSubmitBid() {
   })
 }
 
+// ─── useRejectRequest ─── portal-api /marketplace/requests/{id}/reject ───
+// Direct action, not routed through maker-checker: declining a request
+// commits no capital and carries none of the risk a bid does, so unlike
+// useSubmitBid it doesn't go through /approvals/submit.
+export function useRejectRequest() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ requestId, reason }: { requestId: string; reason?: string }) =>
+      portalApi.post<{ ok: boolean; status: string }>(
+        `/marketplace/requests/${requestId}/reject`,
+        { reason: reason ?? null },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.marketplace })
+      qc.invalidateQueries({ queryKey: QK.audit })
+    },
+  })
+}
+
 // ─── usePendingActions ─── portal-api /approvals/pending ─────
 export function usePendingActions() {
   return useQuery<PendingAction[]>({

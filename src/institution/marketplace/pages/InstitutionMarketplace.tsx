@@ -30,7 +30,7 @@
 import { useState, useCallback } from "react";
 import { RefreshCw, SlidersHorizontal, BarChart2 } from "lucide-react";
 import {
-  useMarketplace, useProducts, useSubmitBid, useMyInstitution,
+  useMarketplace, useProducts, useSubmitBid, useRejectRequest, useMyInstitution,
 } from "@/institution/hooks/useInstitution";
 import { useIntelligence } from "@/shared/lib/intelligence";
 import { RequestDetailDrawer }  from "@/institution/marketplace/components/RequestDetailDrawer";
@@ -302,11 +302,13 @@ export default function InstitutionMarketplace() {
   const { data: requests = [], isLoading, refetch } = useMarketplace();
   const { data: products  = [] }                    = useProducts();
   const submitBid                                   = useSubmitBid();
+  const rejectRequest                                = useRejectRequest();
 
   const [productFilter,  setProductFilter]  = useState("all");
   const [detailRequest,  setDetailRequest]  = useState<MarketplaceRequest | null>(null);
   const [biddingRequest, setBiddingRequest] = useState<MarketplaceRequest | null>(null);
   const [bidSuccessId,   setBidSuccessId]   = useState<string | null>(null);
+  const [declineSuccessId, setDeclineSuccessId] = useState<string | null>(null);
 
   const modules  = institution?.modules ?? [];
   const canBid   = modules.includes("marketplace");
@@ -343,6 +345,17 @@ export default function InstitutionMarketplace() {
       /* error surfaced via submitBid.error */
     }
   }, [biddingRequest, submitBid]);
+
+  const handleReject = useCallback(async (reason: string) => {
+    if (!detailRequest) return;
+    try {
+      await rejectRequest.mutateAsync({ requestId: detailRequest.id, reason: reason || undefined });
+      setDeclineSuccessId(detailRequest.id);
+      setDetailRequest(null);
+    } catch {
+      /* error surfaced via rejectRequest.error in the drawer */
+    }
+  }, [detailRequest, rejectRequest]);
 
   return (
     <main className="p-6 lg:p-8 max-w-[1440px] mx-auto">
@@ -416,11 +429,22 @@ export default function InstitutionMarketplace() {
         </div>
       )}
 
+      {declineSuccessId && (
+        <div className="mt-4">
+          <InlineAlert variant="success" onDismiss={() => setDeclineSuccessId(null)}>
+            Request declined — the client has been notified.
+          </InlineAlert>
+        </div>
+      )}
+
       {detailRequest && (
         <RequestDetailDrawer
           request={detailRequest}
           onClose={() => setDetailRequest(null)}
           onBid={() => setBiddingRequest(detailRequest)}
+          onReject={handleReject}
+          isRejecting={rejectRequest.isPending}
+          rejectError={rejectRequest.error?.message}
         />
       )}
       {biddingRequest && (

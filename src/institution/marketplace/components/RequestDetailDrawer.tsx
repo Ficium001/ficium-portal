@@ -5,7 +5,14 @@ import RequestChat         from "@/shared/components/RequestChat";
 import type { MarketplaceRequest, LoanRecord } from "@/institution/types/institution";
 import { SectionLabel, DetailStat, ProfileStat } from "./MarketplacePrimitives";
 
-interface Props { request: MarketplaceRequest; onClose: () => void; onBid: () => void; }
+interface Props {
+  request: MarketplaceRequest;
+  onClose: () => void;
+  onBid: () => void;
+  onReject: (reason: string) => void;
+  isRejecting?: boolean;
+  rejectError?: string;
+}
 
 const fmt     = (v: number) => v >= 1_000_000 ? `MUR ${(v / 1_000_000).toFixed(1)}M` : `MUR ${Number(v).toLocaleString()}`;
 const fmtDate = (s: string) => new Date(s).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -251,10 +258,12 @@ function buildPDFHtml(f: ReturnType<typeof useFields>, request: MarketplaceReque
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function RequestDetailDrawer({ request, onClose, onBid }: Props) {
+export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejecting, rejectError }: Props) {
   const [tab,             setTab]             = useState<"details" | "chat">("details");
   const [markerComment,   setMarkerComment]   = useState("");
   const [approverComment, setApproverComment] = useState("");
+  const [showDecline,     setShowDecline]     = useState(false);
+  const [declineReason,   setDeclineReason]   = useState("");
   const f        = useFields(request);
   const isUrgent = new Date(request.bid_window_closes_at).getTime() - Date.now() < 60 * 60 * 1000;
 
@@ -439,13 +448,55 @@ export function RequestDetailDrawer({ request, onClose, onBid }: Props) {
 
         {/* Footer */}
         {tab === "details" && (
-          <div className="flex-shrink-0 bg-white border-t border-ink/[0.07] px-8 py-5 flex items-center gap-4">
-            <button onClick={onBid} className="flex-1 flex items-center justify-center gap-2 bg-ficium hover:bg-ficium-deep text-white font-bold py-3.5 rounded-2xl transition-colors text-[15px] shadow-ficium">
-              <Zap className="w-5 h-5" /> Place bid on this request
-            </button>
-            <button onClick={onClose} className="px-6 py-3.5 rounded-2xl border border-ink/10 text-muted text-[14px] font-semibold hover:bg-ink/[0.03] transition-colors">
-              Close
-            </button>
+          <div className="flex-shrink-0 bg-white border-t border-ink/[0.07] px-8 py-5">
+            {showDecline ? (
+              <div>
+                <label className="block text-[11px] font-bold text-muted uppercase tracking-wider mb-2">
+                  Reason for declining (shown to Ficium, not the borrower)
+                </label>
+                <textarea
+                  value={declineReason}
+                  onChange={e => setDeclineReason(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="e.g. Outside current risk appetite for this product/tenor"
+                  className="w-full bg-white border border-ink/[0.10] focus:border-red-400 focus:ring-2 focus:ring-red-400/15 rounded-2xl px-4 py-3 text-[13px] text-ink placeholder:text-muted/60 outline-none resize-none transition-all mb-3"
+                />
+                {rejectError && (
+                  <div className="flex items-center gap-2 text-[13px] text-red-600 mb-3">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {rejectError}
+                  </div>
+                )}
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => onReject(declineReason.trim())}
+                    disabled={isRejecting}
+                    className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-2xl transition-colors text-[15px]"
+                  >
+                    {isRejecting ? "Declining…" : "Confirm decline"}
+                  </button>
+                  <button
+                    onClick={() => setShowDecline(false)}
+                    disabled={isRejecting}
+                    className="px-6 py-3.5 rounded-2xl border border-ink/10 text-muted text-[14px] font-semibold hover:bg-ink/[0.03] transition-colors"
+                  >
+                    Back
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <button onClick={onBid} className="flex-1 flex items-center justify-center gap-2 bg-ficium hover:bg-ficium-deep text-white font-bold py-3.5 rounded-2xl transition-colors text-[15px] shadow-ficium">
+                  <Zap className="w-5 h-5" /> Place bid on this request
+                </button>
+                <button onClick={() => setShowDecline(true)} className="px-6 py-3.5 rounded-2xl border border-red-200 text-red-600 text-[14px] font-semibold hover:bg-red-50 transition-colors">
+                  Decline
+                </button>
+                <button onClick={onClose} className="px-6 py-3.5 rounded-2xl border border-ink/10 text-muted text-[14px] font-semibold hover:bg-ink/[0.03] transition-colors">
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
