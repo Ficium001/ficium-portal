@@ -65,6 +65,11 @@ jobs:
 
       - name: Dead-code guard (no orphaned files or unused deps)
         run: npx knip --include files,dependencies
+        env:
+          # Works around a known knip/oxc-parser crash (RangeError: Array
+          # buffer allocation failed) on Node >=22 in memory-constrained
+          # environments. See https://knip.dev/reference/known-issues
+          KNIP_DISABLE_RAW_TRANSFER: "1"
 
       - name: Build
         run: npm run build
