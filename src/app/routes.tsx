@@ -39,6 +39,7 @@ const InstitutionBids        = lazy(() => import('../institution/bids/pages/Inst
 const InstitutionPipelines   = lazy(() => import('../institution/pipeline/pages/InstitutionPipelines').then(m => ({ default: m.InstitutionPipelines })))
 const PipelineDetail         = lazy(() => import('../institution/pipeline/pages/PipelineDetail').then(m => ({ default: m.PipelineDetail })))
 const InstitutionApprovals   = lazy(() => import('../institution/approvals/pages/InstitutionApprovals'))
+const ApprovalChainsInbox    = lazy(() => import('../institution/approval-chains/pages/ApprovalChainsInbox'))
 const InstitutionProducts    = lazy(() => import('../institution/products/pages/InstitutionProducts'))
 const InstitutionAudit       = lazy(() => import('../institution/audit/pages/InstitutionAudit'))
 const InstitutionSettings    = lazy(() => import('../institution/settings/pages/InstitutionSettings'))
@@ -167,6 +168,7 @@ export const router = createBrowserRouter([
           { path: '/pipelines',    element: <RequireModule moduleKey="inst:pipeline"><S><InstitutionPipelines /></S></RequireModule> },
           { path: '/pipelines/:id',element: <RequireModule moduleKey="inst:pipeline"><S><PipelineDetail /></S></RequireModule> },
           { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
+          { path: '/approval-chains', element: <RequireModule moduleKey="inst:approvals"><S><ApprovalChainsInbox /></S></RequireModule> },
           { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
           { path: '/audit',        element: <RequireModule moduleKey="inst:audit"><S><InstitutionAudit /></S></RequireModule> },
           { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },

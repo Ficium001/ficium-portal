@@ -71,6 +71,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'A',
   },
   {
+    key:         'inst:approvals',
+    label:       'Approval Chains',
+    description: 'Committee votes and multi-stage approval chains (bids, offer letters, mandates)',
+    category:    'institution',
+    path:        '/approval-chains',
+    iconKey:     'Users',
+    shortcut:    'H',
+  },
+  {
     key:         'inst:dual_control',
     label:       'Dual Control',
     description: 'Four-eyes approval queue for internal actions (groups, users, settings)',
