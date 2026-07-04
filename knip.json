@@ -2,11 +2,13 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
     "src/app/**/*.{ts,tsx}",
-    "supabase/functions/**/index.ts",
-    "api/**/*.{js,ts}"
+    "supabase/functions/**/index.ts"
   ],
   "project": [
-    "src/**/*.{ts,tsx}",
-    "api/**/*.{js,ts}"
+    "src/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "src/institution/benefits/pages/InstitutionBenefits.tsx",
+    "src/institution/documents/pages/InstitutionDocuments.tsx"
   ]
 }
