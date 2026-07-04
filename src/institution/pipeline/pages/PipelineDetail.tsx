@@ -74,7 +74,7 @@ export function PipelineDetail() {
         {pipeline.status === "completed" && (
           <div className="flex items-center gap-3 bg-green-50 border border-green-200
                           rounded-2xl px-4 py-3 text-[13px] text-green-800">
-            <CheckCircle2 size={18} className="text-green-600 flex-shrink-0" />
+            <CheckCircle2 size={18} className="text-green-600 shrink-0" />
             <div>
               <div className="font-semibold">Pipeline complete</div>
               <div className="text-[12px] text-green-700 mt-0.5">

@@ -70,8 +70,8 @@ const COUNTRIES = [
 ];
 
 const inputCls = (err?: boolean) => [
-  "w-full rounded-xl border px-4 py-3.5 text-[16px] outline-none transition-all bg-white text-ink placeholder:text-ink/30",
-  err ? "border-red-400 focus:ring-2 focus:ring-red-200" : "border-ink/[0.12] focus:border-ficium focus:ring-2 focus:ring-ficium/20",
+  "w-full rounded-xl border px-4 py-3.5 text-[16px] outline-hidden transition-all bg-white text-ink placeholder:text-ink/30",
+  err ? "border-red-400 focus:ring-2 focus:ring-red-200" : "border-ink/12 focus:border-ficium focus:ring-2 focus:ring-ficium/20",
 ].join(" ");
 
 export default function RegisterInstitution() {

@@ -167,7 +167,7 @@ export default function LineChart({
       {hovered && hover !== null && pts[hover] && (
         <div
           className='absolute pointer-events-none bg-ink text-white text-[12px] font-semibold
-                     px-2.5 py-1.5 rounded-[9px] whitespace-nowrap z-[3]'
+                     px-2.5 py-1.5 rounded-[9px] whitespace-nowrap z-3'
           style={{
             left: `${(pts[hover][0] / W) * 100}%`,
             top: `${(pts[hover][1] / H) * 100}%`,

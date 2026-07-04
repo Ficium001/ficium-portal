@@ -81,21 +81,21 @@ function ProfileTab({ institution }: { institution: Institution }) {
           <h2 className="font-display font-bold text-[15px] text-ink">Institution profile</h2>
           <p className="text-[11px] text-muted">To update, contact your Ficium account manager</p>
         </div>
-        <div className="divide-y divide-ink/[0.05]">
+        <div className="divide-y divide-ink/5">
           {fields.map(([label, value]) => (
             <div key={label} className="flex items-center px-5 py-3.5">
-              <div className="w-44 text-[12px] text-muted flex-shrink-0">{label}</div>
+              <div className="w-44 text-[12px] text-muted shrink-0">{label}</div>
               <div className="text-[13px] font-medium text-ink capitalize">{value}</div>
             </div>
           ))}
           {/* Compliance status */}
           <div className="flex items-center px-5 py-3.5">
-            <div className="w-44 text-[12px] text-muted flex-shrink-0">Compliance status</div>
+            <div className="w-44 text-[12px] text-muted shrink-0">Compliance status</div>
             <StatusBadge status={institution.compliance_status} size="xs" />
           </div>
           {/* Onboarding stage */}
           <div className="flex items-center px-5 py-3.5">
-            <div className="w-44 text-[12px] text-muted flex-shrink-0">Onboarding stage</div>
+            <div className="w-44 text-[12px] text-muted shrink-0">Onboarding stage</div>
             <StatusBadge status={institution.onboarding_stage} size="xs"
               label={institution.onboarding_stage.replace(/_/g, " ")} />
           </div>
@@ -156,17 +156,17 @@ function SlaTab({ isAdmin }: { isAdmin: boolean }) {
         </p>
       </div>
       {isLoading ? (
-        <div className="divide-y divide-ink/[0.05]">
+        <div className="divide-y divide-ink/5">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="px-5 py-4 flex items-center gap-4 animate-pulse">
-              <div className="flex-1 h-4 bg-ink/[0.06] rounded w-32" />
-              <div className="h-8 w-24 bg-ink/[0.05] rounded-lg" />
-              <div className="h-8 w-24 bg-ink/[0.05] rounded-lg" />
+              <div className="flex-1 h-4 bg-ink/6 rounded-sm w-32" />
+              <div className="h-8 w-24 bg-ink/5 rounded-lg" />
+              <div className="h-8 w-24 bg-ink/5 rounded-lg" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="divide-y divide-ink/[0.05]">
+        <div className="divide-y divide-ink/5">
           {products.map((p) => {
             const v = getVal(p.code);
             return (
@@ -190,7 +190,7 @@ function SlaTab({ isAdmin }: { isAdmin: boolean }) {
                       disabled={!isAdmin}
                       min={15}
                       max={1440}
-                      className="w-24 border border-ink/[0.12] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 disabled:bg-ink/[0.02] disabled:text-muted"
+                      className="w-24 border border-ink/12 rounded-lg px-3 py-2 text-[13px] outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 disabled:bg-ink/2 disabled:text-muted"
                     />
                   </div>
                   <div>
@@ -204,7 +204,7 @@ function SlaTab({ isAdmin }: { isAdmin: boolean }) {
                       disabled={!isAdmin}
                       min={15}
                       max={2880}
-                      className="w-24 border border-ink/[0.12] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 disabled:bg-ink/[0.02] disabled:text-muted"
+                      className="w-24 border border-ink/12 rounded-lg px-3 py-2 text-[13px] outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 disabled:bg-ink/2 disabled:text-muted"
                     />
                   </div>
                   {isAdmin && (
@@ -247,7 +247,7 @@ function ComplianceBanner() {
   if (data.can_bid) {
     return (
       <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl mb-6">
-        <ShieldCheck size={18} className="text-emerald-600 flex-shrink-0" />
+        <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
         <div>
           <p className="text-[13px] font-bold text-emerald-800">Compliance verified</p>
           <p className="text-[12px] text-emerald-700">All required documents approved. Your institution can submit bids.</p>
@@ -257,7 +257,7 @@ function ComplianceBanner() {
   }
   return (
     <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl mb-6">
-      <ShieldAlert size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+      <ShieldAlert size={18} className="text-amber-600 shrink-0 mt-0.5" />
       <div>
         <p className="text-[13px] font-bold text-amber-800">Compliance incomplete</p>
         <p className="text-[12px] text-amber-700 mt-0.5">
@@ -283,7 +283,7 @@ function DocRow({
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string ?? "";
 
   return (
-    <div className="flex items-start gap-4 px-5 py-4 border-b border-ink/[0.05] last:border-0">
+    <div className="flex items-start gap-4 px-5 py-4 border-b border-ink/5 last:border-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[13px] font-semibold text-ink">{docType.label}</span>
@@ -315,7 +315,7 @@ function DocRow({
           </div>
         )}
       </div>
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <input ref={ref} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
           onChange={async e => {
             const file = e.target.files?.[0];
@@ -379,12 +379,12 @@ function DocumentsTab() {
       )}
       {isLoading ? (
         <div className="space-y-2 animate-pulse">
-          {[1,2,3].map(i => <div key={i} className="h-16 bg-ink/[0.04] rounded-xl" />)}
+          {[1,2,3].map(i => <div key={i} className="h-16 bg-ink/4 rounded-xl" />)}
         </div>
       ) : (
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/[0.01]">
+            <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/1">
               <h3 className="text-[13px] font-bold text-ink">Required documents</h3>
               <p className="text-[11px] text-muted mt-0.5">All must be approved by Ficium before your institution can bid.</p>
             </div>
@@ -394,7 +394,7 @@ function DocumentsTab() {
           </div>
           {optional.length > 0 && (
             <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/[0.01]">
+              <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/1">
                 <h3 className="text-[13px] font-bold text-ink">Optional documents</h3>
                 <p className="text-[11px] text-muted mt-0.5">Not required for bidding but may be requested during onboarding.</p>
               </div>
@@ -434,7 +434,7 @@ export default function InstitutionSettings() {
       <div
         role="tablist"
         aria-label="Settings sections"
-        className="flex gap-1 bg-ink/[0.04] p-1 rounded-xl mb-6 w-fit"
+        className="flex gap-1 bg-ink/4 p-1 rounded-xl mb-6 w-fit"
       >
         {TABS.map((t) => (
           <button
@@ -444,7 +444,7 @@ export default function InstitutionSettings() {
             onClick={() => setTab(t.key)}
             className={[
               "flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all",
-              tab === t.key ? "bg-white shadow-sm text-ink" : "text-muted hover:text-ink",
+              tab === t.key ? "bg-white shadow-xs text-ink" : "text-muted hover:text-ink",
             ].join(" ")}
           >
             <t.icon className="w-3.5 h-3.5" aria-hidden />

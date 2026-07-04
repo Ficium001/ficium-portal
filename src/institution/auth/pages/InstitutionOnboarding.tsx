@@ -89,7 +89,7 @@ function StepIndicator({ current }: { current: Step }) {
                   "w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all",
                   done   ? "bg-ficium text-white" :
                   active ? "bg-ficium text-white ring-4 ring-ficium/20" :
-                           "bg-ink/[0.06] text-muted",
+                           "bg-ink/6 text-muted",
                 ].join(" ")}
                 aria-current={active ? "step" : undefined}
               >
@@ -100,7 +100,7 @@ function StepIndicator({ current }: { current: Step }) {
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`h-0.5 w-16 mx-1 mb-4 ${done ? "bg-ficium" : "bg-ink/[0.08]"}`} aria-hidden />
+              <div className={`h-0.5 w-16 mx-1 mb-4 ${done ? "bg-ficium" : "bg-ink/8"}`} aria-hidden />
             )}
           </div>
         );
@@ -150,7 +150,7 @@ function Step1Welcome({
         <div className="space-y-3">
           {CHECKLIST.map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-ficium/8 flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-ficium/8 flex items-center justify-center shrink-0">
                 <Icon className="w-3.5 h-3.5 text-ficium" aria-hidden />
               </div>
               <span className="text-[13px] text-ink">{label}</span>
@@ -212,12 +212,12 @@ function FileUploadField({
           "w-full flex items-center gap-3 border-2 border-dashed rounded-xl px-4 py-4 transition-all text-left",
           file
             ? "border-emerald-300 bg-emerald-50"
-            : "border-ink/[0.12] hover:border-ficium/40 hover:bg-ficium/[0.02]",
+            : "border-ink/12 hover:border-ficium/40 hover:bg-ficium/2",
         ].join(" ")}
         aria-label={`Upload ${label}`}
       >
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          file ? "bg-emerald-100" : "bg-ink/[0.04]"
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+          file ? "bg-emerald-100" : "bg-ink/4"
         }`}>
           {file
             ? <CheckCircle className="w-4.5 h-4.5 text-emerald-600" aria-hidden />
@@ -359,12 +359,12 @@ function SelectCard<T extends string>({
       className={[
         "w-full text-left flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 transition-all",
         selected
-          ? "border-ficium bg-ficium/[0.04]"
-          : "border-ink/[0.10] hover:border-ficium/30",
+          ? "border-ficium bg-ficium/4"
+          : "border-ink/10 hover:border-ficium/30",
       ].join(" ")}
     >
       <div className={[
-        "w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 transition-all",
+        "w-4 h-4 rounded-full border-2 shrink-0 mt-0.5 transition-all",
         selected ? "border-ficium bg-ficium" : "border-ink/20",
       ].join(" ")} aria-hidden />
       <div>
@@ -433,7 +433,7 @@ function Step3Technical({
       </div>
 
       {/* IT contact */}
-      <div className="bg-ink/[0.025] rounded-xl p-4 mb-6 space-y-4">
+      <div className="bg-ink/2.5 rounded-xl p-4 mb-6 space-y-4">
         <div className="text-[12px] font-bold text-ink uppercase tracking-wide">
           IT contact
         </div>
@@ -545,15 +545,15 @@ function Step4Review({
       </p>
 
       <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden mb-5">
-        <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/[0.015]">
+        <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/1.5">
           <span className="text-[11px] font-bold text-muted uppercase tracking-wider">
             Application summary
           </span>
         </div>
-        <div className="divide-y divide-ink/[0.05]">
+        <div className="divide-y divide-ink/5">
           {rows.map(([label, value]) => (
             <div key={label} className="flex items-center px-5 py-3">
-              <div className="w-40 text-[12px] text-muted flex-shrink-0 capitalize">{label}</div>
+              <div className="w-40 text-[12px] text-muted shrink-0 capitalize">{label}</div>
               <div className="text-[13px] font-medium text-ink capitalize">{value}</div>
             </div>
           ))}

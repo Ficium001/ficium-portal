@@ -37,10 +37,10 @@ const ALL_EVENTS = [
 function DeliveryRow({ d }: { d: WebhookDelivery }) {
   const ok = d.status === "delivered";
   return (
-    <div className="flex items-start gap-3 px-4 py-3 border-b border-ink/[0.05] last:border-0 text-[12px]">
+    <div className="flex items-start gap-3 px-4 py-3 border-b border-ink/5 last:border-0 text-[12px]">
       {ok
-        ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-        : <XCircle     className="w-3.5 h-3.5 text-red-400   flex-shrink-0 mt-0.5" />
+        ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+        : <XCircle     className="w-3.5 h-3.5 text-red-400   shrink-0 mt-0.5" />
       }
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -67,7 +67,7 @@ function DeliveryLog({ webhookId }: { webhookId: string }) {
   if (isLoading) {
     return (
       <div className="p-4 space-y-2 animate-pulse">
-        {[1, 2, 3].map(i => <div key={i} className="h-8 bg-ink/[0.04] rounded-lg" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-8 bg-ink/4 rounded-lg" />)}
       </div>
     );
   }
@@ -80,7 +80,7 @@ function DeliveryLog({ webhookId }: { webhookId: string }) {
   }
   return (
     <div>
-      <div className="px-4 py-2.5 bg-ink/[0.02] border-b border-ink/[0.06]">
+      <div className="px-4 py-2.5 bg-ink/2 border-b border-ink/6">
         <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">
           {data.total} total deliveries
         </span>
@@ -151,7 +151,7 @@ function WebhookCard({
       <div className="px-5 pt-4 pb-3">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">{deliveryIcon()}</div>
+            <div className="shrink-0 mt-0.5">{deliveryIcon()}</div>
             <div>
               <div className="font-display font-bold text-[14px] text-ink">{webhook.label}</div>
               <code className="text-[11px] font-mono text-muted mt-0.5 break-all block">{webhook.endpoint_url}</code>
@@ -212,13 +212,13 @@ function WebhookCard({
       {/* Delivery log toggle */}
       <button
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-2 px-5 py-3 bg-ink/[0.02] border-t border-ink/[0.06] text-[12px] text-muted hover:text-ink transition-colors"
+        className="w-full flex items-center gap-2 px-5 py-3 bg-ink/2 border-t border-ink/6 text-[12px] text-muted hover:text-ink transition-colors"
       >
         {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         Delivery log
       </button>
       {expanded && (
-        <div className="border-t border-ink/[0.06]">
+        <div className="border-t border-ink/6">
           <DeliveryLog webhookId={webhook.id} />
         </div>
       )}
@@ -288,10 +288,10 @@ function CreateWebhookModal({
                 <button key={evt.key} type="button" onClick={() => toggle(evt.key)}
                   aria-pressed={selected}
                   className={`w-full flex items-center gap-3 text-left px-3.5 py-2.5 rounded-xl border transition-all ${
-                    selected ? "border-ficium/30 bg-ficium/[0.04]" : "border-ink/[0.10] hover:border-ficium/20"
+                    selected ? "border-ficium/30 bg-ficium/4" : "border-ink/10 hover:border-ficium/20"
                   }`}
                 >
-                  <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
+                  <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center ${
                     selected ? "border-ficium bg-ficium" : "border-ink/20"
                   }`}>
                     {selected && <Check className="w-3 h-3 text-white" />}
@@ -317,8 +317,8 @@ function CreateWebhookModal({
           </FormField>
         </div>
 
-        <div className="bg-ficium/[0.04] border border-ficium/15 rounded-xl p-3.5 flex gap-2.5">
-          <Shield className="w-4 h-4 text-ficium flex-shrink-0 mt-0.5" aria-hidden />
+        <div className="bg-ficium/4 border border-ficium/15 rounded-xl p-3.5 flex gap-2.5">
+          <Shield className="w-4 h-4 text-ficium shrink-0 mt-0.5" aria-hidden />
           <p className="text-[12px] text-ink/70">
             Ficium signs every payload with{" "}
             <code className="font-mono text-[11px] text-ficium">X-Ficium-Signature-256</code>.
@@ -349,7 +349,7 @@ function SecretBanner({ secret, onDismiss }: { secret: string; onDismiss: () => 
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-4">
       <div className="flex items-center gap-2 mb-3">
-        <Shield className="w-4 h-4 text-amber-700 flex-shrink-0" />
+        <Shield className="w-4 h-4 text-amber-700 shrink-0" />
         <span className="text-[13px] font-bold text-amber-800">
           Copy your signing secret — shown once only
         </span>
@@ -358,7 +358,7 @@ function SecretBanner({ secret, onDismiss }: { secret: string; onDismiss: () => 
         <code className="flex-1 bg-white border border-amber-200 rounded-lg px-3 py-2.5 text-[11px] font-mono text-ink break-all">
           {secret}
         </code>
-        <button onClick={copy} className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 hover:text-amber-900 flex-shrink-0">
+        <button onClick={copy} className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 hover:text-amber-900 shrink-0">
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           {copied ? "Copied" : "Copy"}
         </button>
@@ -407,10 +407,10 @@ export function WebhooksTab({ isAdmin }: { isAdmin: boolean }) {
           {[1, 2].map(i => (
             <div key={i} className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-4 h-4 bg-ink/[0.06] rounded-full" />
+                <div className="w-4 h-4 bg-ink/6 rounded-full" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="h-4 w-36 bg-ink/[0.06] rounded" />
-                  <div className="h-3 w-52 bg-ink/[0.04] rounded" />
+                  <div className="h-4 w-36 bg-ink/6 rounded-sm" />
+                  <div className="h-3 w-52 bg-ink/4 rounded-sm" />
                 </div>
               </div>
             </div>

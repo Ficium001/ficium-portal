@@ -1,8 +1,114 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter+Tight:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter+Tight:wght@400;500;600;700&display=swap')
+layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-ficium: #2a1fe6;
+  --color-ficium-deep: #1a14a8;
+  --color-ficium-bright: #3d32ff;
+
+  --color-ink: #0b0b1e;
+  --color-paper: #fafafc;
+  --color-line: #ececf2;
+  --color-muted: #6b6b85;
+  --color-good: #0fa47a;
+  --color-warn: #e8930c;
+  --color-bad: #e5484d;
+
+  --color-gblue-from: #1e6cf5;
+  --color-gblue-to: #0b3fd6;
+  --color-gblue-cyan: #06b6d4;
+
+  --color-gpurple-from: #7c3aed;
+  --color-gpurple-to: #c026d3;
+
+  --color-cream: #faf7f0;
+  --color-accent: #ffd84d;
+  --color-mint: #7df9c5;
+  --color-peach: #ff9f7a;
+
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius-pill: 999px;
+  --radius-card: 20px;
+  --radius-hero: 28px;
+
+  --shadow-card:
+    0 1px 2px rgba(11, 11, 30, 0.04), 0 8px 24px rgba(11, 11, 30, 0.05);
+  --shadow-lift:
+    0 2px 4px rgba(11, 11, 30, 0.06), 0 16px 40px rgba(42, 31, 230, 0.12);
+  --shadow-ficium: 0 8px 24px rgba(124, 58, 237, 0.35);
+
+  --tracking-display: -0.035em;
+
+  --ease-swift: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-pulse-ring: pulseRing 2.4s infinite;
+  --animate-pulse-ring-green: pulseRingGreen 2.4s infinite;
+  --animate-drift: drift 14s ease-in-out infinite alternate;
+  --animate-fade-slide: fadeSlide 0.25s ease-out;
+
+  @keyframes pulseRing {
+    0% {
+      box-shadow: 0 0 0 0 rgba(192, 38, 211, 0.45);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(192, 38, 211, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(192, 38, 211, 0);
+    }
+  }
+  @keyframes pulseRingGreen {
+    0% {
+      box-shadow: 0 0 0 0 rgba(15, 164, 122, 0.45);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(15, 164, 122, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(15, 164, 122, 0);
+    }
+  }
+  @keyframes drift {
+    from {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    to {
+      transform: translate3d(-30px, 22px, 0) rotate(-6deg);
+    }
+  }
+  @keyframes fadeSlide {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 body {
   font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;

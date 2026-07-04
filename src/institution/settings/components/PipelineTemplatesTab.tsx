@@ -281,7 +281,7 @@ function StageModal({
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={bVisible}
               onChange={e => setBVisible(e.target.checked)}
-              className="w-4 h-4 rounded accent-ficium" />
+              className="w-4 h-4 rounded-sm accent-ficium" />
             <div>
               <div className="text-[13px] font-medium text-ink">Visible to borrower</div>
               <div className="text-[11px] text-muted">Show this stage in the borrower's loan tracker</div>
@@ -291,7 +291,7 @@ function StageModal({
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={rmc}
               onChange={e => setRmc(e.target.checked)}
-              className="w-4 h-4 rounded accent-ficium" />
+              className="w-4 h-4 rounded-sm accent-ficium" />
             <div>
               <div className="text-[13px] font-medium text-ink">Requires maker-checker</div>
               <div className="text-[11px] text-muted">Stage needs a second officer to approve before advancing</div>
@@ -301,7 +301,7 @@ function StageModal({
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={rdoc}
               onChange={e => setRdoc(e.target.checked)}
-              className="w-4 h-4 rounded accent-ficium" />
+              className="w-4 h-4 rounded-sm accent-ficium" />
             <div>
               <div className="text-[13px] font-medium text-ink">Requires documents</div>
               <div className="text-[11px] text-muted">Stage is gated — documents must be uploaded before advancing</div>
@@ -351,7 +351,7 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
     }`}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <div className="w-9 h-9 rounded-xl bg-ficium/10 flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-ficium/10 flex items-center justify-center shrink-0">
           <GitBranch size={16} className="text-ficium" />
         </div>
 
@@ -365,7 +365,7 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
               </span>
             )}
             {!template.is_active && (
-              <span className="text-[10px] font-bold text-muted bg-ink/[0.06] rounded-full px-2 py-0.5">
+              <span className="text-[10px] font-bold text-muted bg-ink/6 rounded-full px-2 py-0.5">
                 INACTIVE
               </span>
             )}
@@ -375,7 +375,7 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Active toggle */}
           <button
             onClick={() => updateTemplate.mutate({ is_active: !template.is_active })}
@@ -413,14 +413,14 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
                   {detail.stages.map(stage => (
                     <div key={stage.id} className="flex items-start gap-3 px-4 py-3">
                       <div className="w-6 h-6 rounded-full bg-ficium/10 flex items-center justify-center
-                                      text-[11px] font-bold text-ficium flex-shrink-0 mt-0.5">
+                                      text-[11px] font-bold text-ficium shrink-0 mt-0.5">
                         {stage.position}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-[13px] font-medium text-ink">{stage.label}</span>
-                          <span className="text-[10px] font-semibold text-muted bg-ink/[0.06] rounded px-1.5 py-0.5">
+                          <span className="text-[10px] font-semibold text-muted bg-ink/6 rounded-sm px-1.5 py-0.5">
                             {STAGE_KEY_LABELS[stage.stage_key]}
                           </span>
                         </div>
@@ -461,11 +461,11 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => setStageModal(stage)}
                           className="w-7 h-7 flex items-center justify-center text-muted
-                                     hover:text-ficium transition-colors rounded-lg hover:bg-ficium/[0.08]"
+                                     hover:text-ficium transition-colors rounded-lg hover:bg-ficium/8"
                         >
                           <Pencil size={13} />
                         </button>
@@ -483,7 +483,7 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
                 </div>
               ) : (
                 <div className="flex items-center gap-3 px-4 py-4 text-muted">
-                  <AlertCircle size={16} className="flex-shrink-0" />
+                  <AlertCircle size={16} className="shrink-0" />
                   <span className="text-[13px]">
                     No stages yet. Pipelines cannot start without at least one stage.
                   </span>

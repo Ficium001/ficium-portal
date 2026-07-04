@@ -340,7 +340,7 @@ function DocumentsTab() {
                     href={`${supabaseUrl}/storage/v1/object/public/institution-docs/${doc.storage_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-ficium hover:text-ficium/70 flex-shrink-0"
+                    className="text-ficium hover:text-ficium/70 shrink-0"
                   >
                     <ExternalLink size={12} />
                   </a>
@@ -388,7 +388,7 @@ function DocumentsTab() {
       >
         {reviewing && (
           <div className="space-y-4">
-            <div className="bg-ink/[0.03] rounded-xl p-4 space-y-2">
+            <div className="bg-ink/3 rounded-xl p-4 space-y-2">
               <div className="flex justify-between text-[12px]">
                 <span className="text-muted">Institution</span>
                 <span className="font-medium text-ink">{reviewing.institution_name}</span>
@@ -416,7 +416,7 @@ function DocumentsTab() {
 
             <AFormField label="Rejection reason (required if rejecting)">
               <textarea
-                className="w-full rounded-xl border border-ink/[0.1] bg-ink/[0.02] px-3 py-2 text-[13px] text-ink placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ficium/30"
+                className="w-full rounded-xl border border-ink/10 bg-ink/2 px-3 py-2 text-[13px] text-ink placeholder:text-muted resize-none focus:outline-hidden focus:ring-2 focus:ring-ficium/30"
                 rows={3}
                 value={rejectReason}
                 onChange={e => setRejectReason(e.target.value)}

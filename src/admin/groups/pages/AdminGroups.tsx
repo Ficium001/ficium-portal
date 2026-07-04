@@ -165,23 +165,23 @@ function ModuleSecurityPanel({
                     ? 'cursor-default'
                     : 'cursor-pointer hover:border-ficium/40',
                   on
-                    ? 'bg-ficium/[0.06] border-ficium/20'
-                    : 'bg-white border-ink/[0.08]',
+                    ? 'bg-ficium/6 border-ficium/20'
+                    : 'bg-white border-ink/8',
                 ].join(' ')}
                 aria-pressed={on}
                 aria-label={`${mod.label} — ${on ? 'enabled' : 'disabled'}`}
               >
                 {on
-                  ? <CheckSquare className='w-4 h-4 text-ficium flex-shrink-0' aria-hidden />
-                  : <Square      className='w-4 h-4 text-ink/20 flex-shrink-0' aria-hidden />
+                  ? <CheckSquare className='w-4 h-4 text-ficium shrink-0' aria-hidden />
+                  : <Square      className='w-4 h-4 text-ink/20 shrink-0' aria-hidden />
                 }
-                <ModuleIcon iconKey={mod.iconKey} className='w-3.5 h-3.5 text-muted flex-shrink-0' />
+                <ModuleIcon iconKey={mod.iconKey} className='w-3.5 h-3.5 text-muted shrink-0' />
                 <div className='min-w-0 flex-1'>
                   <div className='text-[13px] font-semibold text-ink'>{mod.label}</div>
                   <div className='text-[11px] text-muted/60 truncate'>{mod.description}</div>
                 </div>
                 {mod.shortcut && (
-                  <kbd className='text-[9px] font-mono text-muted/40 bg-ink/[0.04] px-1.5 py-0.5 rounded hidden sm:block'>
+                  <kbd className='text-[9px] font-mono text-muted/40 bg-ink/4 px-1.5 py-0.5 rounded-sm hidden sm:block'>
                     G+{mod.shortcut}
                   </kbd>
                 )}
@@ -215,7 +215,7 @@ function ModuleSecurityPanel({
       {renderCategory('admin')}
 
       {!group.is_system && dirty && (
-        <div className='mt-5 border-t border-ink/[0.08] pt-4 space-y-3'>
+        <div className='mt-5 border-t border-ink/8 pt-4 space-y-3'>
           <AAlert variant='warning'>
             Saving module changes enters the dual-control queue. A second admin must approve.
           </AAlert>
@@ -263,7 +263,7 @@ function GroupDetail({
 
   const typeLabel = group.user_type === 'admin' ? 'Admin Portal' : 'Institution Portal'
   const typeColor = group.user_type === 'admin'
-    ? 'text-ficium bg-ficium/[0.08] border-ficium/20'
+    ? 'text-ficium bg-ficium/8 border-ficium/20'
     : 'text-emerald-700 bg-emerald-50 border-emerald-200'
 
   const memberCount = group.member_count ?? 0
@@ -274,17 +274,17 @@ function GroupDetail({
   return (
     <div className='flex flex-col h-full'>
       {/* Header */}
-      <div className='px-5 pt-5 pb-4 border-b border-ink/[0.08] flex-shrink-0'>
+      <div className='px-5 pt-5 pb-4 border-b border-ink/8 shrink-0'>
         <div className='flex items-start justify-between gap-3 mb-3'>
           <div className='flex items-center gap-3'>
-            <div className='w-9 h-9 rounded-xl bg-ficium/10 border border-ficium/20 flex items-center justify-center flex-shrink-0'>
+            <div className='w-9 h-9 rounded-xl bg-ficium/10 border border-ficium/20 flex items-center justify-center shrink-0'>
               <Shield className='w-4 h-4 text-ficium' aria-hidden />
             </div>
             <div>
               <div className='flex items-center gap-2'>
                 <h2 className='text-[16px] font-bold text-ink'>{group.label}</h2>
                 {group.is_system && (
-                  <span className='flex items-center gap-1 text-[9px] font-bold text-muted/50 bg-ink/[0.04] border border-ink/[0.08] px-1.5 py-0.5 rounded-full uppercase tracking-wider'>
+                  <span className='flex items-center gap-1 text-[9px] font-bold text-muted/50 bg-ink/4 border border-ink/8 px-1.5 py-0.5 rounded-full uppercase tracking-wider'>
                     <Lock className='w-2.5 h-2.5' aria-hidden />System
                   </span>
                 )}
@@ -320,7 +320,7 @@ function GroupDetail({
       </div>
 
       {/* Tabs */}
-      <div className='px-5 border-b border-ink/[0.08] flex gap-1 flex-shrink-0'>
+      <div className='px-5 border-b border-ink/8 flex gap-1 shrink-0'>
         {(['modules', 'details'] as DetailTab[]).map(t => (
           <button
             key={t}
@@ -352,7 +352,7 @@ function GroupDetail({
               ['Created',     new Date(group.created_at).toLocaleDateString('en-MU')],
               ['Last updated',new Date(group.updated_at).toLocaleDateString('en-MU')],
             ].map(([label, value]) => (
-              <div key={label} className='flex justify-between py-2 border-b border-ink/[0.05]'>
+              <div key={label} className='flex justify-between py-2 border-b border-ink/5'>
                 <span className='text-[12px] text-muted/60'>{label}</span>
                 <span className='text-[12px] font-semibold text-ink font-mono'>{value}</span>
               </div>
@@ -449,10 +449,10 @@ function CreateGroupModal({
                 <button key={mod.key} onClick={() => toggle(mod.key)}
                   className={[
                     'flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left transition-all',
-                    on ? 'bg-ficium/[0.06] border-ficium/20' : 'bg-white border-ink/[0.08] hover:border-ficium/30',
+                    on ? 'bg-ficium/6 border-ficium/20' : 'bg-white border-ink/8 hover:border-ficium/30',
                   ].join(' ')}>
-                  {on ? <CheckSquare className='w-4 h-4 text-ficium flex-shrink-0' /> : <Square className='w-4 h-4 text-ink/20 flex-shrink-0' />}
-                  <ModuleIcon iconKey={mod.iconKey} className='w-3.5 h-3.5 text-muted flex-shrink-0' />
+                  {on ? <CheckSquare className='w-4 h-4 text-ficium shrink-0' /> : <Square className='w-4 h-4 text-ink/20 shrink-0' />}
+                  <ModuleIcon iconKey={mod.iconKey} className='w-3.5 h-3.5 text-muted shrink-0' />
                   <span className='text-[13px] font-medium text-ink'>{mod.label}</span>
                 </button>
               )
@@ -489,27 +489,27 @@ function GroupRow({
     : group.module_permissions.length
 
   const typeColor = group.user_type === 'admin'
-    ? 'text-ficium bg-ficium/[0.08] border-ficium/20'
+    ? 'text-ficium bg-ficium/8 border-ficium/20'
     : 'text-emerald-700 bg-emerald-50 border-emerald-200'
 
   return (
     <button
       onClick={onClick}
       className={[
-        'w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-ink/[0.05]',
+        'w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-ink/5',
         selected
-          ? 'bg-ficium/[0.06] border-l-2 border-l-ficium'
-          : 'hover:bg-ink/[0.02] border-l-2 border-l-transparent',
+          ? 'bg-ficium/6 border-l-2 border-l-ficium'
+          : 'hover:bg-ink/2 border-l-2 border-l-transparent',
       ].join(' ')}
       aria-current={selected ? 'true' : undefined}
     >
-      <div className='w-8 h-8 rounded-lg bg-ficium/10 flex items-center justify-center flex-shrink-0'>
+      <div className='w-8 h-8 rounded-lg bg-ficium/10 flex items-center justify-center shrink-0'>
         <Shield className='w-3.5 h-3.5 text-ficium' aria-hidden />
       </div>
       <div className='flex-1 min-w-0'>
         <div className='flex items-center gap-2'>
           <span className='text-[13px] font-semibold text-ink truncate'>{group.label}</span>
-          {group.is_system && <Lock className='w-3 h-3 text-muted/40 flex-shrink-0' aria-label='System group' />}
+          {group.is_system && <Lock className='w-3 h-3 text-muted/40 shrink-0' aria-label='System group' />}
         </div>
         <div className='flex items-center gap-2 mt-0.5'>
           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${typeColor}`}>
@@ -520,7 +520,7 @@ function GroupRow({
           </span>
         </div>
       </div>
-      <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${selected ? 'text-ficium' : 'text-ink/20'}`} aria-hidden />
+      <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-colors ${selected ? 'text-ficium' : 'text-ink/20'}`} aria-hidden />
     </button>
   )
 }
@@ -549,8 +549,8 @@ export default function AdminGroups() {
   return (
     <div className='flex h-full overflow-hidden'>
       {/* Left: group list */}
-      <div className={`flex flex-col border-r border-ink/[0.08] bg-white flex-shrink-0 ${selected ? 'w-72' : 'flex-1'}`}>
-        <div className='px-5 pt-5 pb-4 border-b border-ink/[0.08]'>
+      <div className={`flex flex-col border-r border-ink/8 bg-white shrink-0 ${selected ? 'w-72' : 'flex-1'}`}>
+        <div className='px-5 pt-5 pb-4 border-b border-ink/8'>
           <ASectionHeader
             title='Groups'
             subtitle={`${groups.length} groups · ${adminCount} admin · ${instCount} institution`}
@@ -571,7 +571,7 @@ export default function AdminGroups() {
                   'px-3 py-1 rounded-full text-[11px] font-semibold border transition-all capitalize',
                   typeFilter === f
                     ? 'bg-ficium text-white border-ficium'
-                    : 'bg-white text-muted border-ink/[0.12] hover:border-ficium/30',
+                    : 'bg-white text-muted border-ink/12 hover:border-ficium/30',
                 ].join(' ')}
               >
                 {f === 'all' ? 'All' : f === 'admin' ? 'Admin Portal' : 'Institution Portal'}

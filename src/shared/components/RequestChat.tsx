@@ -15,7 +15,7 @@ export default function RequestChat({
   client:     SupabaseClient;
 }) {
   return (
-    <div className="bg-ink/[0.03] border border-ink/[0.07] rounded-xl p-6 text-center">
+    <div className="bg-ink/3 border border-ink/[0.07] rounded-xl p-6 text-center">
       <p className="text-[13px] text-muted">
         Chat channel for request <code className="font-mono text-ficium">{requestId.slice(0, 8)}…</code>
       </p>

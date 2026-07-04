@@ -86,7 +86,7 @@ export default function AdminAudit() {
         actions={<ABtn variant='secondary' size='sm' icon={Download} onClick={handleExport}>Export CSV</ABtn>}
       />
 
-      <div className='bg-white border border-ink/[0.08] rounded-xl px-5 py-3 flex items-center gap-3 mb-5'>
+      <div className='bg-white border border-ink/8 rounded-xl px-5 py-3 flex items-center gap-3 mb-5'>
         <ScrollText className='w-4 h-4 text-muted/50' aria-hidden />
         <p className='text-[9px] text-muted/30 font-mono uppercase tracking-widest'>
           Append-only · No updates or deletes permitted · WORM enforced at database level · FSC Mauritius compliant
@@ -106,7 +106,7 @@ export default function AdminAudit() {
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder='Search event, actor, resource…'
             aria-label='Search audit events'
-            className='bg-white border border-ink/[0.12] rounded-xl pl-8 pr-8 py-2 text-[11px] text-ink/80 outline-none focus:border-ficium font-mono w-56 transition-all' />
+            className='bg-white border border-ink/12 rounded-xl pl-8 pr-8 py-2 text-[11px] text-ink/80 outline-hidden focus:border-ficium font-mono w-56 transition-all' />
           {search && (
             <button onClick={() => setSearch('')} aria-label='Clear' className='absolute right-3 top-1/2 -translate-y-1/2 text-muted/50 hover:text-ink/80'>
               <X className='w-3 h-3' />

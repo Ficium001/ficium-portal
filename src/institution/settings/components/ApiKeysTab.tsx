@@ -66,7 +66,7 @@ function CreatedKeyBanner({ rawKey, onDismiss }: { rawKey: string; onDismiss: ()
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-4">
       <div className="flex items-center gap-2 mb-3">
-        <Shield className="w-4 h-4 text-amber-700 flex-shrink-0" aria-hidden />
+        <Shield className="w-4 h-4 text-amber-700 shrink-0" aria-hidden />
         <span className="text-[13px] font-bold text-amber-800">
           Copy this key now — it will never be shown again
         </span>
@@ -77,14 +77,14 @@ function CreatedKeyBanner({ rawKey, onDismiss }: { rawKey: string; onDismiss: ()
         </code>
         <button
           onClick={() => setShow(s => !s)}
-          className="text-amber-600 hover:text-amber-800 flex-shrink-0"
+          className="text-amber-600 hover:text-amber-800 shrink-0"
           aria-label={show ? "Hide key" : "Reveal key"}
         >
           {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>
         <button
           onClick={copy}
-          className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 hover:text-amber-900 flex-shrink-0"
+          className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 hover:text-amber-900 shrink-0"
         >
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           {copied ? "Copied" : "Copy"}
@@ -120,7 +120,7 @@ function KeyCard({
     <div className={`bg-white rounded-xl border border-ink/[0.07] p-5 ${!apiKey.active ? "opacity-70" : ""}`}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-start gap-3">
-          <Key className="w-4 h-4 text-ficium mt-0.5 flex-shrink-0" aria-hidden />
+          <Key className="w-4 h-4 text-ficium mt-0.5 shrink-0" aria-hidden />
           <div>
             <div className="font-display font-bold text-[14px] text-ink">{apiKey.label}</div>
             <code className="text-[11px] font-mono text-muted mt-0.5 block">{apiKey.key_prefix}••••••••</code>
@@ -145,7 +145,7 @@ function KeyCard({
       </div>
 
       {/* Meta */}
-      <div className="flex items-center flex-wrap gap-4 text-[11px] text-muted border-t border-ink/[0.06] pt-3 mb-3">
+      <div className="flex items-center flex-wrap gap-4 text-[11px] text-muted border-t border-ink/6 pt-3 mb-3">
         {apiKey.requested_by_username && (
           <span>Created by <strong className="text-ink">{apiKey.requested_by_username}</strong></span>
         )}
@@ -246,11 +246,11 @@ function CreateKeyModal({ open, onClose, onCreated }: {
                   aria-pressed={selected}
                   className={`w-full flex items-center gap-3 text-left px-3.5 py-2.5 rounded-xl border transition-all ${
                     selected
-                      ? "border-ficium/30 bg-ficium/[0.04]"
-                      : "border-ink/[0.10] hover:border-ficium/20"
+                      ? "border-ficium/30 bg-ficium/4"
+                      : "border-ink/10 hover:border-ficium/20"
                   }`}
                 >
-                  <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
+                  <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center ${
                     selected ? "border-ficium bg-ficium" : "border-ink/20"
                   }`}>
                     {selected && <Check className="w-3 h-3 text-white" />}
@@ -277,8 +277,8 @@ function CreateKeyModal({ open, onClose, onCreated }: {
           />
         </FormField>
 
-        <div className="bg-ficium/[0.04] border border-ficium/15 rounded-xl p-3.5 flex gap-2.5">
-          <Shield className="w-4 h-4 text-ficium flex-shrink-0 mt-0.5" aria-hidden />
+        <div className="bg-ficium/4 border border-ficium/15 rounded-xl p-3.5 flex gap-2.5">
+          <Shield className="w-4 h-4 text-ficium shrink-0 mt-0.5" aria-hidden />
           <p className="text-[12px] text-ink/70">
             Key generation requires maker-checker approval — a second admin must approve
             before the key becomes active. The raw key is shown once on creation.
@@ -390,11 +390,11 @@ export function ApiKeysTab({ isAdmin }: { isAdmin: boolean }) {
           {[1, 2].map(i => (
             <div key={i} className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-4 h-4 bg-ink/[0.06] rounded" />
-                <div className="h-4 w-40 bg-ink/[0.06] rounded" />
+                <div className="w-4 h-4 bg-ink/6 rounded-sm" />
+                <div className="h-4 w-40 bg-ink/6 rounded-sm" />
               </div>
               <div className="flex gap-2">
-                {[1, 2, 3].map(j => <div key={j} className="h-5 w-24 bg-ink/[0.05] rounded-full" />)}
+                {[1, 2, 3].map(j => <div key={j} className="h-5 w-24 bg-ink/5 rounded-full" />)}
               </div>
             </div>
           ))}

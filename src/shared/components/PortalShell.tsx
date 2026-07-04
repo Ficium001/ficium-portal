@@ -108,7 +108,7 @@ function useConnStatus(): ConnStatus {
 // ─── Idle warning ─────────────────────────────────────────────
 function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; onSignOut: () => void }) {
   return (
-    <div className='fixed inset-0 bg-ink/30 backdrop-blur-sm flex items-center justify-center z-[100] p-4'
+    <div className='fixed inset-0 bg-ink/30 backdrop-blur-xs flex items-center justify-center z-100 p-4'
       role='alertdialog' aria-labelledby='idle-title'>
       <div className='bg-white rounded-2xl border border-amber-200 shadow-2xl p-7 max-w-sm w-full text-center'>
         <div className='w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-4'>
@@ -124,7 +124,7 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
             Continue session
           </button>
           <button onClick={onSignOut}
-            className='flex-1 border border-ink/[0.12] text-muted font-semibold py-2.5 rounded-xl hover:bg-ink/[0.03] transition-colors text-[13px]'>
+            className='flex-1 border border-ink/12 text-muted font-semibold py-2.5 rounded-xl hover:bg-ink/3 transition-colors text-[13px]'>
             Sign out
           </button>
         </div>
@@ -204,7 +204,7 @@ function Drawer({
       {/* Scrim */}
       <div
         className={[
-          'fixed inset-0 z-[70] bg-ink/35 backdrop-blur-[3px] transition-opacity duration-300',
+          'fixed inset-0 z-70 bg-ink/35 backdrop-blur-[3px] transition-opacity duration-300',
           open ? 'opacity-100' : 'opacity-0 pointer-events-none',
         ].join(' ')}
         onClick={onClose}
@@ -214,11 +214,11 @@ function Drawer({
       {/* Panel */}
       <nav
         className={[
-          'fixed top-0 left-0 bottom-0 z-[80] w-[min(320px,86vw)]',
-          'bg-white/[0.92] backdrop-blur-2xl border-r border-line',
+          'fixed top-0 left-0 bottom-0 z-80 w-[min(320px,86vw)]',
+          'bg-white/92 backdrop-blur-2xl border-r border-line',
           'flex flex-col px-4 pt-5 pb-6 overflow-y-auto',
-          'transition-transform duration-[450ms] ease-swift',
-          open ? 'translate-x-0' : '-translate-x-[104%]',
+          'transition-transform duration-450 ease-swift',
+          open ? 'translate-x-0' : 'translate-x-[-104%]',
         ].join(' ')}
         aria-label='Main navigation'
         inert={!open}
@@ -232,7 +232,7 @@ function Drawer({
           </div>
           <button
             onClick={onClose}
-            className='ml-auto w-9 h-9 rounded-xl grid place-items-center text-muted hover:bg-ink/[0.04] hover:text-ink transition-colors'
+            className='ml-auto w-9 h-9 rounded-xl grid place-items-center text-muted hover:bg-ink/4 hover:text-ink transition-colors'
             aria-label='Close menu'
           >
             <X className='w-5 h-5' aria-hidden />
@@ -294,17 +294,17 @@ function Drawer({
                       }}
                       className={({ isActive }) => [
                         'flex items-center gap-3 px-3 py-[11px] rounded-[14px] text-[14.5px]',
-                        'motion-reduce:!transition-none motion-reduce:!opacity-100 motion-reduce:!transform-none',
+                        'motion-reduce:transition-none! motion-reduce:opacity-100! motion-reduce:transform-none!',
                         isActive
                           ? 'font-semibold text-ficium bg-[linear-gradient(90deg,rgba(30,108,245,.10),rgba(124,58,237,.10))]'
                           : 'font-medium text-ink hover:bg-[#F1F1F8]',
                       ].join(' ')}
                     >
-                      <Icon className='w-5 h-5 flex-shrink-0 opacity-75' aria-hidden />
+                      <Icon className='w-5 h-5 shrink-0 opacity-75' aria-hidden />
                       <span className='flex-1 truncate'>{mod.label}</span>
                       {badge > 0 && (
                         <span
-                          className='text-[11px] font-bold text-white rounded-pill px-2 py-0.5 flex-shrink-0'
+                          className='text-[11px] font-bold text-white rounded-pill px-2 py-0.5 shrink-0'
                           style={{ background: 'linear-gradient(135deg,#7C3AED,#C026D3)' }}
                         >
                           {badge}
@@ -321,7 +321,7 @@ function Drawer({
         {/* Foot */}
         <div className='mt-auto pt-4 border-t border-line flex items-center gap-3 px-2'>
           <div
-            className='w-9 h-9 rounded-full grid place-items-center flex-shrink-0'
+            className='w-9 h-9 rounded-full grid place-items-center shrink-0'
             style={{ background: 'linear-gradient(135deg,#1E6CF5,#7C3AED)' }}
             aria-hidden
           >
@@ -365,8 +365,8 @@ function TopBar({
   return (
     <header
       className={[
-        'flex items-center gap-3 px-4 lg:px-6 py-3 flex-shrink-0',
-        'bg-paper/[0.82] backdrop-blur-xl border-b transition-colors duration-300',
+        'flex items-center gap-3 px-4 lg:px-6 py-3 shrink-0',
+        'bg-paper/82 backdrop-blur-xl border-b transition-colors duration-300',
         scrolled ? 'border-line' : 'border-transparent',
       ].join(' ')}
     >
@@ -374,7 +374,7 @@ function TopBar({
       <button
         onClick={onMenuToggle}
         className='relative w-11 h-11 rounded-xl grid place-items-center hover:bg-[#EEEEF6] transition-colors
-                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-ficium focus-visible:outline-offset-2'
+                   focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-ficium focus-visible:outline-offset-2'
         aria-label='Toggle navigation menu'
         aria-expanded={drawerOpen}
       >
@@ -420,7 +420,7 @@ function TopBar({
 
       {/* Avatar */}
       <div
-        className='w-[38px] h-[38px] rounded-full grid place-items-center flex-shrink-0
+        className='w-[38px] h-[38px] rounded-full grid place-items-center shrink-0
                    transition-transform duration-300 ease-swift hover:scale-105'
         style={{ background: 'linear-gradient(135deg,#1E6CF5,#7C3AED)' }}
         aria-hidden
@@ -446,7 +446,7 @@ function StatusBar({ groupLabel, connStatus, idleWarning }: {
   groupLabel: string; connStatus: ConnStatus; idleWarning: boolean
 }) {
   return (
-    <div className='h-6 bg-ink/[0.015] border-t border-line flex items-center px-4 gap-4 flex-shrink-0 text-[10px] font-mono text-muted'
+    <div className='h-6 bg-ink/1.5 border-t border-line flex items-center px-4 gap-4 shrink-0 text-[10px] font-mono text-muted'
       role='status' aria-live='polite'>
       <span className={`flex items-center gap-1 font-semibold ${connStatus === 'connected' ? 'text-good' : connStatus === 'reconnecting' ? 'text-warn' : 'text-bad'}`}>
         {connStatus === 'connected'

@@ -141,7 +141,7 @@ function DualControlQueue() {
             return (
               <Panel key={action.id} className={urgent ? 'border-amber-300' : ''}>
                 <div className='flex items-center gap-4'>
-                  <div className='w-9 h-9 rounded-xl bg-ficium/8 flex items-center justify-center flex-shrink-0'>
+                  <div className='w-9 h-9 rounded-xl bg-ficium/8 flex items-center justify-center shrink-0'>
                     <GitMerge className='w-4 h-4 text-ficium' aria-hidden />
                   </div>
                   <div className='flex-1 min-w-0'>
@@ -160,7 +160,7 @@ function DualControlQueue() {
                   </div>
                   <Link
                     to='/inst-dual-control'
-                    className='text-[12.5px] font-semibold text-ficium hover:underline flex-shrink-0'
+                    className='text-[12.5px] font-semibold text-ficium hover:underline shrink-0'
                   >
                     Review →
                   </Link>
@@ -203,7 +203,7 @@ function TeamOverview() {
                 .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
               return (
                 <div key={m.id} className='flex items-center gap-3 py-3 first:pt-0 last:pb-0'>
-                  <div className='w-8 h-8 rounded-full bg-ficium/10 flex items-center justify-center text-[11px] font-bold text-ficium flex-shrink-0'>
+                  <div className='w-8 h-8 rounded-full bg-ficium/10 flex items-center justify-center text-[11px] font-bold text-ficium shrink-0'>
                     {initials}
                   </div>
                   <div className='flex-1 min-w-0'>
@@ -214,7 +214,7 @@ function TeamOverview() {
                       <div className='text-[11px] text-muted truncate'>{m.email}</div>
                     )}
                   </div>
-                  <div className='flex items-center gap-2 flex-shrink-0'>
+                  <div className='flex items-center gap-2 shrink-0'>
                     {m.custom_group_id ? (
                       <Tag tone='blue'>{m.member_role ?? m.role}</Tag>
                     ) : (
@@ -350,7 +350,7 @@ function AdminCallout() {
                 onClick={() => navigate(to)}
                 className='flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-line hover:border-ficium hover:text-ficium text-ink transition-all text-left group'
               >
-                <Icon className='w-4 h-4 flex-shrink-0 group-hover:text-ficium text-muted transition-colors' aria-hidden />
+                <Icon className='w-4 h-4 shrink-0 group-hover:text-ficium text-muted transition-colors' aria-hidden />
                 <span className='text-[13px] font-semibold'>{label}</span>
               </button>
             ))}

@@ -59,10 +59,10 @@ function BenefitCard({
 
   return (
     <div className={`bg-white rounded-xl border transition-opacity ${
-      benefit.is_active ? 'border-ink/[0.07]' : 'border-ink/[0.04] opacity-60'
+      benefit.is_active ? 'border-ink/[0.07]' : 'border-ink/4 opacity-60'
     }`}>
       <div className="flex items-start gap-3 px-5 py-4">
-        <div className="w-9 h-9 rounded-lg bg-ficium/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="w-9 h-9 rounded-lg bg-ficium/10 flex items-center justify-center shrink-0 mt-0.5">
           <Icon size={16} className="text-ficium" />
         </div>
         <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ function BenefitCard({
             <p className="text-[11px] text-muted mt-1 italic">{benefit.conditions}</p>
           )}
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => onEdit(benefit)}
             className="px-3 py-1.5 text-[11px] font-medium text-muted hover:text-ink rounded-lg hover:bg-ink/5 transition-colors"
@@ -242,7 +242,7 @@ function BenefitForm({ initial, onSubmit, loading, error, onClose }: BenefitForm
         className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
           form.is_guaranteed
             ? 'border-emerald-200 bg-emerald-50'
-            : 'border-ink/[0.07] bg-ink/[0.02] hover:bg-ink/[0.04]'
+            : 'border-ink/[0.07] bg-ink/2 hover:bg-ink/4'
         }`}
         onClick={() => set('is_guaranteed', !form.is_guaranteed)}
       >

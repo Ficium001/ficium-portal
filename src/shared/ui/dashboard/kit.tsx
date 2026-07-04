@@ -43,7 +43,7 @@ export function SectionHead({
       {to && (
         <Link
           to={to}
-          className='flex items-center gap-1 text-[13.5px] font-semibold text-ficium hover:underline flex-shrink-0'
+          className='flex items-center gap-1 text-[13.5px] font-semibold text-ficium hover:underline shrink-0'
         >
           {toLabel} <ArrowRight className='w-3.5 h-3.5' aria-hidden />
         </Link>
@@ -104,7 +104,7 @@ export function HoverCard({
 export function CardIcon({ children }: { children: ReactNode }) {
   return (
     <div
-      className='w-[42px] h-[42px] rounded-[13px] grid place-items-center flex-shrink-0'
+      className='w-[42px] h-[42px] rounded-[13px] grid place-items-center shrink-0'
       style={{ background: 'linear-gradient(135deg,rgba(30,108,245,.10),rgba(124,58,237,.10))' }}
     >
       {children}
@@ -127,7 +127,7 @@ export function StatMini({
     <div className='bg-white border border-line rounded-[18px] shadow-card px-5 py-5 flex items-center gap-3.5
                     transition-transform duration-300 ease-swift hover:-translate-y-0.5'>
       <div
-        className={`w-[38px] h-[38px] rounded-[11px] grid place-items-center flex-shrink-0 ${
+        className={`w-[38px] h-[38px] rounded-[11px] grid place-items-center shrink-0 ${
           tone === 'green' ? 'bg-[#F2FBF7]' : 'bg-[#F4EFFE]'
         }`}
       >
@@ -175,9 +175,9 @@ export function FeedItem({
 }) {
   return (
     <div className='flex items-start gap-3.5 px-1 py-3 rounded-xl transition-colors hover:bg-[#F7F7FB]'>
-      <div className='flex flex-col items-center flex-shrink-0 pt-[5px] self-stretch'>
+      <div className='flex flex-col items-center shrink-0 pt-[5px] self-stretch'>
         <span
-          className='w-[9px] h-[9px] rounded-full flex-shrink-0'
+          className='w-[9px] h-[9px] rounded-full shrink-0'
           style={{ background: FEED_DOT[tone] }}
           aria-hidden
         />
@@ -188,7 +188,7 @@ export function FeedItem({
         {detail && <span className='block text-muted text-[12px] mt-0.5'>{detail}</span>}
       </div>
       {time && (
-        <span className='ml-auto text-[12px] text-muted flex-shrink-0 pt-[3px]'>{time}</span>
+        <span className='ml-auto text-[12px] text-muted shrink-0 pt-[3px]'>{time}</span>
       )}
     </div>
   )
@@ -223,7 +223,7 @@ const TAG_STYLES: Record<string, string> = {
   amber: 'bg-[#FDF3E3] text-warn',
   red:   'bg-[#FDECEC] text-bad',
   blue:  'bg-[#ECF2FE] text-[#1E6CF5]',
-  grey:  'bg-ink/[0.05] text-muted',
+  grey:  'bg-ink/5 text-muted',
 }
 
 export function Tag({
@@ -278,5 +278,5 @@ export function ProgressBar({
 
 // ─── Skeleton ─────────────────────────────────────────────────
 export function SkeletonBlock({ className = 'h-24' }: { className?: string }) {
-  return <div className={`animate-pulse bg-ink/[0.05] rounded-card ${className}`} aria-hidden />
+  return <div className={`animate-pulse bg-ink/5 rounded-card ${className}`} aria-hidden />
 }

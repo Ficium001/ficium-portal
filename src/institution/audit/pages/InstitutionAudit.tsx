@@ -126,7 +126,7 @@ function JsonDiff({
       <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-2">{label}</p>
       <div className="rounded-xl border border-line overflow-hidden text-[12px] font-mono">
         {/* Header row */}
-        <div className="grid grid-cols-3 bg-ink/[0.03] border-b border-line">
+        <div className="grid grid-cols-3 bg-ink/3 border-b border-line">
           <div className="px-3 py-1.5 text-[10px] font-semibold text-muted uppercase tracking-wider">Field</div>
           <div className="px-3 py-1.5 text-[10px] font-semibold text-amber-700 uppercase tracking-wider border-l border-line">Before</div>
           <div className="px-3 py-1.5 text-[10px] font-semibold text-emerald-700 uppercase tracking-wider border-l border-line">After</div>
@@ -182,14 +182,14 @@ function AuditEventDrawer({
         <div className="flex items-start justify-between px-6 py-5 border-b border-line">
           <div>
             <p className="text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">Audit event</p>
-            <code className="text-[13px] font-mono text-ink bg-ink/[0.04] px-2 py-0.5 rounded-lg">
+            <code className="text-[13px] font-mono text-ink bg-ink/4 px-2 py-0.5 rounded-lg">
               {event.event_label || "—"}
             </code>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-ink/[0.05] transition-colors mt-0.5"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-ink/5 transition-colors mt-0.5"
           >
             <X className="w-4 h-4" />
           </button>
@@ -222,7 +222,7 @@ function AuditEventDrawer({
               },
               { label: "Event ID",  value: <code className="font-mono text-[11px] text-muted break-all">{event.id}</code> },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-ink/[0.02] rounded-xl p-3">
+              <div key={label} className="bg-ink/2 rounded-xl p-3">
                 <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-1">{label}</p>
                 <div className="text-[13px] text-ink">{value}</div>
               </div>
@@ -245,14 +245,14 @@ function AuditEventDrawer({
               after={event.state_after}
             />
           ) : (
-            <div className="bg-ink/[0.02] border border-line rounded-xl px-4 py-6 text-center">
+            <div className="bg-ink/2 border border-line rounded-xl px-4 py-6 text-center">
               <p className="text-[12px] text-muted">No field-level change data recorded for this event.</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-line bg-ink/[0.015]">
+        <div className="px-6 py-4 border-t border-line bg-ink/1.5">
           <p className="text-[11px] text-muted font-mono">
             WORM-protected · append-only · FSC 7-year retention
           </p>
@@ -543,8 +543,8 @@ export default function InstitutionAudit() {
       {activeTab === "log" && (
         <>
           {/* Compliance banner */}
-          <div className="bg-ink/[0.025] border border-ink/[0.07] rounded-xl px-5 py-3 flex items-center gap-3 mb-6">
-            <ScrollText className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+          <div className="bg-ink/2.5 border border-ink/[0.07] rounded-xl px-5 py-3 flex items-center gap-3 mb-6">
+            <ScrollText className="w-4 h-4 text-muted shrink-0" aria-hidden />
             <p className="text-[11px] text-muted font-mono tracking-wide uppercase">
               Append-only · WORM compliant · FSC Mauritius reportable · 7-year retention ·
               No updates or deletes permitted
@@ -562,7 +562,7 @@ export default function InstitutionAudit() {
           {/* Filters row */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
             <div className="flex items-center gap-2 flex-wrap">
-              <Filter className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+              <Filter className="w-4 h-4 text-muted shrink-0" aria-hidden />
               <FilterPills
                 options={OUTCOME_OPTIONS}
                 value={outcome}
@@ -584,7 +584,7 @@ export default function InstitutionAudit() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search event, resource, role…"
                 aria-label="Search audit events"
-                className="bg-white border border-ink/[0.12] rounded-xl pl-9 pr-9 py-2 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 w-full lg:w-60 transition-all"
+                className="bg-white border border-ink/12 rounded-xl pl-9 pr-9 py-2 text-[13px] outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 w-full lg:w-60 transition-all"
               />
               {search && (
                 <button
@@ -629,14 +629,14 @@ export default function InstitutionAudit() {
                     <DataRow
                       key={e.id}
                       onClick={() => setSelectedEvent(e)}
-                      className="cursor-pointer hover:bg-ficium/[0.02] transition-colors"
+                      className="cursor-pointer hover:bg-ficium/2 transition-colors"
                     >
                       <Td>
                         <div className="font-semibold text-[13px] whitespace-nowrap">{date}</div>
                         <div className="text-[11px] text-muted font-mono">{time}</div>
                       </Td>
                       <Td>
-                        <code className="text-[11px] text-ink bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono">
+                        <code className="text-[11px] text-ink bg-ink/4 px-2 py-0.5 rounded-lg font-mono">
                           {e.event_label}
                         </code>
                       </Td>

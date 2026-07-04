@@ -379,7 +379,7 @@ function BidsAndCallout() {
               {recent.map(b => (
                 <div key={b.id} className='flex items-center gap-3 px-1.5 py-3 rounded-xl hover:bg-[#F7F7FB] transition-colors'>
                   <div
-                    className='w-9 h-9 rounded-[11px] grid place-items-center flex-shrink-0'
+                    className='w-9 h-9 rounded-[11px] grid place-items-center shrink-0'
                     style={{ background: 'linear-gradient(135deg,rgba(30,108,245,.10),rgba(124,58,237,.10))' }}
                     aria-hidden
                   >

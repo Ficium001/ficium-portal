@@ -66,7 +66,7 @@ export default function InstitutionPending() {
                   return (
                 <div key={stage.key} className="flex items-start gap-4">
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                       done   ? "bg-green-500 text-white" :
                       active ? "bg-ficium text-white" :
                                "bg-ink/8 text-muted"
@@ -108,7 +108,7 @@ export default function InstitutionPending() {
               { icon: Zap,      text: "Review our API documentation for integration"  },
             ].map(item => (
               <div key={item.text} className="flex items-center gap-3 text-[13px] text-muted">
-                <item.icon className="w-4 h-4 text-ficium flex-shrink-0" />
+                <item.icon className="w-4 h-4 text-ficium shrink-0" />
                 {item.text}
               </div>
             ))}

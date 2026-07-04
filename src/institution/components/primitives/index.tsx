@@ -43,22 +43,22 @@ const STATUS_STYLES: Record<string, string> = {
   accepted:    "bg-emerald-50 text-emerald-700 border border-emerald-200",
   rejected:    "bg-red-50 text-red-600 border border-red-200",
   expired:     "bg-amber-50 text-amber-700 border border-amber-200",
-  withdrawn:   "bg-ink/[0.05] text-muted border border-ink/[0.08]",
-  draft:       "bg-ink/[0.05] text-muted border border-ink/[0.08]",
+  withdrawn:   "bg-ink/5 text-muted border border-ink/8",
+  draft:       "bg-ink/5 text-muted border border-ink/8",
   // action statuses
   pending:     "bg-amber-50 text-amber-700 border border-amber-200",
   approved:    "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  cancelled:   "bg-ink/[0.05] text-muted border border-ink/[0.08]",
+  cancelled:   "bg-ink/5 text-muted border border-ink/8",
   // compliance
   passed:      "bg-emerald-50 text-emerald-700 border border-emerald-200",
   failed:      "bg-red-50 text-red-600 border border-red-200",
   under_review:"bg-amber-50 text-amber-700 border border-amber-200",
-  not_submitted:"bg-ink/[0.05] text-muted border border-ink/[0.08]",
+  not_submitted:"bg-ink/5 text-muted border border-ink/8",
   // generic
   active:      "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  inactive:    "bg-ink/[0.05] text-muted border border-ink/[0.08]",
+  inactive:    "bg-ink/5 text-muted border border-ink/8",
   success:     "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  logged:      "bg-ink/[0.05] text-muted border border-ink/[0.08]",
+  logged:      "bg-ink/5 text-muted border border-ink/8",
   open:        "bg-ficium/8 text-ficium border border-ficium/20",
   delivered:   "bg-emerald-50 text-emerald-700 border border-emerald-200",
 };
@@ -129,8 +129,8 @@ export function KpiCard({
       </div>
       {loading ? (
         <>
-          <div className="h-8 w-20 bg-ink/[0.06] rounded-lg mb-2 animate-pulse" />
-          <div className="h-3 w-28 bg-ink/[0.04] rounded animate-pulse" />
+          <div className="h-8 w-20 bg-ink/6 rounded-lg mb-2 animate-pulse" />
+          <div className="h-3 w-28 bg-ink/4 rounded-sm animate-pulse" />
         </>
       ) : (
         <>
@@ -185,7 +185,7 @@ export function SectionHeader({
         )}
       </div>
       {actions && (
-        <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>
+        <div className="flex items-center gap-2 shrink-0">{actions}</div>
       )}
     </div>
   );
@@ -213,7 +213,7 @@ export function DataTable({
             <caption className="sr-only">{caption}</caption>
           )}
           <thead>
-            <tr className="border-b border-ink/[0.07] bg-ink/[0.015]">
+            <tr className="border-b border-ink/[0.07] bg-ink/1.5">
               {headers.map((h) => (
                 <th
                   key={h}
@@ -247,9 +247,9 @@ export function DataRow({
   return (
     <tr
       className={[
-        "border-b border-ink/[0.04] transition-colors",
+        "border-b border-ink/4 transition-colors",
         onClick ? "cursor-pointer hover:bg-cream/70" : "hover:bg-cream/40",
-        selected ? "bg-ficium/[0.04]" : "",
+        selected ? "bg-ficium/4" : "",
         className,
       ].join(" ")}
       onClick={onClick}
@@ -284,11 +284,11 @@ export function Td({
 /** Animated skeleton row for DataTable. */
 export function SkeletonRow({ cols }: { cols: number }) {
   return (
-    <tr className="border-b border-ink/[0.04]" aria-hidden>
+    <tr className="border-b border-ink/4" aria-hidden>
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-5 py-4">
           <div
-            className={`h-3.5 bg-ink/[0.06] rounded animate-pulse ${
+            className={`h-3.5 bg-ink/6 rounded animate-pulse ${
               i === 0 ? "w-32" : i === cols - 1 ? "w-16" : "w-24"
             }`}
           />
@@ -305,10 +305,10 @@ export function SkeletonCard() {
       className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse"
       aria-hidden
     >
-      <div className="w-8 h-8 bg-ink/[0.06] rounded-lg mb-4" />
-      <div className="h-3 w-20 bg-ink/[0.05] rounded mb-3" />
-      <div className="h-7 w-16 bg-ink/[0.08] rounded mb-2" />
-      <div className="h-3 w-28 bg-ink/[0.04] rounded" />
+      <div className="w-8 h-8 bg-ink/6 rounded-lg mb-4" />
+      <div className="h-3 w-20 bg-ink/5 rounded-sm mb-3" />
+      <div className="h-7 w-16 bg-ink/8 rounded-sm mb-2" />
+      <div className="h-3 w-28 bg-ink/4 rounded-sm" />
     </div>
   );
 }
@@ -384,7 +384,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 bg-ink/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-ink/50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
       role="presentation"
       onClick={onClose}
     >
@@ -406,7 +406,7 @@ export function Modal({
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="text-muted hover:text-ink transition-colors p-1 rounded-lg hover:bg-ink/[0.04]"
+            className="text-muted hover:text-ink transition-colors p-1 rounded-lg hover:bg-ink/4"
           >
             <X className="w-4 h-4" />
           </button>
@@ -444,13 +444,13 @@ export function InlineAlert({
       role="alert"
       className={`flex items-start gap-3 border rounded-xl px-5 py-3.5 ${bg}`}
     >
-      <Icon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${text}`} aria-hidden />
+      <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${text}`} aria-hidden />
       <div className={`text-[13px] flex-1 ${text}`}>{children}</div>
       {onDismiss && (
         <button
           onClick={onDismiss}
           aria-label="Dismiss"
-          className={`flex-shrink-0 hover:opacity-70 transition-opacity ${text}`}
+          className={`shrink-0 hover:opacity-70 transition-opacity ${text}`}
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -489,7 +489,7 @@ export function FilterPills<T extends string>({
             "text-[12px] font-semibold px-3.5 py-1.5 rounded-full border transition-all",
             value === opt.key
               ? "bg-ink text-white border-ink"
-              : "bg-white border-ink/[0.10] text-muted hover:border-ficium/40 hover:text-ficium",
+              : "bg-white border-ink/10 text-muted hover:border-ficium/40 hover:text-ficium",
           ].join(" ")}
         >
           {opt.label}
@@ -570,7 +570,7 @@ export function ConfirmModal({
           rows={3}
           placeholder={notePlaceholder}
           aria-label="Reason"
-          className="w-full bg-white border border-ink/[0.12] rounded-xl px-4 py-3 text-[13px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 resize-none mb-4 font-body"
+          className="w-full bg-white border border-ink/12 rounded-xl px-4 py-3 text-[13px] outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 resize-none mb-4 font-body"
         />
       )}
       <div className="flex gap-3 pt-1">
@@ -590,7 +590,7 @@ export function ConfirmModal({
         </button>
         <button
           onClick={onClose}
-          className="px-5 text-[13px] font-semibold text-muted border border-ink/10 rounded-xl hover:bg-ink/[0.03] transition-colors"
+          className="px-5 text-[13px] font-semibold text-muted border border-ink/10 rounded-xl hover:bg-ink/3 transition-colors"
         >
           Cancel
         </button>
@@ -630,8 +630,8 @@ export function Btn({
   const sizes = { sm: "px-3.5 py-2 text-[12px]", md: "px-5 py-2.5 text-[13px]" };
   const variants = {
     primary:   "bg-ficium hover:bg-ficium-deep text-white",
-    secondary: "bg-white border border-ink/[0.12] text-ink hover:border-ficium/40",
-    ghost:     "bg-transparent text-muted hover:text-ink hover:bg-ink/[0.04]",
+    secondary: "bg-white border border-ink/12 text-ink hover:border-ficium/40",
+    ghost:     "bg-transparent text-muted hover:text-ink hover:bg-ink/4",
     danger:    "bg-red-500 hover:bg-red-600 text-white",
   };
 
@@ -680,7 +680,7 @@ export function FormField({
 }
 
 export const inputCls =
-  "w-full bg-white border border-ink/[0.12] rounded-xl px-4 py-2.5 text-[13px] text-ink outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all font-body placeholder:text-muted/60";
+  "w-full bg-white border border-ink/12 rounded-xl px-4 py-2.5 text-[13px] text-ink outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all font-body placeholder:text-muted/60";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MonoRef — monospaced reference / ID display
@@ -697,7 +697,7 @@ export function MonoRef({
   return (
     <code
       title={value}
-      className="text-[11px] font-mono bg-ink/[0.04] px-2 py-0.5 rounded-lg text-muted"
+      className="text-[11px] font-mono bg-ink/4 px-2 py-0.5 rounded-lg text-muted"
     >
       {display}
     </code>

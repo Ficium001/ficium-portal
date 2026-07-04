@@ -42,7 +42,7 @@ function ComplianceBanner() {
   if (data.can_bid) {
     return (
       <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-        <ShieldCheck size={20} className="text-emerald-600 flex-shrink-0" />
+        <ShieldCheck size={20} className="text-emerald-600 shrink-0" />
         <div>
           <p className="text-[13px] font-bold text-emerald-800">Compliance verified</p>
           <p className="text-[12px] text-emerald-700">
@@ -55,7 +55,7 @@ function ComplianceBanner() {
 
   return (
     <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-      <ShieldAlert size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+      <ShieldAlert size={20} className="text-amber-600 shrink-0 mt-0.5" />
       <div>
         <p className="text-[13px] font-bold text-amber-800">Compliance incomplete</p>
         <p className="text-[12px] text-amber-700 mt-0.5">
@@ -88,7 +88,7 @@ function DocRow({
   const { label, Icon, cls } = STATUS_CONFIG[status]
 
   return (
-    <div className="flex items-start gap-4 px-5 py-4 border-b border-ink/[0.05] last:border-0">
+    <div className="flex items-start gap-4 px-5 py-4 border-b border-ink/5 last:border-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[13px] font-semibold text-ink">{docType.label}</span>
@@ -141,7 +141,7 @@ function DocRow({
         )}
       </div>
 
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <input
           ref={fileRef}
           type="file"
@@ -236,7 +236,7 @@ export default function InstitutionDocuments() {
       {!isLoading && (
         <>
           <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/[0.01]">
+            <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/1">
               <h3 className="text-[13px] font-bold text-ink">Required documents</h3>
               <p className="text-[11px] text-muted mt-0.5">
                 All documents below must be approved to enable bidding.
@@ -255,7 +255,7 @@ export default function InstitutionDocuments() {
 
           {optional.length > 0 && (
             <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/[0.01]">
+              <div className="px-5 py-3.5 border-b border-ink/[0.07] bg-ink/1">
                 <h3 className="text-[13px] font-bold text-ink">Optional documents</h3>
                 <p className="text-[11px] text-muted mt-0.5">
                   Not required for bidding, but may be requested by Ficium during onboarding.

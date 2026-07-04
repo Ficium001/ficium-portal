@@ -16,7 +16,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
       className={[
         "w-full px-4 py-3 sm:py-3.5",
         "text-[15px] font-body text-ink",
-        "bg-white border-[1.5px] rounded-xl outline-none",
+        "bg-white border-[1.5px] rounded-xl outline-hidden",
         "transition-colors",
         invalid
           ? "border-red-600 focus:ring-2 focus:ring-red-600/20"

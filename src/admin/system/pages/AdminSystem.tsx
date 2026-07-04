@@ -66,7 +66,7 @@ export default function AdminSystem() {
       )}
 
       {/* Immutability notice */}
-      <div className='mt-8 bg-white border border-ink/[0.08] rounded-xl p-5'>
+      <div className='mt-8 bg-white border border-ink/8 rounded-xl p-5'>
         <div className='text-[9px] font-bold text-muted/30 uppercase tracking-widest mb-3'>Platform guarantees</div>
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
           {[

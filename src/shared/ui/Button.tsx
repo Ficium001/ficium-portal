@@ -16,7 +16,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 const base =
   "inline-flex items-center justify-center gap-2 font-semibold font-body " +
   "transition-colors rounded-pill " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +
+  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 " +
   "disabled:opacity-60 disabled:cursor-not-allowed";
 
 const sizes: Record<Size, string> = {

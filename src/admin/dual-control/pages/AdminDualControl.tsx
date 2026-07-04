@@ -88,13 +88,13 @@ function ActionDetailPanel({
           {/* Payload */}
           <div>
             <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-2.5'>Action payload</div>
-            <pre className='text-[10px] font-mono text-muted bg-white border border-ink/[0.08] rounded-lg p-3 overflow-auto max-h-52 leading-relaxed'>
+            <pre className='text-[10px] font-mono text-muted bg-white border border-ink/8 rounded-lg p-3 overflow-auto max-h-52 leading-relaxed'>
               {JSON.stringify(action.payload, null, 2)}
             </pre>
             {action.payload_before && (
               <>
                 <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-2.5 mt-4'>Previous state</div>
-                <pre className='text-[10px] font-mono text-muted/70 bg-white border border-ink/[0.08] rounded-lg p-3 overflow-auto max-h-32 leading-relaxed'>
+                <pre className='text-[10px] font-mono text-muted/70 bg-white border border-ink/8 rounded-lg p-3 overflow-auto max-h-32 leading-relaxed'>
                   {JSON.stringify(action.payload_before, null, 2)}
                 </pre>
               </>
@@ -122,7 +122,7 @@ function ActionDetailPanel({
               ))}
             </div>
             {action.checker_id && (
-              <div className='mt-4 bg-white border border-ink/[0.08] rounded-lg p-3 text-[11px]'>
+              <div className='mt-4 bg-white border border-ink/8 rounded-lg p-3 text-[11px]'>
                 <div className='text-[9px] font-bold text-muted/50 uppercase tracking-widest mb-2'>Checker decision</div>
                 <div className='space-y-1'>
                   <div className='flex justify-between'><span className='text-muted/50'>Checker</span><span className='font-mono text-muted'>{action.checker_email}</span></div>
@@ -286,7 +286,7 @@ export default function AdminDualControl() {
       />
 
       <div className='bg-white border border-ficium/20/50 rounded-xl px-5 py-3 flex items-center gap-3 mb-5'>
-        <ShieldCheck className='w-4 h-4 text-ficium flex-shrink-0' aria-hidden />
+        <ShieldCheck className='w-4 h-4 text-ficium shrink-0' aria-hidden />
         <p className='text-[10px] text-ficium font-mono uppercase tracking-widest'>
           Four-eyes control enforced · Self-approval blocked at DB level · All decisions immutably logged · Maker IP recorded
         </p>

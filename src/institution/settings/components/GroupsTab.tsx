@@ -202,12 +202,12 @@ function ModulePicker({
         const isOpen = expanded.has(g.label);
         const selectedCount = g.items.filter((m) => selected.includes(m.key)).length;
         return (
-          <div key={g.label} className="border border-ink/[0.08] rounded-lg overflow-hidden">
+          <div key={g.label} className="border border-ink/8 rounded-lg overflow-hidden">
             <button
               type="button"
               onClick={() => toggleSection(g.label)}
               aria-expanded={isOpen}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-ink/[0.015] hover:bg-ink/[0.03] transition-colors text-left"
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-ink/1.5 hover:bg-ink/3 transition-colors text-left"
             >
               <span className="flex items-center gap-1.5">
                 {isOpen ? (
@@ -236,14 +236,14 @@ function ModulePicker({
                       className={[
                         "flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all",
                         on
-                          ? "border-ficium/40 bg-ficium/[0.04]"
-                          : "border-ink/[0.08] hover:border-ink/[0.15]",
+                          ? "border-ficium/40 bg-ficium/4"
+                          : "border-ink/8 hover:border-ink/15",
                       ].join(" ")}
                     >
                       <div
                         className={[
-                          "w-4 h-4 mt-0.5 rounded border flex-shrink-0 flex items-center justify-center",
-                          on ? "bg-ficium border-ficium" : "border-ink/[0.25]",
+                          "w-4 h-4 mt-0.5 rounded-sm border shrink-0 flex items-center justify-center",
+                          on ? "bg-ficium border-ficium" : "border-ink/25",
                         ].join(" ")}
                       >
                         {on && <span className="text-white text-[10px] leading-none">✓</span>}
@@ -304,14 +304,14 @@ function ProductPicker({
             className={[
               "flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-all",
               on
-                ? "border-ficium/40 bg-ficium/[0.04]"
-                : "border-ink/[0.08] hover:border-ink/[0.15]",
+                ? "border-ficium/40 bg-ficium/4"
+                : "border-ink/8 hover:border-ink/15",
             ].join(" ")}
           >
             <div
               className={[
-                "w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center",
-                on ? "bg-ficium border-ficium" : "border-ink/[0.25]",
+                "w-4 h-4 rounded-sm border shrink-0 flex items-center justify-center",
+                on ? "bg-ficium border-ficium" : "border-ink/25",
               ].join(" ")}
             >
               {on && <span className="text-white text-[10px] leading-none">✓</span>}
@@ -354,14 +354,14 @@ function AccessModeToggle({
             className={[
               "flex items-start gap-2.5 p-3 rounded-lg border text-left transition-all",
               on
-                ? "border-ficium/40 bg-ficium/[0.04]"
-                : "border-ink/[0.08] hover:border-ink/[0.15]",
+                ? "border-ficium/40 bg-ficium/4"
+                : "border-ink/8 hover:border-ink/15",
             ].join(" ")}
           >
             <div
               className={[
-                "w-4 h-4 mt-0.5 rounded-full border flex-shrink-0 flex items-center justify-center",
-                on ? "border-ficium" : "border-ink/[0.25]",
+                "w-4 h-4 mt-0.5 rounded-full border shrink-0 flex items-center justify-center",
+                on ? "border-ficium" : "border-ink/25",
               ].join(" ")}
             >
               {on && <div className="w-2 h-2 rounded-full bg-ficium" />}
@@ -543,7 +543,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                 <DataRow key={g.id}>
                   <Td>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-ficium/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-ficium/10 flex items-center justify-center shrink-0">
                         <Shield className="w-3.5 h-3.5 text-ficium" aria-hidden />
                       </div>
                       <div className="min-w-0">
@@ -566,7 +566,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                         <span className="text-[11px] text-muted">No modules</span>
                       ) : (
                         (g.module_permissions ?? []).map((k) => (
-                          <span key={k} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ink/[0.05] text-muted border border-ink/[0.08]">
+                          <span key={k} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ink/5 text-muted border border-ink/8">
                             {k.replace("inst:", "")}
                           </span>
                         ))
@@ -579,7 +579,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                         <span className="text-[11px] text-muted">All licensed products</span>
                       ) : (
                         productLabels.map((label) => (
-                          <span key={label} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ficium/[0.06] text-ficium border border-ficium/[0.15]">
+                          <span key={label} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ficium/6 text-ficium border border-ficium/15">
                             {label}
                           </span>
                         ))
@@ -595,7 +595,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                         <button
                           onClick={() => openEdit(g)}
                           aria-label={`Edit access for ${g.label}`}
-                          className="p-1.5 rounded-md text-muted hover:text-ink hover:bg-ink/[0.05] transition-colors"
+                          className="p-1.5 rounded-md text-muted hover:text-ink hover:bg-ink/5 transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" aria-hidden />
                         </button>

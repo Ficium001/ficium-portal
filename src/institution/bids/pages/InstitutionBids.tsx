@@ -82,8 +82,8 @@ function BorrowerRevealPanel({ bidId }: { bidId: string }) {
   if (isLoading) {
     return (
       <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4 animate-pulse">
-        <div className="h-3 bg-emerald-200/60 rounded w-1/3 mb-2" />
-        <div className="h-3 bg-emerald-200/40 rounded w-1/2" />
+        <div className="h-3 bg-emerald-200/60 rounded-sm w-1/3 mb-2" />
+        <div className="h-3 bg-emerald-200/40 rounded-sm w-1/2" />
       </div>
     )
   }
@@ -192,7 +192,7 @@ function BidDetailPanel({
               Conditions
             </div>
             {bid.conditions && Object.keys(bid.conditions).length > 0 ? (
-              <pre className="text-[11px] text-muted bg-white border border-ink/[0.08] rounded-lg p-3 overflow-auto max-h-28 font-mono leading-relaxed">
+              <pre className="text-[11px] text-muted bg-white border border-ink/8 rounded-lg p-3 overflow-auto max-h-28 font-mono leading-relaxed">
                 {JSON.stringify(bid.conditions, null, 2)}
               </pre>
             ) : (
@@ -382,7 +382,7 @@ export default function InstitutionBids() {
                   </Td>
                   <Td className="text-muted">{bid.term_months}m</Td>
                   <Td>
-                    <code className="text-[11px] bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono text-muted">
+                    <code className="text-[11px] bg-ink/4 px-2 py-0.5 rounded-lg font-mono text-muted">
                       {bid.submitted_via ?? "—"}
                     </code>
                   </Td>

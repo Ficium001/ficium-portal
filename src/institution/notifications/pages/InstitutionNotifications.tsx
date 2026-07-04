@@ -43,7 +43,7 @@ const KIND_CONFIG: Record<PortalNotificationKind, {
   bid_accepted:        { icon: CheckCircle,   bg: 'bg-emerald-50', fg: 'text-emerald-600', label: 'Bid',      actionRequired: false },
   bid_rejected:        { icon: XCircle,       bg: 'bg-red-50',     fg: 'text-red-500',     label: 'Bid',      actionRequired: false },
   bid_expired:         { icon: Clock,         bg: 'bg-amber-50',   fg: 'text-amber-600',   label: 'Bid',      actionRequired: false },
-  request_closed:      { icon: CheckCircle,   bg: 'bg-ink/[0.05]', fg: 'text-muted',       label: 'Request',  actionRequired: false },
+  request_closed:      { icon: CheckCircle,   bg: 'bg-ink/5', fg: 'text-muted',       label: 'Request',  actionRequired: false },
   pipeline_advanced:   { icon: TrendingUp,    bg: 'bg-ficium/10',  fg: 'text-ficium',      label: 'Pipeline', actionRequired: false },
   pipeline_approved:   { icon: CheckCircle,   bg: 'bg-emerald-50', fg: 'text-emerald-600', label: 'Pipeline', actionRequired: false },
   approval_needed:     { icon: AlertTriangle, bg: 'bg-amber-50',   fg: 'text-amber-600',   label: 'Approval', actionRequired: true  },
@@ -73,12 +73,12 @@ function NotifRow({ notif, onRead }: {
       className={[
         'flex items-start gap-4 px-5 py-4 rounded-2xl border transition-all cursor-pointer',
         isUnread
-          ? 'bg-white border-ficium/15 shadow-sm hover:shadow-md hover:border-ficium/25'
-          : 'bg-white/60 border-ink/[0.06] hover:bg-white',
+          ? 'bg-white border-ficium/15 shadow-xs hover:shadow-md hover:border-ficium/25'
+          : 'bg-white/60 border-ink/6 hover:bg-white',
       ].join(' ')}
     >
       {/* Icon */}
-      <div className={`w-10 h-10 rounded-xl grid place-items-center flex-shrink-0 ${cfg.bg}`}>
+      <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${cfg.bg}`}>
         <Icon size={18} className={cfg.fg} />
       </div>
 
@@ -92,7 +92,7 @@ function NotifRow({ notif, onRead }: {
                 <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full">ACTION</span>
               )}
               {isUnread && (
-                <span className="w-1.5 h-1.5 rounded-full bg-ficium flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-ficium shrink-0" />
               )}
             </div>
             <div className={`text-[14px] font-semibold leading-snug ${isUnread ? 'text-ink' : 'text-ink/70'}`}>
@@ -102,7 +102,7 @@ function NotifRow({ notif, onRead }: {
               <p className="text-[12px] text-muted mt-0.5 leading-relaxed">{notif.body}</p>
             )}
           </div>
-          <span className="text-[11px] text-muted whitespace-nowrap flex-shrink-0">{portalTimeAgo(notif.created_at)}</span>
+          <span className="text-[11px] text-muted whitespace-nowrap shrink-0">{portalTimeAgo(notif.created_at)}</span>
         </div>
       </div>
     </div>
@@ -152,7 +152,7 @@ export default function InstitutionNotifications() {
       {/* Action required banner */}
       {actionRequired.length > 0 && (
         <div className="mb-5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3">
-          <AlertTriangle size={16} className="text-amber-600 flex-shrink-0" />
+          <AlertTriangle size={16} className="text-amber-600 shrink-0" />
           <span className="text-[13px] font-semibold text-amber-800">
             {actionRequired.length} notification{actionRequired.length > 1 ? 's' : ''} require your action.
           </span>
@@ -162,12 +162,12 @@ export default function InstitutionNotifications() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-20 bg-ink/[0.04] rounded-2xl animate-pulse" />
+            <div key={i} className="h-20 bg-ink/4 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : notifications.length === 0 ? (
         <div className="text-center py-16">
-          <div className="w-16 h-16 rounded-[22px] bg-ink/[0.04] grid place-items-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-[22px] bg-ink/4 grid place-items-center mx-auto mb-4">
             <BellOff size={28} className="text-muted" />
           </div>
           <div className="font-display text-[20px] font-bold text-ink mb-2">No notifications yet</div>

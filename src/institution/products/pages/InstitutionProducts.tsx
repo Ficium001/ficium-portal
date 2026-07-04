@@ -64,16 +64,16 @@ function BenefitChip({
   const Icon = CAT_ICONS[benefit.cat_code] ?? Star;
   return (
     <div className={`flex items-start gap-2.5 p-3 rounded-xl border bg-white transition-opacity ${
-      benefit.is_active ? "border-ink/[0.07]" : "border-ink/[0.04] opacity-50"
+      benefit.is_active ? "border-ink/[0.07]" : "border-ink/4 opacity-50"
     }`}>
-      <div className="w-7 h-7 rounded-lg bg-ficium/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <div className="w-7 h-7 rounded-lg bg-ficium/10 flex items-center justify-center shrink-0 mt-0.5">
         <Icon size={13} className="text-ficium" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[12px] font-semibold text-ink truncate">{benefit.title}</span>
           {benefit.is_guaranteed && (
-            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex-shrink-0">
+            <span className="text-[9px] font-bold px-1 py-0.5 rounded-sm bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
               GUARANTEED
             </span>
           )}
@@ -87,7 +87,7 @@ function BenefitChip({
       </div>
       <button
         onClick={() => onToggle(benefit)}
-        className="flex-shrink-0 text-muted hover:text-ink transition-colors mt-0.5"
+        className="shrink-0 text-muted hover:text-ink transition-colors mt-0.5"
         title={benefit.is_active ? "Deactivate" : "Activate"}
       >
         {benefit.is_active
@@ -162,7 +162,7 @@ function BenefitForm({
 
       <div
         className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-          form.is_guaranteed ? "border-emerald-200 bg-emerald-50" : "border-ink/[0.07] hover:bg-ink/[0.02]"
+          form.is_guaranteed ? "border-emerald-200 bg-emerald-50" : "border-ink/[0.07] hover:bg-ink/2"
         }`}
         onClick={() => set("is_guaranteed", !form.is_guaranteed)}
       >
@@ -237,7 +237,7 @@ function ProductBenefits({
   };
 
   return (
-    <div className="mt-6 pt-5 border-t border-ink/[0.06]">
+    <div className="mt-6 pt-5 border-t border-ink/6">
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="text-[13px] font-semibold text-ink">Benefits</p>
@@ -265,7 +265,7 @@ function ProductBenefits({
 
       {/* Global benefits hint */}
       {globalBenefits.length > 0 && (
-        <div className="bg-ink/[0.02] rounded-xl px-4 py-3 border border-ink/[0.04]">
+        <div className="bg-ink/2 rounded-xl px-4 py-3 border border-ink/4">
           <p className="text-[11px] font-semibold text-muted uppercase tracking-wide mb-1.5">
             Also applies — all products
           </p>
@@ -273,7 +273,7 @@ function ProductBenefits({
             {globalBenefits.map(b => {
               const Icon = CAT_ICONS[b.cat_code] ?? Star;
               return (
-                <div key={b.id} className="flex items-center gap-1.5 text-[11px] text-muted bg-white border border-ink/[0.06] px-2 py-1 rounded-lg">
+                <div key={b.id} className="flex items-center gap-1.5 text-[11px] text-muted bg-white border border-ink/6 px-2 py-1 rounded-lg">
                   <Icon size={11} className="text-ficium" />
                   {b.title}
                 </div>
@@ -328,7 +328,7 @@ function ProductRow({
   return (
     <div className={[
       "bg-white rounded-xl border overflow-hidden transition-all",
-      licensed ? "border-ink/[0.07] hover:border-ink/[0.15]" : "border-ink/[0.05] opacity-70",
+      licensed ? "border-ink/[0.07] hover:border-ink/15" : "border-ink/5 opacity-70",
     ].join(" ")}>
 
       {/* Header row */}
@@ -338,7 +338,7 @@ function ProductRow({
         role="button" aria-expanded={expanded} tabIndex={0}
         onKeyDown={e => e.key === "Enter" && setExpanded(v => !v)}
       >
-        <div className="w-10 h-10 rounded-xl bg-ficium/8 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-ficium/8 flex items-center justify-center shrink-0">
           <Package className="w-5 h-5 text-ficium" aria-hidden />
         </div>
         <div className="flex-1 min-w-0">
@@ -346,17 +346,17 @@ function ProductRow({
             <span className="font-display font-bold text-[14px] text-ink">{product.label}</span>
             {licensed
               ? <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">Licensed</span>
-              : <span className="text-[10px] font-bold bg-ink/5 text-muted border border-ink/[0.08] px-2 py-0.5 rounded-full flex items-center gap-1"><Lock className="w-2.5 h-2.5" />Not licensed</span>
+              : <span className="text-[10px] font-bold bg-ink/5 text-muted border border-ink/8 px-2 py-0.5 rounded-full flex items-center gap-1"><Lock className="w-2.5 h-2.5" />Not licensed</span>
             }
             {product.family_label && (
-              <span className="text-[10px] text-muted bg-ink/[0.04] px-2 py-0.5 rounded-full">{product.family_label}</span>
+              <span className="text-[10px] text-muted bg-ink/4 px-2 py-0.5 rounded-full">{product.family_label}</span>
             )}
           </div>
           <code className="text-[11px] text-muted font-mono mt-0.5 block">{product.code}</code>
         </div>
 
         {rc && (
-          <div className="hidden lg:flex items-center gap-8 text-[12px] flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-8 text-[12px] shrink-0">
             <div>
               <div className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-0.5">Platform rate</div>
               <div className="font-semibold text-ink">{fmtRate(rc.min_rate)} – {fmtRate(rc.max_rate)}</div>
@@ -378,18 +378,18 @@ function ProductRow({
         {(() => {
           const count = allBenefits.filter(b => b.product_id === product.id && b.is_active).length;
           return count > 0 ? (
-            <div className="hidden sm:flex items-center gap-1 text-[11px] text-ficium bg-ficium/8 px-2 py-1 rounded-full flex-shrink-0">
+            <div className="hidden sm:flex items-center gap-1 text-[11px] text-ficium bg-ficium/8 px-2 py-1 rounded-full shrink-0">
               <Gift size={11} /> {count} benefit{count !== 1 ? "s" : ""}
             </div>
           ) : null;
         })()}
 
-        {expanded ? <ChevronUp className="w-4 h-4 text-muted flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted flex-shrink-0" />}
+        {expanded ? <ChevronUp className="w-4 h-4 text-muted shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted shrink-0" />}
       </div>
 
       {/* Expanded panel */}
       {expanded && (
-        <div className="border-t border-ink/[0.07] px-5 py-5 bg-ink/[0.01]">
+        <div className="border-t border-ink/[0.07] px-5 py-5 bg-ink/1">
           {licensed ? (
             <>
               {/* Limits section */}
@@ -497,10 +497,10 @@ export default function InstitutionProducts() {
           {[1,2,3,4].map(i => (
             <div key={i} className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-ink/[0.06] rounded-xl" />
+                <div className="w-10 h-10 bg-ink/6 rounded-xl" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-32 bg-ink/[0.06] rounded" />
-                  <div className="h-3 w-20 bg-ink/[0.04] rounded" />
+                  <div className="h-4 w-32 bg-ink/6 rounded-sm" />
+                  <div className="h-3 w-20 bg-ink/4 rounded-sm" />
                 </div>
               </div>
             </div>

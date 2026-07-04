@@ -96,16 +96,16 @@ function ActionSummary({ action }: { action: PendingAction }) {
           Action details
         </span>
       </div>
-      <div className="bg-white border border-ink/[0.08] rounded-xl overflow-hidden">
+      <div className="bg-white border border-ink/8 rounded-xl overflow-hidden">
         {rows.map((row, i) => (
           <div
             key={i}
             className={`flex items-center justify-between px-4 py-3 text-[13px] ${
-              i < rows.length - 1 ? "border-b border-ink/[0.06]" : ""
+              i < rows.length - 1 ? "border-b border-ink/6" : ""
             }`}
           >
             <span className="text-muted capitalize">{row.label}</span>
-            <span className="font-semibold text-ink max-w-[60%] text-right break-words">
+            <span className="font-semibold text-ink max-w-[60%] text-right wrap-break-word">
               {row.value}
             </span>
           </div>
@@ -146,7 +146,7 @@ function ActionCard({
       ].join(" ")}
     >
       <div className="px-5 py-4 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-ficium/8 flex items-center justify-center flex-shrink-0 text-lg" aria-hidden>
+        <div className="w-10 h-10 rounded-xl bg-ficium/8 flex items-center justify-center shrink-0 text-lg" aria-hidden>
           {meta.icon}
         </div>
 
@@ -156,7 +156,7 @@ function ActionCard({
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${RISK_STYLE[meta.risk]}`}>
               {meta.risk} risk
             </span>
-            <code className="text-[11px] text-muted bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono">
+            <code className="text-[11px] text-muted bg-ink/4 px-2 py-0.5 rounded-lg font-mono">
               {action.resource_type}
             </code>
           </div>
@@ -167,7 +167,7 @@ function ActionCard({
           </div>
         </div>
 
-        <div className={`text-right text-[12px] flex-shrink-0 ${isUrgent ? "text-amber-600 font-semibold" : "text-muted"}`}>
+        <div className={`text-right text-[12px] shrink-0 ${isUrgent ? "text-amber-600 font-semibold" : "text-muted"}`}>
           <div className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" aria-hidden />
             {isExpired ? "Expired" : `Expires in ${formatDistanceToNow(action.expires_at)}`}
@@ -264,15 +264,15 @@ function TempPasswordModal({
           <strong>{fullName || email}</strong> has been created and can now log in to the portal.
         </InlineAlert>
         {username && (
-          <div className="bg-ink/[0.03] border border-ink/[0.10] rounded-xl px-4 py-3">
+          <div className="bg-ink/3 border border-ink/10 rounded-xl px-4 py-3">
             <p className="text-[11px] text-muted mb-0.5">Username (for login)</p>
             <code className="text-[13px] font-mono font-bold text-ink">{username}</code>
           </div>
         )}
         <div>
           <p className="text-[12px] text-muted mb-1">Temporary password — share this with the user</p>
-          <div className="flex items-center gap-2 bg-ink/[0.03] border border-ink/[0.10] rounded-xl px-4 py-3">
-            <Key className="w-4 h-4 text-ficium flex-shrink-0" aria-hidden />
+          <div className="flex items-center gap-2 bg-ink/3 border border-ink/10 rounded-xl px-4 py-3">
+            <Key className="w-4 h-4 text-ficium shrink-0" aria-hidden />
             <code className="flex-1 text-[14px] font-mono font-bold text-ink tracking-wider">{tempPassword}</code>
             <button onClick={copy} className="text-ficium hover:text-ficium-deep transition-colors" aria-label="Copy password">
               <Copy className="w-4 h-4" />
@@ -396,10 +396,10 @@ export default function InstitutionDualControl() {
         {isLoading && Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-ink/[0.06] rounded-xl" />
+              <div className="w-10 h-10 bg-ink/6 rounded-xl" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-40 bg-ink/[0.06] rounded" />
-                <div className="h-3 w-32 bg-ink/[0.04] rounded" />
+                <div className="h-4 w-40 bg-ink/6 rounded-sm" />
+                <div className="h-3 w-32 bg-ink/4 rounded-sm" />
               </div>
             </div>
           </div>

@@ -86,13 +86,13 @@ function RequestCard({
     <article
       className={`bg-white rounded-xl border overflow-hidden transition-all ${
         windowClosed
-          ? "border-ink/[0.05] opacity-75"
+          ? "border-ink/5 opacity-75"
           : "border-ink/[0.07] hover:border-ficium/30 hover:shadow-md"
       }`}
       aria-label={`${request.product_label ?? request.product_type} request — ${fmtMUR(Number(request.amount))}`}
     >
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 border-b border-ink/[0.06]">
+      <div className="px-5 pt-4 pb-3 border-b border-ink/6">
         <div className="flex items-start justify-between gap-2">
           <div>
             <div className="font-display font-bold text-[15px] text-ink leading-tight">
@@ -118,7 +118,7 @@ function RequestCard({
               </div>
             )}
             {windowClosed ? (
-              <span className="text-[10px] font-semibold bg-ink/[0.06] text-muted px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold bg-ink/6 text-muted px-2 py-0.5 rounded-full">
                 Window closed
               </span>
             ) : (
@@ -160,7 +160,7 @@ function RequestCard({
 
         {/* Anonymous client signals */}
         {(healthScore || request.client_monthly_income || request.client_employment_status) && (
-          <div className="bg-ink/[0.025] rounded-lg px-3 py-2.5 mb-4">
+          <div className="bg-ink/2.5 rounded-lg px-3 py-2.5 mb-4">
             <div className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">
               Client signals (anonymised)
             </div>
@@ -208,7 +208,7 @@ function RequestCard({
         <div className="flex gap-2">
           <button
             onClick={onOpen}
-            className="flex-1 text-[12px] font-semibold border border-ink/[0.12] text-ink rounded-lg py-2 hover:border-ficium/40 hover:text-ficium transition-colors"
+            className="flex-1 text-[12px] font-semibold border border-ink/12 text-ink rounded-lg py-2 hover:border-ficium/40 hover:text-ficium transition-colors"
             aria-label="View request details"
           >
             View details
@@ -261,7 +261,7 @@ function IntelStrip() {
                 {r.avg_rate_pct}%
               </div>
               <div className="text-[10px] text-muted mb-1.5">market avg APR</div>
-              <div className="space-y-0.5 border-t border-ink/[0.06] pt-1.5">
+              <div className="space-y-0.5 border-t border-ink/6 pt-1.5">
                 <div className="text-[10px] text-muted">
                   Range{" "}
                   <span className="font-semibold text-ink">
@@ -398,7 +398,7 @@ export default function InstitutionMarketplace() {
       )}
 
       <div className="flex items-center gap-3 mt-5 mb-5">
-        <SlidersHorizontal className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+        <SlidersHorizontal className="w-4 h-4 text-muted shrink-0" aria-hidden />
         <FilterPills
           options={filterOptions}
           value={productFilter}

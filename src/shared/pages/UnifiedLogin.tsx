@@ -114,7 +114,7 @@ function LeftPanel() {
           ].map(({ icon: Icon, label }) => (
             <div key={label} className='flex items-center gap-3'>
               <div
-                className='w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0'
+                className='w-8 h-8 rounded-lg flex items-center justify-center shrink-0'
                 style={{ background: 'linear-gradient(135deg,rgba(30,108,245,.16),rgba(124,58,237,.16))' }}
               >
                 <Icon className='w-4 h-4 text-white/80' aria-hidden />
@@ -152,11 +152,11 @@ export default function UnifiedLogin() {
   const [newPwLoading, setNewPwLoading]= useState(false)
 
   const inputCls = (invalid?: boolean) => [
-    'w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none transition-all bg-white text-ink',
+    'w-full rounded-xl border px-4 py-3.5 text-[15px] outline-hidden transition-all bg-white text-ink',
     'placeholder:text-ink/30',
     invalid
       ? 'border-red-400 focus:ring-2 focus:ring-red-200'
-      : 'border-ink/[0.12] focus:border-ficium focus:ring-2 focus:ring-ficium/20',
+      : 'border-ink/12 focus:border-ficium focus:ring-2 focus:ring-ficium/20',
   ].join(' ')
 
   // If already signed in (valid ficium-auth token), detect and redirect.
@@ -250,7 +250,7 @@ export default function UnifiedLogin() {
               type='password'
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              className='w-full rounded-xl border border-line px-4 py-3.5 text-[15px] outline-none focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all'
+              className='w-full rounded-xl border border-line px-4 py-3.5 text-[15px] outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 transition-all'
               placeholder='Minimum 12 characters'
               autoFocus
             />
@@ -259,7 +259,7 @@ export default function UnifiedLogin() {
           <button
             onClick={handleForceChange}
             disabled={newPwLoading || !newPassword}
-            className='w-full disabled:opacity-50 text-white font-bold py-3.5 rounded-[14px] text-[15px] transition-all bg-gradient-to-r from-ficium to-purple-500 hover:-translate-y-0.5 hover:shadow-ficium'
+            className='w-full disabled:opacity-50 text-white font-bold py-3.5 rounded-[14px] text-[15px] transition-all bg-linear-to-r from-ficium to-purple-500 hover:-translate-y-0.5 hover:shadow-ficium'
           >
             {newPwLoading ? 'Updating…' : 'Set password & continue →'}
           </button>
@@ -351,7 +351,7 @@ export default function UnifiedLogin() {
             </button>
           </form>
 
-          <div className='mt-6 pt-5 border-t border-ink/[0.08] space-y-3'>
+          <div className='mt-6 pt-5 border-t border-ink/8 space-y-3'>
             <p className='text-[13px] text-muted text-center'>
               Not yet registered?{' '}
               <Link to='/register' className='text-ficium font-semibold hover:underline'>

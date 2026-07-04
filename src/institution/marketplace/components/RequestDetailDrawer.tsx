@@ -276,12 +276,12 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-ink/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-ink/50 backdrop-blur-xs" onClick={onClose}>
       <div className="relative bg-white rounded-3xl shadow-[0_32px_80px_rgba(10,10,26,0.28)] w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden"
            onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-start justify-between px-8 py-5 border-b border-ink/[0.07] flex-shrink-0">
+        <div className="flex items-start justify-between px-8 py-5 border-b border-ink/[0.07] shrink-0">
           <div>
             <div className="text-[11px] font-bold text-ficium uppercase tracking-widest mb-1">{f.familyLabel ?? "Financial product"}</div>
             <h2 className="font-display font-bold text-[24px] text-ink leading-tight">{f.productLabel}</h2>
@@ -290,14 +290,14 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
             <button onClick={downloadPDF} className="flex items-center gap-1.5 text-[12px] font-semibold text-muted hover:text-ficium border border-ink/10 hover:border-ficium/30 px-3.5 py-2 rounded-xl transition-colors">
               <Download className="w-3.5 h-3.5" /> PDF
             </button>
-            <button onClick={onClose} className="w-9 h-9 rounded-xl bg-ink/[0.05] hover:bg-ink/10 grid place-items-center text-muted hover:text-ink transition-colors">
+            <button onClick={onClose} className="w-9 h-9 rounded-xl bg-ink/5 hover:bg-ink/10 grid place-items-center text-muted hover:text-ink transition-colors">
               <X className="w-4.5 h-4.5" />
             </button>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-ink/[0.07] flex-shrink-0 px-8">
+        <div className="flex border-b border-ink/[0.07] shrink-0 px-8">
           {(["details", "chat"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex items-center gap-2 py-3.5 mr-6 text-[13px] font-semibold transition-colors border-b-2 ${tab === t ? "border-ficium text-ficium" : "border-transparent text-muted hover:text-ink"}`}>
@@ -348,7 +348,7 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                     <ProfileStat label="DSR post-loan" value={f.dsrPost != null ? `${f.dsrPost}%` : "—"} accent={accentDSR(f.dsrPost)} />
                   </div>
                   {(f.collateralType && f.collateralType !== "none") && (
-                    <div className="pt-2 border-t border-ink/[0.06] grid grid-cols-2 gap-2">
+                    <div className="pt-2 border-t border-ink/6 grid grid-cols-2 gap-2">
                       <ProfileStat label="Collateral" value={[fmtType(f.collateralType), f.collateralSub].filter(Boolean).join(" / ") || "—"} />
                       <ProfileStat label="LTV" value={f.ltvPct != null ? `${f.ltvPct}%` : "—"} accent={accentLTV(f.ltvPct)} />
                     </div>
@@ -395,10 +395,10 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                   <ProfileStat label="Number of existing loans" value={f.loans.length > 0 ? `${f.loans.length}` : "—"} />
                 </div>
                 {f.loans.length > 0 && (
-                  <div className="rounded-xl overflow-hidden border border-ink/[0.08]">
+                  <div className="rounded-xl overflow-hidden border border-ink/8">
                     <table className="w-full text-[12px]">
                       <thead>
-                        <tr className="bg-ink/[0.03] border-b border-ink/[0.06]">
+                        <tr className="bg-ink/3 border-b border-ink/6">
                           {["Type","Outstanding","Monthly","Bank","Months left"].map((h, i) => (
                             <th key={h} className={`py-2.5 px-4 font-bold text-muted uppercase tracking-wide text-[10px] ${i > 0 ? "text-right" : "text-left"} last:text-right`}>{h}</th>
                           ))}
@@ -406,7 +406,7 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                       </thead>
                       <tbody>
                         {f.loans.map((loan, i) => (
-                          <tr key={i} className="border-b border-ink/[0.04] last:border-0">
+                          <tr key={i} className="border-b border-ink/4 last:border-0">
                             <td className="px-4 py-2.5 font-semibold text-ink">{fmtType(loan.type)}</td>
                             <td className="px-4 py-2.5 text-right text-ink">{fmt(loan.outstanding)}</td>
                             <td className="px-4 py-2.5 text-right text-ink">{fmt(loan.monthly)}</td>
@@ -434,7 +434,7 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                       <span className={`text-[11px] font-bold text-${color === "ficium" ? "ficium" : "amber-600"} uppercase tracking-wider`}>{label}</span>
                     </div>
                     <textarea value={value} onChange={e => set(e.target.value)} rows={3} placeholder={placeholder}
-                      className={`w-full bg-white border border-ink/[0.10] focus:border-${color === "ficium" ? "ficium" : "amber-400"} focus:ring-2 focus:ring-${color === "ficium" ? "ficium" : "amber-400"}/15 rounded-2xl px-4 py-3 text-[13px] text-ink placeholder:text-muted/60 outline-none resize-none transition-all`} />
+                      className={`w-full bg-white border border-ink/10 focus:border-${color === "ficium" ? "ficium" : "amber-400"} focus:ring-2 focus:ring-${color === "ficium" ? "ficium" : "amber-400"}/15 rounded-2xl px-4 py-3 text-[13px] text-ink placeholder:text-muted/60 outline-hidden resize-none transition-all`} />
                   </div>
                 ))}
               </div>
@@ -448,7 +448,7 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
 
         {/* Footer */}
         {tab === "details" && (
-          <div className="flex-shrink-0 bg-white border-t border-ink/[0.07] px-8 py-5">
+          <div className="shrink-0 bg-white border-t border-ink/[0.07] px-8 py-5">
             {showDecline ? (
               <div>
                 <label className="block text-[11px] font-bold text-muted uppercase tracking-wider mb-2">
@@ -460,11 +460,11 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                   rows={2}
                   maxLength={500}
                   placeholder="e.g. Outside current risk appetite for this product/tenor"
-                  className="w-full bg-white border border-ink/[0.10] focus:border-red-400 focus:ring-2 focus:ring-red-400/15 rounded-2xl px-4 py-3 text-[13px] text-ink placeholder:text-muted/60 outline-none resize-none transition-all mb-3"
+                  className="w-full bg-white border border-ink/10 focus:border-red-400 focus:ring-2 focus:ring-red-400/15 rounded-2xl px-4 py-3 text-[13px] text-ink placeholder:text-muted/60 outline-hidden resize-none transition-all mb-3"
                 />
                 {rejectError && (
                   <div className="flex items-center gap-2 text-[13px] text-red-600 mb-3">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {rejectError}
+                    <AlertCircle className="w-4 h-4 shrink-0" /> {rejectError}
                   </div>
                 )}
                 <div className="flex items-center gap-4">
@@ -478,7 +478,7 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                   <button
                     onClick={() => setShowDecline(false)}
                     disabled={isRejecting}
-                    className="px-6 py-3.5 rounded-2xl border border-ink/10 text-muted text-[14px] font-semibold hover:bg-ink/[0.03] transition-colors"
+                    className="px-6 py-3.5 rounded-2xl border border-ink/10 text-muted text-[14px] font-semibold hover:bg-ink/3 transition-colors"
                   >
                     Back
                   </button>
@@ -492,7 +492,7 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                 <button onClick={() => setShowDecline(true)} className="px-6 py-3.5 rounded-2xl border border-red-200 text-red-600 text-[14px] font-semibold hover:bg-red-50 transition-colors">
                   Decline
                 </button>
-                <button onClick={onClose} className="px-6 py-3.5 rounded-2xl border border-ink/10 text-muted text-[14px] font-semibold hover:bg-ink/[0.03] transition-colors">
+                <button onClick={onClose} className="px-6 py-3.5 rounded-2xl border border-ink/10 text-muted text-[14px] font-semibold hover:bg-ink/3 transition-colors">
                   Close
                 </button>
               </div>

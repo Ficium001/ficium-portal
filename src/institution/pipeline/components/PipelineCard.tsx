@@ -48,7 +48,7 @@ export function PipelineCard({ pipeline }: PipelineCardProps) {
         </div>
         <ChevronRight
           size={16}
-          className="text-muted group-hover:text-ficium transition-colors flex-shrink-0 mt-1"
+          className="text-muted group-hover:text-ficium transition-colors shrink-0 mt-1"
         />
       </div>
 
@@ -80,7 +80,7 @@ export function PipelineCard({ pipeline }: PipelineCardProps) {
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold
-                           bg-ficium/[0.08] text-ficium border border-ficium/20
+                           bg-ficium/8 text-ficium border border-ficium/20
                            px-2.5 py-1 rounded-full">
             Active
           </span>
@@ -91,7 +91,7 @@ export function PipelineCard({ pipeline }: PipelineCardProps) {
                             px-2.5 py-1 rounded-full
                             ${breached
                               ? "bg-red-50 text-red-600 border border-red-200"
-                              : "bg-ink/[0.04] text-muted"}`}>
+                              : "bg-ink/4 text-muted"}`}>
             {breached && <AlertTriangle size={11} />}
             {slaLabel(pipeline.current_sla_due_at, breached)}
           </span>

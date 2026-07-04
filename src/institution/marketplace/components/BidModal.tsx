@@ -30,7 +30,7 @@ export function BidModal({ request, onClose, onSubmit, isSubmitting, error }: Bi
   });
 
   const inputCls = (err?: boolean) =>
-    `w-full bg-white border ${err ? "border-red-400 focus:ring-red-200" : "border-ink/[0.12] focus:border-ficium focus:ring-ficium/20"} rounded-xl px-4 py-3 text-[15px] outline-none transition-all focus:ring-2`;
+    `w-full bg-white border ${err ? "border-red-400 focus:ring-red-200" : "border-ink/12 focus:border-ficium focus:ring-ficium/20"} rounded-xl px-4 py-3 text-[15px] outline-hidden transition-all focus:ring-2`;
 
   const windowMs     = request.bid_window_closes_at
     ? new Date(request.bid_window_closes_at).getTime() - Date.now()
@@ -43,7 +43,7 @@ export function BidModal({ request, onClose, onSubmit, isSubmitting, error }: Bi
   const windowUrgent = windowMs !== null && windowMs < 2 * 3_600_000;
 
   return (
-    <div className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-ink/40 backdrop-blur-xs flex items-center justify-center z-60 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between p-6 border-b border-ink/[0.07]">
           <div>
@@ -57,7 +57,7 @@ export function BidModal({ request, onClose, onSubmit, isSubmitting, error }: Bi
             <button onClick={onClose} className="text-muted hover:text-ink transition-colors"><X className="w-5 h-5" /></button>
             {windowLabel && (
               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                windowUrgent ? "bg-red-50 text-red-600" : "bg-ink/[0.05] text-muted"
+                windowUrgent ? "bg-red-50 text-red-600" : "bg-ink/5 text-muted"
               }`}>
                 ⏱ {windowLabel}
               </span>
@@ -105,7 +105,7 @@ export function BidModal({ request, onClose, onSubmit, isSubmitting, error }: Bi
                 : <Zap className="w-4 h-4" />}
               Submit for approval
             </button>
-            <button type="button" onClick={onClose} className="px-5 text-[13px] font-semibold text-muted border border-ink/10 rounded-xl hover:bg-ink/[0.03] transition-colors">Cancel</button>
+            <button type="button" onClick={onClose} className="px-5 text-[13px] font-semibold text-muted border border-ink/10 rounded-xl hover:bg-ink/3 transition-colors">Cancel</button>
           </div>
         </form>
       </div>

@@ -211,7 +211,7 @@ function CompetitivenessPanel({ analytics, isLoading }: {
                 </div>
               </div>
               {/* Bar */}
-              <div className="relative h-2 bg-ink/[0.08] rounded-full overflow-hidden">
+              <div className="relative h-2 bg-ink/8 rounded-full overflow-hidden">
                 <div
                   className="absolute left-0 top-0 h-full rounded-full transition-all duration-700"
                   style={{

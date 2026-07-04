@@ -27,7 +27,7 @@ export function DetailStat({ label, value, children, bold, accent }: {
 export function ProfileStat({ label, value, accent }: { label: string; value: string; accent?: "green" | "amber" | "red" }) {
   const cls = accent === "green" ? "text-green-600 font-bold" : accent === "amber" ? "text-amber-600 font-bold" : accent === "red" ? "text-red-500 font-bold" : "font-bold text-ink";
   return (
-    <div className="bg-white rounded-xl p-2.5 border border-ink/[0.06]">
+    <div className="bg-white rounded-xl p-2.5 border border-ink/6">
       <div className="text-[10px] text-muted mb-0.5">{label}</div>
       <div className={`text-[13px] ${cls} capitalize`}>{value}</div>
     </div>

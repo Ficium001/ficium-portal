@@ -104,16 +104,16 @@ function ActionSummary({ action }: { action: PendingAction }) {
           Action summary
         </span>
       </div>
-      <div className="bg-white border border-ink/[0.08] rounded-xl overflow-hidden">
+      <div className="bg-white border border-ink/8 rounded-xl overflow-hidden">
         {rows.map((row, i) => (
           <div
             key={i}
             className={`flex items-center justify-between px-4 py-3 text-[13px] ${
-              i < rows.length - 1 ? "border-b border-ink/[0.06]" : ""
+              i < rows.length - 1 ? "border-b border-ink/6" : ""
             }`}
           >
             <span className="text-muted capitalize">{row.label}</span>
-            <span className="font-semibold text-ink max-w-[60%] text-right break-words">
+            <span className="font-semibold text-ink max-w-[60%] text-right wrap-break-word">
               {row.value}
             </span>
           </div>
@@ -168,12 +168,12 @@ function ClientDossier({ action }: { action: PendingAction }) {
           Anonymised · identity not disclosed
         </span>
       </div>
-      <div className="bg-white border border-ink/[0.08] rounded-xl overflow-hidden">
-        <div className="grid grid-cols-2 divide-x divide-ink/[0.06]">
+      <div className="bg-white border border-ink/8 rounded-xl overflow-hidden">
+        <div className="grid grid-cols-2 divide-x divide-ink/6">
           {rows.map((row, i) => (
             <div
               key={i}
-              className={`px-4 py-3 text-[13px] ${i < rows.length - 2 ? "border-b border-ink/[0.06]" : ""}`}
+              className={`px-4 py-3 text-[13px] ${i < rows.length - 2 ? "border-b border-ink/6" : ""}`}
             >
               <div className="text-[10px] text-muted mb-0.5 capitalize">{row.label}</div>
               <div className="font-semibold text-ink capitalize">{row.value}</div>
@@ -227,7 +227,7 @@ function ActionCard({
       {/* Header row */}
       <div className="px-5 py-4 flex items-center gap-4">
         <div
-          className="w-10 h-10 rounded-xl bg-ficium/8 flex items-center justify-center flex-shrink-0 text-lg"
+          className="w-10 h-10 rounded-xl bg-ficium/8 flex items-center justify-center shrink-0 text-lg"
           aria-hidden
         >
           {meta.icon}
@@ -239,7 +239,7 @@ function ActionCard({
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${RISK_STYLE[meta.risk]}`}>
               {meta.risk} risk
             </span>
-            <code className="text-[11px] text-muted bg-ink/[0.04] px-2 py-0.5 rounded-lg font-mono">
+            <code className="text-[11px] text-muted bg-ink/4 px-2 py-0.5 rounded-lg font-mono">
               {action.resource_type}
             </code>
           </div>
@@ -250,7 +250,7 @@ function ActionCard({
           </div>
         </div>
 
-        <div className={`text-right text-[12px] flex-shrink-0 ${isUrgent ? "text-amber-600 font-semibold" : "text-muted"}`}>
+        <div className={`text-right text-[12px] shrink-0 ${isUrgent ? "text-amber-600 font-semibold" : "text-muted"}`}>
           <div className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" aria-hidden />
             {isExpired ? "Expired" : `Expires in ${formatDistanceToNow(action.expires_at)}`}
@@ -439,10 +439,10 @@ export default function InstitutionApprovals() {
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-ink/[0.06] rounded-xl" />
+                <div className="w-10 h-10 bg-ink/6 rounded-xl" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-40 bg-ink/[0.06] rounded" />
-                  <div className="h-3 w-32 bg-ink/[0.04] rounded" />
+                  <div className="h-4 w-40 bg-ink/6 rounded-sm" />
+                  <div className="h-3 w-32 bg-ink/4 rounded-sm" />
                 </div>
               </div>
             </div>

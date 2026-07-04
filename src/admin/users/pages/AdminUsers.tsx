@@ -318,19 +318,19 @@ function UserDetailPanel({
               )}
               {!isDeactivated && !isSelf && (
                 <button onClick={() => onAction('reset_password', user.id)}
-                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-ficium bg-ficium/[0.08] border border-ficium/20 px-3 py-2 rounded-lg hover:bg-ficium/[0.15] transition-colors'>
+                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-ficium bg-ficium/8 border border-ficium/20 px-3 py-2 rounded-lg hover:bg-ficium/15 transition-colors'>
                   <RefreshCw className='w-3.5 h-3.5' aria-hidden />Force password reset
                 </button>
               )}
               {!isDeactivated && !isSelf && (
                 <button onClick={() => onAction('force_logout', user.id)}
-                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-muted bg-cream/50 border border-ink/[0.15] px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
+                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-muted bg-cream/50 border border-ink/15 px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
                   <LogOut className='w-3.5 h-3.5' aria-hidden />Force logout all sessions
                 </button>
               )}
               {!isDeactivated && !isSelf && (
                 <button onClick={() => onAction('role_change', user.id)}
-                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-muted bg-cream/50 border border-ink/[0.15] px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
+                  className='flex items-center gap-2 w-full text-left text-[12px] font-semibold text-muted bg-cream/50 border border-ink/15 px-3 py-2 rounded-lg hover:bg-[#374151] transition-colors'>
                   <Shield className='w-3.5 h-3.5' aria-hidden />Change role
                 </button>
               )}
@@ -474,7 +474,7 @@ export default function AdminUsers() {
             onChange={e => setSearch(e.target.value)}
             placeholder='Search email or name…'
             aria-label='Search users'
-            className='bg-white border border-ink/[0.12] rounded-xl pl-9 pr-4 py-2 text-[12px] text-ink/80 outline-none focus:border-ficium font-mono w-60 transition-all'
+            className='bg-white border border-ink/12 rounded-xl pl-9 pr-4 py-2 text-[12px] text-ink/80 outline-hidden focus:border-ficium font-mono w-60 transition-all'
           />
         </div>
       </div>

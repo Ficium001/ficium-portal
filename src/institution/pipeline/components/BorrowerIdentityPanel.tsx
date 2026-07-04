@@ -13,14 +13,14 @@ export function BorrowerIdentityPanel({
   if (!name && !email) return null;
 
   return (
-    <div className="bg-ficium/[0.04] border border-ficium/15 rounded-2xl p-4 space-y-2">
+    <div className="bg-ficium/4 border border-ficium/15 rounded-2xl p-4 space-y-2">
       <div className="text-[10px] font-bold text-ficium uppercase tracking-widest mb-1">
         Borrower identity
       </div>
 
       {name && (
         <div className="flex items-center gap-2 text-[13px] text-ink">
-          <User size={13} className="text-ficium flex-shrink-0" />
+          <User size={13} className="text-ficium shrink-0" />
           <span className="font-semibold">{name}</span>
         </div>
       )}
@@ -30,7 +30,7 @@ export function BorrowerIdentityPanel({
           href={`mailto:${email}`}
           className="flex items-center gap-2 text-[13px] text-ficium hover:underline"
         >
-          <Mail size={13} className="flex-shrink-0" />
+          <Mail size={13} className="shrink-0" />
           {email}
         </a>
       )}
@@ -40,7 +40,7 @@ export function BorrowerIdentityPanel({
           href={`tel:${phone}`}
           className="flex items-center gap-2 text-[13px] text-ficium hover:underline"
         >
-          <Phone size={13} className="flex-shrink-0" />
+          <Phone size={13} className="shrink-0" />
           {phone}
         </a>
       )}

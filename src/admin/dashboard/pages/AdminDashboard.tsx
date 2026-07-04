@@ -354,7 +354,7 @@ function SessionsAndCallout() {
                 return (
                   <div key={s.id} className='flex items-center gap-3 px-1.5 py-3 rounded-xl hover:bg-[#F7F7FB] transition-colors'>
                     <div
-                      className='w-9 h-9 rounded-full grid place-items-center flex-shrink-0 text-[12px] font-bold text-white'
+                      className='w-9 h-9 rounded-full grid place-items-center shrink-0 text-[12px] font-bold text-white'
                       style={{ background: 'linear-gradient(135deg,#1E6CF5,#7C3AED)' }}
                       aria-hidden
                     >
@@ -366,7 +366,7 @@ function SessionsAndCallout() {
                         {s.ip_address}{s.admin_role ? ` · ${s.admin_role}` : ''}
                       </div>
                     </div>
-                    <span className='text-[12px] text-muted flex-shrink-0'>{fmtAgo(s.last_active_at)}</span>
+                    <span className='text-[12px] text-muted shrink-0'>{fmtAgo(s.last_active_at)}</span>
                   </div>
                 )
               })}
