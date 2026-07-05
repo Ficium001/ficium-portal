@@ -140,3 +140,17 @@ export interface EsignEnvelope {
   sealed_sha256: string | null
   signers: { party: 'borrower' | 'institution'; display_name: string; status: string; signed_at: string | null }[]
 }
+
+export interface EsignEvent {
+  event: string
+  detail: Record<string, unknown> | null
+  ip: string | null
+  created_at: string
+  prev_hash: string
+  hash: string
+}
+
+export interface EsignEventTrail {
+  chain_intact: boolean
+  events: EsignEvent[]
+}

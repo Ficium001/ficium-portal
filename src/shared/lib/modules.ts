@@ -80,6 +80,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'H',
   },
   {
+    key:         'inst:esign',
+    label:       'E-Signatures',
+    description: 'Send, track and seal signature envelopes for offer letters and mandates',
+    category:    'institution',
+    path:        '/esign',
+    iconKey:     'PenLine',
+    shortcut:    'W',
+  },
+  {
     key:         'inst:dual_control',
     label:       'Dual Control',
     description: 'Four-eyes approval queue for internal actions (groups, users, settings)',

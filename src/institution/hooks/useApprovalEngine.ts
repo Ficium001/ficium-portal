@@ -11,7 +11,7 @@ import { portalApi } from '@/shared/lib/portalApi'
 import type {
   Committee, CommitteeMember, ApprovalTemplate, DoaRule, DoaConditions,
   ApprovalInboxItem, ApprovalInstanceDetail, SimulateResult, EntityType,
-  VoteAction, EsignEnvelope,
+  VoteAction, EsignEnvelope, EsignEventTrail,
 } from '@/institution/types/approvalEngine'
 
 export const AEQK = {
@@ -197,12 +197,16 @@ export function useCreateEnvelope() {
 }
 
 export function useEnvelopeEvents(envelopeId: string) {
-  return useQuery({
+  return useQuery<EsignEventTrail>({
     queryKey: ['esign', 'events', envelopeId],
-    queryFn: () => portalApi.get<{
-      chain_intact: boolean
-      events: { event: string; created_at: string; ip: string | null; hash: string }[]
-    }>(`/esign/envelopes/${envelopeId}/events`),
+    queryFn: () => portalApi.get<EsignEventTrail>(`/esign/envelopes/${envelopeId}/events`),
     enabled: !!envelopeId,
+  })
+}
+
+export function useSealedUrl() {
+  return useMutation({
+    mutationFn: (envelopeId: string) =>
+      portalApi.get<{ url: string; sha256: string }>(`/esign/envelopes/${envelopeId}/sealed-url`),
   })
 }
