@@ -25,7 +25,7 @@ import { useState, useRef } from "react";
 import {
   Building2, Key, Clock, Check, FolderCheck,
   Upload, CheckCircle2, XCircle, AlertCircle, ExternalLink, ShieldCheck, ShieldAlert,
-  GitBranch, Webhook,
+  GitBranch, Webhook, Users,
 } from "lucide-react";
 import {
   useMyInstitution, useMyRole, useProducts,
@@ -39,6 +39,7 @@ import {
   Btn,
 } from "@/institution/components/primitives";
 import { PipelineTemplatesTab } from "@/institution/settings/components/PipelineTemplatesTab";
+import { ApprovalChainsTab }    from "@/institution/settings/components/ApprovalChainsTab";
 import { ApiKeysTab }           from "@/institution/settings/components/ApiKeysTab";
 import { WebhooksTab }          from "@/institution/settings/components/WebhooksTab";
 
@@ -46,7 +47,7 @@ import { WebhooksTab }          from "@/institution/settings/components/Webhooks
 // Tab types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "api-keys" | "webhooks" | "sla" | "documents" | "pipeline";
+type Tab = "profile" | "api-keys" | "webhooks" | "sla" | "documents" | "pipeline" | "approval-chains";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "profile",   label: "Profile",    icon: Building2    },
@@ -55,6 +56,7 @@ const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "sla",       label: "SLA",        icon: Clock        },
   { key: "documents", label: "Documents",  icon: FolderCheck  },
   { key: "pipeline",  label: "Pipelines",  icon: GitBranch    },
+  { key: "approval-chains", label: "Approval Chains", icon: Users },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -460,6 +462,7 @@ export default function InstitutionSettings() {
       {tab === "sla"       && <SlaTab      isAdmin={isAdmin} />}
       {tab === "documents" && <DocumentsTab />}
       {tab === "pipeline"  && <PipelineTemplatesTab />}
+      {tab === "approval-chains" && <ApprovalChainsTab isAdmin={isAdmin} />}
     </main>
   );
 }

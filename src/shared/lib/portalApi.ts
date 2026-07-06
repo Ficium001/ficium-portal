@@ -6,7 +6,7 @@
 // =============================================================
 import { getValidAccessToken, signOut } from "./ficiumAuth"
 
-const API_URL = (import.meta.env.VITE_PORTAL_API_URL as string | undefined)
+export const API_URL = (import.meta.env.VITE_PORTAL_API_URL as string | undefined)
   ?? "https://ficium-portal-api-production.up.railway.app"
 
 export class PortalApiError extends Error {
