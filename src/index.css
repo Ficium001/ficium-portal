@@ -108,6 +108,10 @@ layer(base);
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  html {
+    text-size-adjust: 100%;
+  }
 }
 
 body {
