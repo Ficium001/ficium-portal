@@ -27,12 +27,14 @@
  * @owner Ficium Engineering
  */
 import { useState } from 'react'
-import { Users, GitBranch, Route, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { Users, GitBranch, Route, Plus, ChevronUp, ChevronDown, Trash2, UserPlus } from 'lucide-react'
 import {
   useApprovalCommittees, useCreateCommittee, useAddCommitteeMember, useEndCommitteeMembership,
   useApprovalTemplates, useCreateTemplate, useActivateTemplate,
   useDoaRules, useCreateDoaRule, useSimulateRouting,
 } from '@/institution/hooks/useApprovalEngine'
+import { useInstitutionMembers } from '@/institution/hooks/useInstitutionMembers'
+import { MemberPickerModal } from '@/institution/components/MemberPickerModal'
 import type {
   Committee, StageDef, StageType, EntityType, DoaConditions,
 } from '@/institution/types/approvalEngine'
@@ -143,10 +145,17 @@ function CommitteesSection({ isAdmin }: { isAdmin: boolean }) {
 function CommitteeCard({ committee, isAdmin }: { committee: Committee; isAdmin: boolean }) {
   const addMember = useAddCommitteeMember(committee.id)
   const endMembership = useEndCommitteeMembership(committee.id)
-  const [memberId, setMemberId] = useState('')
+  const { data: members = [] } = useInstitutionMembers(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [role, setRole] = useState<Committee['members'][number]['role']>('member')
 
   const active = committee.members.filter((m) => !m.valid_to || new Date(m.valid_to) >= new Date())
+  const activeAuthUserIds = active.map((m) => m.member_id)
+
+  const displayName = (authUserId: string) => {
+    const person = members.find((m) => m.auth_user_id === authUserId)
+    return person?.full_name || person?.email || authUserId
+  }
 
   return (
     <div className="bg-white rounded-xl border border-ink/[0.07] p-5">
@@ -160,7 +169,7 @@ function CommitteeCard({ committee, isAdmin }: { committee: Committee; isAdmin: 
       <div className="mt-3 divide-y divide-ink/[0.06]">
         {active.map((m) => (
           <div key={m.id} className="flex items-center justify-between py-2 text-[13px]">
-            <span className="text-ink font-mono text-[12px]">{m.member_id}</span>
+            <span className="text-ink truncate">{displayName(m.member_id)}</span>
             <span className="flex items-center gap-2">
               <span className="rounded bg-ink/4 px-1.5 py-0.5 text-[11px] text-muted">
                 {ROLE_LABEL[m.role]}{!m.is_voting && ' · non-voting'}
@@ -183,12 +192,13 @@ function CommitteeCard({ committee, isAdmin }: { committee: Committee; isAdmin: 
 
       {isAdmin && (
         <div className="mt-3 flex gap-2">
-          <input
-            className={inputCls}
-            placeholder="Member user ID"
-            value={memberId}
-            onChange={(e) => setMemberId(e.target.value)}
-          />
+          <Btn
+            variant="secondary"
+            icon={UserPlus}
+            onClick={() => setPickerOpen(true)}
+          >
+            Add member
+          </Btn>
           <select
             className={inputCls}
             value={role}
@@ -198,22 +208,21 @@ function CommitteeCard({ committee, isAdmin }: { committee: Committee; isAdmin: 
               <option key={v} value={v}>{l}</option>
             ))}
           </select>
-          <Btn
-            variant="secondary"
-            disabled={!memberId || addMember.isPending}
-            loading={addMember.isPending}
-            onClick={() => {
-              addMember.mutate({
-                member_id: memberId, role, is_voting: role !== 'secretary' && role !== 'observer',
-                valid_from: new Date().toISOString().slice(0, 10),
-              })
-              setMemberId('')
-            }}
-          >
-            Add
-          </Btn>
         </div>
       )}
+
+      <MemberPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title={`Add to ${committee.name}`}
+        excludeAuthUserIds={activeAuthUserIds}
+        onSelect={(person) => {
+          addMember.mutate({
+            member_id: person.auth_user_id, role, is_voting: role !== 'secretary' && role !== 'observer',
+            valid_from: new Date().toISOString().slice(0, 10),
+          })
+        }}
+      />
     </div>
   )
 }

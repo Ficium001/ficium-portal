@@ -12,6 +12,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { portalApi } from "@/shared/lib/portalApi";
 import { useMyGroup } from "@/admin/hooks/useAdmin";
+import { useInstitutionMembers } from "@/institution/hooks/useInstitutionMembers";
 import type { InstitutionUser, PendingAction, ApiError } from "@/institution/types/institution";
 import type { InstitutionGroup } from "@/institution/settings/components/GroupsTab";
 import {
@@ -22,13 +23,6 @@ import GroupsTab from "@/institution/settings/components/GroupsTab";
 
 // ─── Data hooks ───────────────────────────────────────────────
 
-function useInstitutionMembers() {
-  return useQuery<(InstitutionUser & { active?: boolean; auth_active?: boolean; member_role?: string; custom_group_id?: string })[]>({
-    queryKey: ["institution", "members"],
-    queryFn: () => portalApi.get("/members?include_inactive=true"),
-    staleTime: 30_000,
-  });
-}
 function useInstitutionGroups() {
   return useQuery<InstitutionGroup[]>({
     queryKey: ["institution", "groups"],
