@@ -329,8 +329,9 @@ function StageModal({
 // ─── Template card ─────────────────────────────────────────────────────────────
 
 function TemplateCard({ template }: { template: PipelineTemplate }) {
-  const [expanded,   setExpanded]   = useState(false);
-  const [stageModal, setStageModal] = useState<null | "add" | StageModalInitial>(null);
+  const [expanded,    setExpanded]    = useState(false);
+  const [stageModal,  setStageModal]  = useState<null | "add" | StageModalInitial>(null);
+  const [toggleError, setToggleError] = useState("");
 
   const { data: detail, isLoading } = useTemplate(expanded ? template.id : "");
   const updateTemplate = useUpdateTemplate(template.id);
@@ -339,6 +340,23 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
   const scopeLabel = template.product_code
     ? (PRODUCT_LABELS[template.product_code] ?? template.product_code)
     : "All products (default)";
+
+  const noStages = template.stage_count === 0;
+
+  function handleToggleActive() {
+    setToggleError("");
+    if (!template.is_active && noStages) {
+      setToggleError("Add at least one stage before activating this template.");
+      return;
+    }
+    updateTemplate.mutate(
+      { is_active: !template.is_active },
+      {
+        onError: (e: unknown) =>
+          setToggleError(e instanceof Error ? e.message : "Failed to update template."),
+      },
+    );
+  }
 
   async function handleDeleteStage(stageId: string) {
     if (!confirm("Remove this stage?")) return;
@@ -378,12 +396,16 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
         <div className="flex items-center gap-2 shrink-0">
           {/* Active toggle */}
           <button
-            onClick={() => updateTemplate.mutate({ is_active: !template.is_active })}
+            onClick={handleToggleActive}
             disabled={updateTemplate.isPending}
-            title={template.is_active ? "Deactivate" : "Activate"}
+            title={
+              !template.is_active && noStages
+                ? "Add a stage before activating"
+                : template.is_active ? "Deactivate" : "Activate"
+            }
             className={`w-9 h-5 rounded-full transition-colors relative ${
               template.is_active ? "bg-ficium" : "bg-ink/20"
-            }`}
+            } ${!template.is_active && noStages ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
               template.is_active ? "translate-x-[18px]" : "translate-x-0.5"
@@ -398,6 +420,12 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
           </button>
         </div>
       </div>
+
+      {toggleError && (
+        <div className="px-4 pb-3 -mt-1">
+          <InlineAlert variant="error">{toggleError}</InlineAlert>
+        </div>
+      )}
 
       {/* Stage list */}
       {expanded && (
