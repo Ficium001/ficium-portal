@@ -32,6 +32,18 @@ export interface Committee {
   members: CommitteeMember[]
 }
 
+export interface Delegation {
+  id: string
+  from_member: string
+  to_member: string
+  scope: string
+  reason: string
+  valid_from: string
+  valid_to: string
+  approved_by: string
+  created_at: string
+}
+
 export interface StageDef {
   seq: number
   name: string

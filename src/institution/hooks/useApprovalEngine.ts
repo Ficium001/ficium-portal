@@ -11,7 +11,7 @@ import { portalApi } from '@/shared/lib/portalApi'
 import type {
   Committee, CommitteeMember, ApprovalTemplate, DoaRule, DoaConditions,
   ApprovalInboxItem, ApprovalInstanceDetail, SimulateResult, EntityType,
-  VoteAction, EsignEnvelope, EsignEventTrail,
+  VoteAction, EsignEnvelope, EsignEventTrail, Delegation,
 } from '@/institution/types/approvalEngine'
 
 export const AEQK = {
@@ -22,6 +22,7 @@ export const AEQK = {
   instance:   (id: string) => ['approval-engine', 'instance', id] as const,
   analytics:  ['approval-engine', 'analytics'] as const,
   envelopes:  ['esign', 'envelopes'] as const,
+  delegations: ['approval-engine', 'delegations'] as const,
 } as const
 
 // ─── Committees ───────────────────────────────────────────────
@@ -60,6 +61,35 @@ export function useEndCommitteeMembership(committeeId: string) {
     mutationFn: (memberRowId: string) =>
       portalApi.delete(`/approval-engine/committees/${committeeId}/members/${memberRowId}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: AEQK.committees }),
+  })
+}
+
+// ─── Delegations ───────────────────────────────────────────────
+
+export function useDelegations() {
+  return useQuery<Delegation[]>({
+    queryKey: AEQK.delegations,
+    queryFn: () => portalApi.get<Delegation[]>('/approval-engine/delegations'),
+  })
+}
+
+export function useCreateDelegation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: {
+      from_member: string; to_member: string; scope?: string
+      reason: string; valid_from: string; valid_to: string
+    }) => portalApi.post<{ id: string }>('/approval-engine/delegations', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: AEQK.delegations }),
+  })
+}
+
+export function useRevokeDelegation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (delegationId: string) =>
+      portalApi.delete(`/approval-engine/delegations/${delegationId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: AEQK.delegations }),
   })
 }
 

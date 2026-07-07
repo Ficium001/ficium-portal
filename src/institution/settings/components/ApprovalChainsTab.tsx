@@ -27,16 +27,18 @@
  * @owner Ficium Engineering
  */
 import { useState } from 'react'
-import { Users, GitBranch, Route, Plus, ChevronUp, ChevronDown, Trash2, UserPlus } from 'lucide-react'
+import { Users, GitBranch, Route, Plus, ChevronUp, ChevronDown, Trash2, UserPlus, Repeat } from 'lucide-react'
 import {
   useApprovalCommittees, useCreateCommittee, useAddCommitteeMember, useEndCommitteeMembership,
   useApprovalTemplates, useCreateTemplate, useActivateTemplate,
   useDoaRules, useCreateDoaRule, useSimulateRouting,
+  useDelegations, useCreateDelegation, useRevokeDelegation,
 } from '@/institution/hooks/useApprovalEngine'
 import { useInstitutionMembers } from '@/institution/hooks/useInstitutionMembers'
 import { MemberPickerModal } from '@/institution/components/MemberPickerModal'
+import { PortalApiError } from '@/shared/lib/portalApi'
 import type {
-  Committee, StageDef, StageType, EntityType, DoaConditions,
+  Committee, StageDef, StageType, EntityType, DoaConditions, Delegation,
 } from '@/institution/types/approvalEngine'
 import {
   SectionHeader, StatusBadge, EmptyState, InlineAlert,
@@ -57,15 +59,16 @@ const ROLES = ['checker', 'officer', 'credit_manager', 'legal', 'admin']
 // Sub-tabs within the tab (Committees / Templates / Routing)
 // ─────────────────────────────────────────────────────────────────────────────
 
-type SubTab = 'committees' | 'templates' | 'routing'
+type SubTab = 'committees' | 'templates' | 'routing' | 'delegations'
 
 export function ApprovalChainsTab({ isAdmin }: { isAdmin: boolean }) {
   const [sub, setSub] = useState<SubTab>('committees')
 
   const SUBS: { key: SubTab; label: string; icon: typeof Users }[] = [
-    { key: 'committees', label: 'Committees', icon: Users },
-    { key: 'templates',  label: 'Workflows',  icon: GitBranch },
-    { key: 'routing',    label: 'Routing',    icon: Route },
+    { key: 'committees',  label: 'Committees',  icon: Users },
+    { key: 'templates',   label: 'Workflows',   icon: GitBranch },
+    { key: 'routing',     label: 'Routing',     icon: Route },
+    { key: 'delegations', label: 'Delegations', icon: Repeat },
   ]
 
   return (
@@ -85,9 +88,10 @@ export function ApprovalChainsTab({ isAdmin }: { isAdmin: boolean }) {
         ))}
       </div>
 
-      {sub === 'committees' && <CommitteesSection isAdmin={isAdmin} />}
-      {sub === 'templates'  && <TemplatesSection isAdmin={isAdmin} />}
-      {sub === 'routing'    && <RoutingSection isAdmin={isAdmin} />}
+      {sub === 'committees'  && <CommitteesSection isAdmin={isAdmin} />}
+      {sub === 'templates'   && <TemplatesSection isAdmin={isAdmin} />}
+      {sub === 'routing'     && <RoutingSection isAdmin={isAdmin} />}
+      {sub === 'delegations' && <DelegationsSection isAdmin={isAdmin} />}
     </div>
   )
 }
@@ -622,5 +626,187 @@ function RoutingSection({ isAdmin }: { isAdmin: boolean }) {
         )}
       </aside>
     </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Delegations
+// ─────────────────────────────────────────────────────────────────────────────
+
+function DelegationsSection({ isAdmin }: { isAdmin: boolean }) {
+  const { data: delegations = [], isLoading } = useDelegations()
+  const { data: members = [] } = useInstitutionMembers(false)
+  const revoke = useRevokeDelegation()
+  const [showCreate, setShowCreate] = useState(false)
+
+  const displayName = (authUserId: string) => {
+    const person = members.find((m) => m.auth_user_id === authUserId)
+    return person?.full_name || person?.email || authUserId
+  }
+
+  const isActive = (d: Delegation) => {
+    const now = new Date()
+    return new Date(d.valid_from) <= now && now <= new Date(d.valid_to)
+  }
+
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+
+  if (isLoading) return <p className="text-[13px] text-muted">Loading delegations…</p>
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader
+        title="Delegations"
+        subtitle="Let someone act on another person's behalf for a scoped, time-bounded window — e.g. covering for annual leave."
+        actions={isAdmin && (
+          <Btn icon={Plus} onClick={() => setShowCreate(true)}>New delegation</Btn>
+        )}
+      />
+
+      {delegations.length === 0 ? (
+        <EmptyState
+          icon={Repeat}
+          title="No delegations"
+          description="When someone is away, delegate their approval authority to a colleague for a fixed window instead of sharing logins."
+        />
+      ) : (
+        <div className="space-y-2.5">
+          {delegations.map((d) => (
+            <div key={d.id} className="bg-white rounded-xl border border-ink/[0.07] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[13px] text-ink">
+                    <span className="font-semibold">{displayName(d.to_member)}</span>
+                    {' '}acting for{' '}
+                    <span className="font-semibold">{displayName(d.from_member)}</span>
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-muted truncate">{d.reason}</p>
+                  <p className="mt-1 text-[11px] text-muted">
+                    {fmt(d.valid_from)} → {fmt(d.valid_to)}
+                    {d.scope !== 'all' && <span className="ml-2 rounded bg-ink/4 px-1.5 py-0.5">{d.scope}</span>}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <StatusBadge
+                    status={isActive(d) ? 'active' : new Date(d.valid_from) > new Date() ? 'pending' : 'inactive'}
+                    label={isActive(d) ? 'Active' : new Date(d.valid_from) > new Date() ? 'Upcoming' : 'Ended'}
+                  />
+                  {isAdmin && isActive(d) && (
+                    <button
+                      onClick={() => revoke.mutate(d.id)}
+                      className="text-[11px] text-red-600 hover:underline"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showCreate && <CreateDelegationModal onClose={() => setShowCreate(false)} />}
+    </div>
+  )
+}
+
+function CreateDelegationModal({ onClose }: { onClose: () => void }) {
+  const create = useCreateDelegation()
+  const [fromPickerOpen, setFromPickerOpen] = useState(false)
+  const [toPickerOpen, setToPickerOpen] = useState(false)
+  const [fromMember, setFromMember] = useState<{ auth_user_id: string; label: string } | null>(null)
+  const [toMember, setToMember] = useState<{ auth_user_id: string; label: string } | null>(null)
+  const [reason, setReason] = useState('')
+  const [validFrom, setValidFrom] = useState('')
+  const [validTo, setValidTo] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const canSubmit =
+    !!fromMember && !!toMember && fromMember.auth_user_id !== toMember.auth_user_id &&
+    reason.trim() !== '' && !!validFrom && !!validTo && !create.isPending
+
+  const submit = () => {
+    if (!canSubmit || !fromMember || !toMember) return
+    setError(null)
+    create.mutate({
+      from_member: fromMember.auth_user_id,
+      to_member:   toMember.auth_user_id,
+      reason:      reason.trim(),
+      valid_from:  new Date(validFrom).toISOString(),
+      valid_to:    new Date(validTo).toISOString(),
+    }, {
+      onSuccess: onClose,
+      onError: (e) => setError(e instanceof PortalApiError ? e.message : 'Could not create the delegation.'),
+    })
+  }
+
+  return (
+    <Modal open onClose={onClose} title="New delegation">
+      <div className="space-y-4">
+        {error && <InlineAlert variant="error">{error}</InlineAlert>}
+
+        <FormField label="Delegating from" required hint="The person whose approval authority is being covered.">
+          <button
+            type="button"
+            onClick={() => setFromPickerOpen(true)}
+            className={`${inputCls} text-left ${fromMember ? 'text-ink' : 'text-muted'}`}
+          >
+            {fromMember?.label ?? 'Choose a person…'}
+          </button>
+        </FormField>
+
+        <FormField label="Delegating to" required hint="The person who will act on their behalf.">
+          <button
+            type="button"
+            onClick={() => setToPickerOpen(true)}
+            className={`${inputCls} text-left ${toMember ? 'text-ink' : 'text-muted'}`}
+          >
+            {toMember?.label ?? 'Choose a person…'}
+          </button>
+        </FormField>
+
+        {fromMember && toMember && fromMember.auth_user_id === toMember.auth_user_id && (
+          <InlineAlert variant="error">A person cannot delegate to themselves.</InlineAlert>
+        )}
+
+        <FormField label="Reason" required>
+          <input className={inputCls} value={reason} onChange={(e) => setReason(e.target.value)}
+            placeholder="Annual leave, 8–15 July" />
+        </FormField>
+
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Valid from" required>
+            <input type="datetime-local" className={inputCls} value={validFrom}
+              onChange={(e) => setValidFrom(e.target.value)} />
+          </FormField>
+          <FormField label="Valid to" required>
+            <input type="datetime-local" className={inputCls} value={validTo}
+              onChange={(e) => setValidTo(e.target.value)} />
+          </FormField>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+          <Btn disabled={!canSubmit} loading={create.isPending} onClick={submit}>
+            Create
+          </Btn>
+        </div>
+      </div>
+
+      <MemberPickerModal
+        open={fromPickerOpen}
+        onClose={() => setFromPickerOpen(false)}
+        title="Who is delegating their authority?"
+        onSelect={(m) => setFromMember({ auth_user_id: m.auth_user_id, label: m.full_name || m.email || m.auth_user_id })}
+      />
+      <MemberPickerModal
+        open={toPickerOpen}
+        onClose={() => setToPickerOpen(false)}
+        title="Who is receiving delegated authority?"
+        onSelect={(m) => setToMember({ auth_user_id: m.auth_user_id, label: m.full_name || m.email || m.auth_user_id })}
+      />
+    </Modal>
   )
 }
