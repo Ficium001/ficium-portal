@@ -41,11 +41,12 @@ export const QK = {
 } as const
 
 // ─── useMyInstitution ─── portal-api /institutions/me ────────
-export function useMyInstitution() {
+export function useMyInstitution(options?: { enabled?: boolean }) {
   return useQuery<Institution>({
     queryKey: QK.institution,
     queryFn: () => portalApi.get<Institution>('/institutions/me'),
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   })
 }
 

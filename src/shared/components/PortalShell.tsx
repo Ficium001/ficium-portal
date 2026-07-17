@@ -38,7 +38,8 @@ import {
 } from 'lucide-react'
 import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '@/shared/lib/ficiumAuth'
 import { useMyGroup } from '@/admin/hooks/useAdmin'
-import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '@/shared/lib/modules'
+import { MODULE_CATALOGUE, allowedModules, filterByEntitlement, type PortalModule } from '@/shared/lib/modules'
+import { useMyInstitution } from '@/institution/hooks/useInstitution'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
 import { usePortalUnreadCount } from '@/institution/notifications/hooks/usePortalNotifications'
 
@@ -504,9 +505,16 @@ export default function PortalShell() {
   const { idleWarning, reset: resetIdle } = useSessionGuard(handleSignOut)
   const connStatus = useConnStatus()
 
+  // Institution-level module entitlement (pricing plan) — only relevant
+  // for institution users; admin users have no institution_id.
+  const { data: myInstitution } = useMyInstitution({ enabled: myGroup?.user_type === 'institution' })
+
   // Keyboard nav
-  const permissions    = myGroup?.module_permissions ?? []
-  const visibleModules = allowedModules(MODULE_CATALOGUE, permissions, myGroup?.user_type)
+  const permissions     = myGroup?.module_permissions ?? []
+  const rbacModules     = allowedModules(MODULE_CATALOGUE, permissions, myGroup?.user_type)
+  const visibleModules  = myGroup?.user_type === 'institution'
+    ? filterByEntitlement(rbacModules, myInstitution?.modules ?? [])
+    : rbacModules
 
   useEffect(() => {
     const routes = Object.fromEntries(

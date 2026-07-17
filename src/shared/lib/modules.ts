@@ -290,6 +290,35 @@ export function allowedModules(
   return list.filter(m => permissions.includes(m.key))
 }
 
+// ─── Institution-level entitlement (pricing) ──────────────────
+// Maps a nav module key → the short key stored in
+// institution.institution.modules (jsonb array), set by Ficium admin
+// per the institution's pricing plan. This is a licensing gate — separate
+// from allowedModules() above, which is per-user RBAC within a group.
+// Modules not listed here (dashboard, settings, team, etc.) aren't priced
+// per-module and are always shown once RBAC allows them.
+export const MODULE_ENTITLEMENT_KEY: Record<string, string> = {
+  'inst:marketplace': 'marketplace',
+  'inst:pipeline':     'pipeline',
+}
+
+/**
+ * Filter a module list further by institution-level entitlement.
+ * A module with an entry in MODULE_ENTITLEMENT_KEY is hidden unless its
+ * mapped short key is present in `institutionModules`. Modules with no
+ * entry are unaffected (pass through).
+ */
+export function filterByEntitlement(
+  list: PortalModule[],
+  institutionModules: string[],
+): PortalModule[] {
+  return list.filter(m => {
+    const entitlementKey = MODULE_ENTITLEMENT_KEY[m.key]
+    if (!entitlementKey) return true
+    return institutionModules.includes(entitlementKey)
+  })
+}
+
 // ─── System group seeds ───────────────────────────────────────
 // Mirrors DB seed data — used for display labels in the UI.
 

@@ -112,6 +112,8 @@ function S({ children }: { children: ReactNode }) {
 
 // ─── Dashboard router — resolves correct dashboard by user type
 import { useMyGroup } from '@/admin/hooks/useAdmin'
+import { useMyInstitution } from '@/institution/hooks/useInstitution'
+import { MODULE_ENTITLEMENT_KEY } from '@/shared/lib/modules'
 
 const InstitutionAdminDashboard = lazy(() => import('../institution/dashboard/pages/InstitutionAdminDashboard'))
 
@@ -131,13 +133,20 @@ function DashboardRouter() {
 // If not, redirects to /dashboard silently.
 
 function RequireModule({ moduleKey, children }: { moduleKey: string; children: ReactNode }) {
-  const { data: myGroup, isLoading } = useMyGroup()
-  if (isLoading) return <PageLoader />
+  const { data: myGroup, isLoading: groupLoading } = useMyGroup()
+  const category         = moduleKey.startsWith('admin:') ? 'admin' : 'institution'
+  const entitlementKey   = MODULE_ENTITLEMENT_KEY[moduleKey]
+  const { data: myInstitution, isLoading: instLoading } = useMyInstitution({
+    enabled: category === 'institution' && !!entitlementKey,
+  })
+  if (groupLoading || (category === 'institution' && !!entitlementKey && instLoading)) return <PageLoader />
   const permissions = myGroup?.module_permissions ?? []
-  const category    = moduleKey.startsWith('admin:') ? 'admin' : 'institution'
   const isWildcard  = permissions.includes('*') && myGroup?.user_type === category
-  const allowed     = isWildcard || permissions.includes(moduleKey)
-  if (!allowed) return <Navigate to="/dashboard" replace />
+  const rbacAllowed = isWildcard || permissions.includes(moduleKey)
+  // Institution-level pricing entitlement — separate from RBAC above.
+  // A licensed module can still be off for this institution's plan.
+  const entitled    = !entitlementKey || (myInstitution?.modules ?? []).includes(entitlementKey)
+  if (!rbacAllowed || !entitled) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
