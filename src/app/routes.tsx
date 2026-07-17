@@ -41,6 +41,7 @@ const PipelineDetail         = lazy(() => import('../institution/pipeline/pages/
 const InstitutionApprovals   = lazy(() => import('../institution/approvals/pages/InstitutionApprovals'))
 const ApprovalChainsInbox    = lazy(() => import('../institution/approval-chains/pages/ApprovalChainsInbox'))
 const EsignEnvelopes         = lazy(() => import('../institution/esign/pages/EsignEnvelopes'))
+const DocTemplates           = lazy(() => import('../institution/doc-templates/pages/DocTemplates'))
 const SignCeremony           = lazy(() => import('../public/esign/pages/SignCeremony'))
 const InstitutionProducts    = lazy(() => import('../institution/products/pages/InstitutionProducts'))
 const InstitutionAudit       = lazy(() => import('../institution/audit/pages/InstitutionAudit'))
@@ -182,6 +183,7 @@ export const router = createBrowserRouter([
           { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
           { path: '/approval-chains', element: <RequireModule moduleKey="inst:approvals"><S><ApprovalChainsInbox /></S></RequireModule> },
           { path: '/esign',        element: <RequireModule moduleKey="inst:esign"><S><EsignEnvelopes /></S></RequireModule> },
+          { path: '/doc-templates',element: <RequireModule moduleKey="inst:doctemplates"><S><DocTemplates /></S></RequireModule> },
           { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
           { path: '/audit',        element: <RequireModule moduleKey="inst:audit"><S><InstitutionAudit /></S></RequireModule> },
           { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },

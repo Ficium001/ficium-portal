@@ -89,6 +89,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'W',
   },
   {
+    key:         'inst:doctemplates',
+    label:       'Doc Templates',
+    description: 'Design loan agreements and facility letters, generate populated Word/PDF per deal',
+    category:    'institution',
+    path:        '/doc-templates',
+    iconKey:     'FileType2',
+    shortcut:    'J',
+  },
+  {
     key:         'inst:dual_control',
     label:       'Dual Control',
     description: 'Four-eyes approval queue for internal actions (groups, users, settings)',
@@ -300,6 +309,7 @@ export function allowedModules(
 export const MODULE_ENTITLEMENT_KEY: Record<string, string> = {
   'inst:marketplace': 'marketplace',
   'inst:pipeline':     'pipeline',
+  'inst:doctemplates': 'inst:doctemplates',
 }
 
 /**

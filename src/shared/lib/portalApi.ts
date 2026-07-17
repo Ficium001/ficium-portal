@@ -68,4 +68,38 @@ export const portalApi = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+
+  /** Multipart POST (file uploads) — browser sets the Content-Type boundary. */
+  postForm: async <T>(path: string, form: FormData): Promise<T> => {
+    const token = await getValidAccessToken()
+    if (!token) { await signOut(); throw new PortalApiError(401, "Session expired") }
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }, // no Content-Type: browser sets boundary
+      body: form,
+    })
+    if (res.status === 401) { await signOut(); throw new PortalApiError(401, "Session expired") }
+    if (!res.ok) {
+      let message = `Portal API error ${res.status}`
+      try { const b = await res.json(); message = b?.detail ?? b?.message ?? message } catch { /* ignore */ }
+      throw new PortalApiError(res.status, message)
+    }
+    return res.json() as Promise<T>
+  },
+
+  /** Binary GET — returns a Blob (generated document downloads). */
+  getBlob: async (path: string): Promise<Blob> => {
+    const token = await getValidAccessToken()
+    if (!token) { await signOut(); throw new PortalApiError(401, "Session expired") }
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.status === 401) { await signOut(); throw new PortalApiError(401, "Session expired") }
+    if (!res.ok) {
+      let message = `Portal API error ${res.status}`
+      try { const b = await res.json(); message = b?.detail ?? b?.message ?? message } catch { /* ignore */ }
+      throw new PortalApiError(res.status, message)
+    }
+    return res.blob()
+  },
 }
