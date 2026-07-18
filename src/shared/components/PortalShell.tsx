@@ -139,10 +139,10 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
 // see Dashboard twice.
 const NAV_SECTIONS = [
   { label: 'Home',        keys: ['inst:dashboard', 'admin:dashboard'] },
-  { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
+  { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval', 'inst:approvals'] },
   { label: 'Insights',    keys: ['inst:analytics', 'inst:notifications'] },
-  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:settings'] },
-  { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit'] },
+  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:settings', 'inst:benefits'] },
+  { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit', 'inst:documents', 'inst:esign', 'inst:doctemplates'] },
   { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
   { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
 ]
@@ -194,6 +194,14 @@ function Drawer({
       return { ...s, modules: mods }
     })
     .filter(s => s.modules.length > 0)
+
+  // Catch-all: any visible module not covered by a named section above
+  // (e.g. a new module added to the catalogue before NAV_SECTIONS is
+  // updated) still renders here instead of silently vanishing from nav.
+  const namedKeys = new Set(NAV_SECTIONS.flatMap(s => s.keys))
+  const seenPaths = new Set(sections.flatMap(s => s.modules.map(m => m.path)))
+  const other = visibleModules.filter(m => !namedKeys.has(m.key) && !seenPaths.has(m.path))
+  if (other.length > 0) sections.push({ label: 'Other', keys: [], modules: other })
 
   const empty = sections.length === 0
 

@@ -134,14 +134,18 @@ const slugify = (s: string) =>
 
 // Mirrors NAV_SECTIONS in PortalShell.tsx so the picker reads exactly like
 // the sidebar the admin already knows. Any module not covered by a named
-// section (e.g. inst:benefits, inst:documents, inst:pipeline — not yet in
-// the live nav) falls into "Other" so nothing is ever silently dropped.
+// section still falls into "Other" below so nothing is ever silently
+// dropped if a new module is added to the catalogue before this list is
+// updated — that gap (inst:benefits/documents/esign/doctemplates/approvals
+// missing from both this list and the live nav) is what caused newly
+// licensed modules to be invisible after being granted; keep both lists
+// in sync when adding a module to shared/lib/modules.ts.
 const MODULE_SECTIONS: { label: string; keys: string[] }[] = [
   { label: "Home",        keys: ["inst:dashboard"] },
-  { label: "Marketplace", keys: ["inst:marketplace", "inst:bids", "inst:bid_approval"] },
+  { label: "Marketplace", keys: ["inst:marketplace", "inst:bids", "inst:bid_approval", "inst:approvals"] },
   { label: "Insights",    keys: ["inst:analytics", "inst:notifications"] },
-  { label: "Manage",      keys: ["inst:dual_control", "inst:team", "inst:products", "inst:settings"] },
-  { label: "Operations",  keys: ["inst:audit", "inst:pipeline"] },
+  { label: "Manage",      keys: ["inst:dual_control", "inst:team", "inst:products", "inst:settings", "inst:benefits"] },
+  { label: "Operations",  keys: ["inst:audit", "inst:pipeline", "inst:documents", "inst:esign", "inst:doctemplates"] },
 ];
 
 // ─── Module checkbox grid (collapsible, grouped like the sidebar nav) ────────
