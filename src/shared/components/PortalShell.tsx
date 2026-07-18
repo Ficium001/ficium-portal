@@ -142,7 +142,7 @@ const NAV_SECTIONS = [
   { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval', 'inst:approvals'] },
   { label: 'Insights',    keys: ['inst:analytics', 'inst:notifications'] },
   { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:settings', 'inst:benefits'] },
-  { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit', 'inst:documents', 'inst:esign', 'inst:doctemplates'] },
+  { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit', 'inst:esign', 'inst:doctemplates'] },
   { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
   { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
 ]

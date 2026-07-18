@@ -145,7 +145,7 @@ const MODULE_SECTIONS: { label: string; keys: string[] }[] = [
   { label: "Marketplace", keys: ["inst:marketplace", "inst:bids", "inst:bid_approval", "inst:approvals"] },
   { label: "Insights",    keys: ["inst:analytics", "inst:notifications"] },
   { label: "Manage",      keys: ["inst:dual_control", "inst:team", "inst:products", "inst:settings", "inst:benefits"] },
-  { label: "Operations",  keys: ["inst:audit", "inst:pipeline", "inst:documents", "inst:esign", "inst:doctemplates"] },
+  { label: "Operations",  keys: ["inst:audit", "inst:pipeline", "inst:esign", "inst:doctemplates"] },
 ];
 
 // ─── Module checkbox grid (collapsible, grouped like the sidebar nav) ────────

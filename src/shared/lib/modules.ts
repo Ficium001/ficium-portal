@@ -125,15 +125,6 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'F',
   },
   {
-    key:         'inst:documents',
-    label:       'Documents',
-    description: 'Upload compliance documents required to bid',
-    category:    'institution',
-    path:        '/documents',
-    iconKey:     'FolderCheck',
-    shortcut:    'O',
-  },
-  {
     key:         'inst:analytics',
     label:       'Analytics',
     description: 'Bid performance, win rate, and deal value analytics',
