@@ -44,6 +44,8 @@ const EsignEnvelopes         = lazy(() => import('../institution/esign/pages/Esi
 const DocTemplates           = lazy(() => import('../institution/doc-templates/pages/DocTemplates'))
 const SignCeremony           = lazy(() => import('../public/esign/pages/SignCeremony'))
 const InstitutionProducts    = lazy(() => import('../institution/products/pages/InstitutionProducts'))
+const InstitutionBenefits    = lazy(() => import('../institution/benefits/pages/InstitutionBenefits'))
+const InstitutionDocuments   = lazy(() => import('../institution/documents/pages/InstitutionDocuments'))
 const InstitutionAudit       = lazy(() => import('../institution/audit/pages/InstitutionAudit'))
 const InstitutionSettings    = lazy(() => import('../institution/settings/pages/InstitutionSettings'))
 const InstitutionUsers       = lazy(() => import('../institution/team/pages/InstitutionUsers'))
@@ -185,6 +187,8 @@ export const router = createBrowserRouter([
           { path: '/esign',        element: <RequireModule moduleKey="inst:esign"><S><EsignEnvelopes /></S></RequireModule> },
           { path: '/doc-templates',element: <RequireModule moduleKey="inst:doctemplates"><S><DocTemplates /></S></RequireModule> },
           { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
+          { path: '/benefits',     element: <RequireModule moduleKey="inst:benefits"><S><InstitutionBenefits /></S></RequireModule> },
+          { path: '/documents',    element: <RequireModule moduleKey="inst:documents"><S><InstitutionDocuments /></S></RequireModule> },
           { path: '/audit',        element: <RequireModule moduleKey="inst:audit"><S><InstitutionAudit /></S></RequireModule> },
           { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },
           { path: '/team/users',        element: <RequireModule moduleKey="inst:team"><S><InstitutionUsers /></S></RequireModule> },
