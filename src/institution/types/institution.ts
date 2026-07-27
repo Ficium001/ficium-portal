@@ -187,6 +187,9 @@ export interface MarketplaceRequest {
   ficium_risk_tier?: 'A' | 'B' | 'C' | 'D' | null
   ficium_score?: number | null
   already_bid?: boolean
+  // Present only for mixed_portfolio (multi-product basket) requests
+  allocation_mode?: 'client_specified' | 'institution_decides' | null
+  allocations?: { product_type: string; product_label: string; amount: number | null }[] | null
 }
 
 export interface PendingAction {
@@ -329,6 +332,9 @@ export interface BidPayload {
   term_months: number
   conditions?: Record<string, unknown>
   submitted_via?: IntegrationMode
+  // Structured per-product counter-allocation for mixed_portfolio requests -
+  // separate from the blended rate/amount_offered/term_months above.
+  allocations?: { product_type: string; amount_offered: number; rate?: number; term_months?: number }[]
 }
 
 // ─── Portal navigation ────────────────────────────────────────

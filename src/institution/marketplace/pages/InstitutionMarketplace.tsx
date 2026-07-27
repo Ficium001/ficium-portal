@@ -337,6 +337,7 @@ export default function InstitutionMarketplace() {
         term_months:    data.term_months,
         conditions:     data.notes ? { notes: data.notes } : undefined,
         submitted_via:  "portal",
+        allocations:    data.allocations,
       });
       setBidSuccessId(id as string);
       setBiddingRequest(null);

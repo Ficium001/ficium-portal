@@ -1,5 +1,5 @@
 import { useState }        from "react";
-import { X, FileText, MessageSquare, Download, User, DollarSign, TrendingUp, Zap, Briefcase, AlertCircle } from "lucide-react";
+import { X, FileText, MessageSquare, Download, User, DollarSign, TrendingUp, Zap, Briefcase, AlertCircle, Layers } from "lucide-react";
 import institutionSupabase from "@/institution/lib/institutionSupabase";
 import RequestChat         from "@/shared/components/RequestChat";
 import type { MarketplaceRequest, LoanRecord } from "@/institution/types/institution";
@@ -326,6 +326,30 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                 <div>
                   <SectionLabel icon={<FileText className="w-3.5 h-3.5" />} text="Purpose" />
                   <p className="text-[14px] text-ink/80 bg-cream rounded-xl px-4 py-3">{f.loanPurpose}</p>
+                </div>
+              )}
+
+              {/* Portfolio breakdown — mixed_portfolio (basket) requests only */}
+              {request.allocations && request.allocations.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <SectionLabel icon={<Layers className="w-3.5 h-3.5" />} text="Requested portfolio breakdown" />
+                    <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                      request.allocation_mode === "institution_decides" ? "bg-amber-50 text-amber-700" : "bg-ficium/10 text-ficium"
+                    }`}>
+                      {request.allocation_mode === "institution_decides" ? "Client left split to you" : "Client specified this split"}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {request.allocations.map(a => (
+                      <div key={a.product_type} className="flex items-center justify-between px-4 py-2.5 bg-cream rounded-xl">
+                        <span className="text-[14px] font-medium text-ink">{a.product_label}</span>
+                        <span className="text-[14px] font-semibold text-ink">
+                          {a.amount != null ? fmt(a.amount) : <span className="text-muted font-normal">Not specified — propose in your bid</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
