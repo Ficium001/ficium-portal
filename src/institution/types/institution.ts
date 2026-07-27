@@ -157,6 +157,7 @@ export interface MarketplaceRequest {
   id: string
   consumer_ref?: string | null          // anonymised ref
   product_id?: string | null
+  product_code?: string | null          // catalog product code, e.g. 'home_loan', 'unit_trust'
   product_type: string                  // legacy / fallback path
   product_label?: string | null
   product_family_label?: string | null
