@@ -425,6 +425,14 @@ export default function InstitutionSettings() {
     role?.role === "admin" || !!role?.is_primary_admin ||
     !!(myGroup?.label?.toLowerCase().includes("admin"));
 
+  // Pipeline templates are only relevant to institutions licensed for the
+  // "pipeline" module (pricing entitlement) — hide the tab entirely rather
+  // than let them configure templates for a module they don't have.
+  const entitledModules = institution?.modules ?? [];
+  const visibleTabs = TABS.filter((t) =>
+    t.key !== "pipeline" || entitledModules.includes("pipeline")
+  );
+
   return (
     <main className="p-6 lg:p-8 max-w-[900px] mx-auto">
       <SectionHeader
@@ -438,7 +446,7 @@ export default function InstitutionSettings() {
         aria-label="Settings sections"
         className="flex gap-1 bg-ink/4 p-1 rounded-xl mb-6 w-fit"
       >
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t.key}
             role="tab"

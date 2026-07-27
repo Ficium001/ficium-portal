@@ -89,6 +89,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'W',
   },
   {
+    key:         'inst:doctemplates',
+    label:       'Doc Templates',
+    description: 'Design loan agreements and facility letters, generate populated Word/PDF per deal',
+    category:    'institution',
+    path:        '/doc-templates',
+    iconKey:     'FileType2',
+    shortcut:    'J',
+  },
+  {
     key:         'inst:dual_control',
     label:       'Dual Control',
     description: 'Four-eyes approval queue for internal actions (groups, users, settings)',
@@ -114,15 +123,6 @@ const INSTITUTION_MODULES: PortalModule[] = [
     path:        '/benefits',
     iconKey:     'Gift',
     shortcut:    'F',
-  },
-  {
-    key:         'inst:documents',
-    label:       'Documents',
-    description: 'Upload compliance documents required to bid',
-    category:    'institution',
-    path:        '/documents',
-    iconKey:     'FolderCheck',
-    shortcut:    'O',
   },
   {
     key:         'inst:analytics',
@@ -288,6 +288,36 @@ export function allowedModules(
     return list // fallback: unknown user_type gets everything (shouldn't happen)
   }
   return list.filter(m => permissions.includes(m.key))
+}
+
+// ─── Institution-level entitlement (pricing) ──────────────────
+// Maps a nav module key → the short key stored in
+// institution.institution.modules (jsonb array), set by Ficium admin
+// per the institution's pricing plan. This is a licensing gate — separate
+// from allowedModules() above, which is per-user RBAC within a group.
+// Modules not listed here (dashboard, settings, team, etc.) aren't priced
+// per-module and are always shown once RBAC allows them.
+export const MODULE_ENTITLEMENT_KEY: Record<string, string> = {
+  'inst:marketplace': 'marketplace',
+  'inst:pipeline':     'pipeline',
+  'inst:doctemplates': 'inst:doctemplates',
+}
+
+/**
+ * Filter a module list further by institution-level entitlement.
+ * A module with an entry in MODULE_ENTITLEMENT_KEY is hidden unless its
+ * mapped short key is present in `institutionModules`. Modules with no
+ * entry are unaffected (pass through).
+ */
+export function filterByEntitlement(
+  list: PortalModule[],
+  institutionModules: string[],
+): PortalModule[] {
+  return list.filter(m => {
+    const entitlementKey = MODULE_ENTITLEMENT_KEY[m.key]
+    if (!entitlementKey) return true
+    return institutionModules.includes(entitlementKey)
+  })
 }
 
 // ─── System group seeds ───────────────────────────────────────

@@ -41,8 +41,10 @@ const PipelineDetail         = lazy(() => import('../institution/pipeline/pages/
 const InstitutionApprovals   = lazy(() => import('../institution/approvals/pages/InstitutionApprovals'))
 const ApprovalChainsInbox    = lazy(() => import('../institution/approval-chains/pages/ApprovalChainsInbox'))
 const EsignEnvelopes         = lazy(() => import('../institution/esign/pages/EsignEnvelopes'))
+const DocTemplates           = lazy(() => import('../institution/doc-templates/pages/DocTemplates'))
 const SignCeremony           = lazy(() => import('../public/esign/pages/SignCeremony'))
 const InstitutionProducts    = lazy(() => import('../institution/products/pages/InstitutionProducts'))
+const InstitutionBenefits    = lazy(() => import('../institution/benefits/pages/InstitutionBenefits'))
 const InstitutionAudit       = lazy(() => import('../institution/audit/pages/InstitutionAudit'))
 const InstitutionSettings    = lazy(() => import('../institution/settings/pages/InstitutionSettings'))
 const InstitutionUsers       = lazy(() => import('../institution/team/pages/InstitutionUsers'))
@@ -112,6 +114,8 @@ function S({ children }: { children: ReactNode }) {
 
 // ─── Dashboard router — resolves correct dashboard by user type
 import { useMyGroup } from '@/admin/hooks/useAdmin'
+import { useMyInstitution } from '@/institution/hooks/useInstitution'
+import { MODULE_ENTITLEMENT_KEY } from '@/shared/lib/modules'
 
 const InstitutionAdminDashboard = lazy(() => import('../institution/dashboard/pages/InstitutionAdminDashboard'))
 
@@ -131,13 +135,20 @@ function DashboardRouter() {
 // If not, redirects to /dashboard silently.
 
 function RequireModule({ moduleKey, children }: { moduleKey: string; children: ReactNode }) {
-  const { data: myGroup, isLoading } = useMyGroup()
-  if (isLoading) return <PageLoader />
+  const { data: myGroup, isLoading: groupLoading } = useMyGroup()
+  const category         = moduleKey.startsWith('admin:') ? 'admin' : 'institution'
+  const entitlementKey   = MODULE_ENTITLEMENT_KEY[moduleKey]
+  const { data: myInstitution, isLoading: instLoading } = useMyInstitution({
+    enabled: category === 'institution' && !!entitlementKey,
+  })
+  if (groupLoading || (category === 'institution' && !!entitlementKey && instLoading)) return <PageLoader />
   const permissions = myGroup?.module_permissions ?? []
-  const category    = moduleKey.startsWith('admin:') ? 'admin' : 'institution'
   const isWildcard  = permissions.includes('*') && myGroup?.user_type === category
-  const allowed     = isWildcard || permissions.includes(moduleKey)
-  if (!allowed) return <Navigate to="/dashboard" replace />
+  const rbacAllowed = isWildcard || permissions.includes(moduleKey)
+  // Institution-level pricing entitlement — separate from RBAC above.
+  // A licensed module can still be off for this institution's plan.
+  const entitled    = !entitlementKey || (myInstitution?.modules ?? []).includes(entitlementKey)
+  if (!rbacAllowed || !entitled) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
@@ -173,7 +184,9 @@ export const router = createBrowserRouter([
           { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
           { path: '/approval-chains', element: <RequireModule moduleKey="inst:approvals"><S><ApprovalChainsInbox /></S></RequireModule> },
           { path: '/esign',        element: <RequireModule moduleKey="inst:esign"><S><EsignEnvelopes /></S></RequireModule> },
+          { path: '/doc-templates',element: <RequireModule moduleKey="inst:doctemplates"><S><DocTemplates /></S></RequireModule> },
           { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
+          { path: '/benefits',     element: <RequireModule moduleKey="inst:benefits"><S><InstitutionBenefits /></S></RequireModule> },
           { path: '/audit',        element: <RequireModule moduleKey="inst:audit"><S><InstitutionAudit /></S></RequireModule> },
           { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },
           { path: '/team/users',        element: <RequireModule moduleKey="inst:team"><S><InstitutionUsers /></S></RequireModule> },

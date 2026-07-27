@@ -34,11 +34,12 @@ import {
   Package, ScrollText, Settings,
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
-  BarChart2, Gift, FolderCheck, GitBranch, PenLine,
+  BarChart2, Gift, FolderCheck, GitBranch, PenLine, FileType2,
 } from 'lucide-react'
 import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '@/shared/lib/ficiumAuth'
 import { useMyGroup } from '@/admin/hooks/useAdmin'
-import { MODULE_CATALOGUE, allowedModules, type PortalModule } from '@/shared/lib/modules'
+import { MODULE_CATALOGUE, allowedModules, filterByEntitlement, type PortalModule } from '@/shared/lib/modules'
+import { useMyInstitution } from '@/institution/hooks/useInstitution'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
 import { usePortalUnreadCount } from '@/institution/notifications/hooks/usePortalNotifications'
 
@@ -51,7 +52,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Store, FileText, Clock, Package,
   ScrollText, Settings, Shield, Users,
   GitMerge, Radio, MonitorDot, Building2,
-  BarChart2, Bell, Gift, FolderCheck, GitBranch, PenLine,
+  BarChart2, Bell, Gift, FolderCheck, GitBranch, PenLine, FileType2,
 }
 function resolveIcon(key: string): React.ElementType {
   return ICON_MAP[key] ?? LayoutDashboard
@@ -138,10 +139,10 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
 // see Dashboard twice.
 const NAV_SECTIONS = [
   { label: 'Home',        keys: ['inst:dashboard', 'admin:dashboard'] },
-  { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval'] },
+  { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval', 'inst:approvals'] },
   { label: 'Insights',    keys: ['inst:analytics', 'inst:notifications'] },
-  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:settings'] },
-  { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit'] },
+  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:settings', 'inst:benefits'] },
+  { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit', 'inst:esign', 'inst:doctemplates'] },
   { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
   { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
 ]
@@ -193,6 +194,14 @@ function Drawer({
       return { ...s, modules: mods }
     })
     .filter(s => s.modules.length > 0)
+
+  // Catch-all: any visible module not covered by a named section above
+  // (e.g. a new module added to the catalogue before NAV_SECTIONS is
+  // updated) still renders here instead of silently vanishing from nav.
+  const namedKeys = new Set(NAV_SECTIONS.flatMap(s => s.keys))
+  const seenPaths = new Set(sections.flatMap(s => s.modules.map(m => m.path)))
+  const other = visibleModules.filter(m => !namedKeys.has(m.key) && !seenPaths.has(m.path))
+  if (other.length > 0) sections.push({ label: 'Other', keys: [], modules: other })
 
   const empty = sections.length === 0
 
@@ -504,9 +513,16 @@ export default function PortalShell() {
   const { idleWarning, reset: resetIdle } = useSessionGuard(handleSignOut)
   const connStatus = useConnStatus()
 
+  // Institution-level module entitlement (pricing plan) — only relevant
+  // for institution users; admin users have no institution_id.
+  const { data: myInstitution } = useMyInstitution({ enabled: myGroup?.user_type === 'institution' })
+
   // Keyboard nav
-  const permissions    = myGroup?.module_permissions ?? []
-  const visibleModules = allowedModules(MODULE_CATALOGUE, permissions, myGroup?.user_type)
+  const permissions     = myGroup?.module_permissions ?? []
+  const rbacModules     = allowedModules(MODULE_CATALOGUE, permissions, myGroup?.user_type)
+  const visibleModules  = myGroup?.user_type === 'institution'
+    ? filterByEntitlement(rbacModules, myInstitution?.modules ?? [])
+    : rbacModules
 
   useEffect(() => {
     const routes = Object.fromEntries(
