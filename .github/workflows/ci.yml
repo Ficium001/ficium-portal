@@ -48,8 +48,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Dependency audit (high+ severity)
-        run: npm audit --audit-level=high
+      - name: Dependency audit (high+ severity, reviewed exceptions in scripts/audit-gate.mjs)
+        run: node scripts/audit-gate.mjs
 
       - name: Typecheck (app)
         run: npx tsc --noEmit -p tsconfig.app.json
