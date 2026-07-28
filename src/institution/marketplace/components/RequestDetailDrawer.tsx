@@ -1,5 +1,5 @@
 import { useState }        from "react";
-import { X, FileText, MessageSquare, Download, User, DollarSign, TrendingUp, Zap, Briefcase, AlertCircle } from "lucide-react";
+import { X, FileText, MessageSquare, Download, User, DollarSign, TrendingUp, Zap, Briefcase, AlertCircle, Layers } from "lucide-react";
 import institutionSupabase from "@/institution/lib/institutionSupabase";
 import RequestChat         from "@/shared/components/RequestChat";
 import type { MarketplaceRequest, LoanRecord } from "@/institution/types/institution";
@@ -56,8 +56,17 @@ const accentTier  = (t?: string | null) => !t ? undefined : t === "A" ? "green" 
 const accentLTV   = (v?: number | null) => !v ? undefined : v < 80 ? "green" : v < 90 ? "amber" : "red";
 const accentYears = (v?: number | null) => !v ? undefined : v >= 3 ? "green" : v >= 1 ? "amber" : "red";
 
+// Repayment-capacity fields (DSR, existing obligations, collateral) only make
+// sense for credit products. Showing them for a deposit or investment request
+// is meaningless at best and reads as an unexplained credit check at worst -
+// branch the drawer's sections on product category rather than rendering the
+// same loan-shaped template for every product type.
+const CREDIT_PRODUCT_CODES = new Set([
+  "home_loan", "personal_loan", "vehicle_loan", "business_loan", "education_loan", "credit_card",
+]);
+
 // ── PDF Report Generator ──────────────────────────────────────────────────────
-function buildPDFHtml(f: ReturnType<typeof useFields>, request: MarketplaceRequest, markerNote: string, approverNote: string): string {
+function buildPDFHtml(f: ReturnType<typeof useFields>, request: MarketplaceRequest, markerNote: string, approverNote: string, isCredit: boolean): string {
   const genDate = new Date().toLocaleString("en-MU", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
   const c = {
@@ -214,11 +223,11 @@ function buildPDFHtml(f: ReturnType<typeof useFields>, request: MarketplaceReque
         statCard("Net Worth", f.netWorthBand ? `${f.netWorthBand} MUR` : "—")
       )}
       <div style="height:10px;"></div>
-      ${grid(4,
+      ${grid(isCredit ? 4 : 2,
         statCard("Credit Score", f.healthScore != null ? `${f.healthScore}/100` : "—", scoreColor(f.healthScore)) +
         statCard("Affordability", f.affordScore != null ? `${f.affordScore}/100` : "—", scoreColor(f.affordScore)) +
-        statCard("DSR Current", f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—", dsrColor(f.dsrCurrent)) +
-        statCard("DSR Post-Loan", f.dsrPost != null ? `${f.dsrPost}%` : "—", dsrColor(f.dsrPost))
+        (isCredit ? statCard("DSR Current", f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—", dsrColor(f.dsrCurrent)) : "") +
+        (isCredit ? statCard("DSR Post-Loan", f.dsrPost != null ? `${f.dsrPost}%` : "—", dsrColor(f.dsrPost)) : "")
       )}
       <div style="margin-top:8px;font-size:10px;color:${c.muted};">Client identity not disclosed at this stage.</div>
     `)}
@@ -232,17 +241,17 @@ function buildPDFHtml(f: ReturnType<typeof useFields>, request: MarketplaceReque
       statCard("Gross Monthly Income", f.grossIncome != null ? fmt(f.grossIncome) : "—", c.ink, 4, true)
     ))}
 
-    <!-- Existing Obligations -->
-    ${section("Existing Obligations", `
+    <!-- Existing Obligations - credit products only -->
+    ${isCredit ? section("Existing Obligations", `
       ${grid(3,
         statCard("Monthly Repayment",    f.existingRepayment != null ? fmt(f.existingRepayment) : "—") +
         statCard("Total Outstanding",    f.existingBalance != null ? fmt(f.existingBalance) : "—") +
         statCard("Number of Loans",      f.loans.length > 0 ? `${f.loans.length}` : "—")
       )}
       ${loanTableHtml}
-    `)}
+    `) : ""}
 
-    ${collateralHtml}
+    ${isCredit ? collateralHtml : ""}
     ${notesHtml}
 
     <!-- Footer -->
@@ -265,10 +274,11 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
   const [showDecline,     setShowDecline]     = useState(false);
   const [declineReason,   setDeclineReason]   = useState("");
   const f        = useFields(request);
+  const isCredit = CREDIT_PRODUCT_CODES.has(request.product_code ?? "");
   const isUrgent = new Date(request.bid_window_closes_at).getTime() - Date.now() < 60 * 60 * 1000;
 
   const downloadPDF = () => {
-    const html = buildPDFHtml(f, request, markerComment, approverComment);
+    const html = buildPDFHtml(f, request, markerComment, approverComment, isCredit);
     const blob = new Blob([html], { type: "text/html" });
     const url  = URL.createObjectURL(blob);
     window.open(url, "_blank");
@@ -329,6 +339,30 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                 </div>
               )}
 
+              {/* Portfolio breakdown — mixed_portfolio (basket) requests only */}
+              {request.allocations && request.allocations.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <SectionLabel icon={<Layers className="w-3.5 h-3.5" />} text="Requested portfolio breakdown" />
+                    <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                      request.allocation_mode === "institution_decides" ? "bg-amber-50 text-amber-700" : "bg-ficium/10 text-ficium"
+                    }`}>
+                      {request.allocation_mode === "institution_decides" ? "Client left split to you" : "Client specified this split"}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {request.allocations.map(a => (
+                      <div key={a.product_type} className="flex items-center justify-between px-4 py-2.5 bg-cream rounded-xl">
+                        <span className="text-[14px] font-medium text-ink">{a.product_label}</span>
+                        <span className="text-[14px] font-semibold text-ink">
+                          {a.amount != null ? fmt(a.amount) : <span className="text-muted font-normal">Not specified — propose in your bid</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 3-col main */}
               <div className="grid grid-cols-3 gap-5">
                 {/* Risk Profile */}
@@ -344,10 +378,14 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                     <ProfileStat label="Net worth" value={f.netWorthBand ? `${f.netWorthBand} MUR` : "—"} />
                     <ProfileStat label="Credit score" value={f.healthScore != null ? `${f.healthScore}/100` : "—"} accent={accentScore(f.healthScore)} />
                     <ProfileStat label="Affordability" value={f.affordScore != null ? `${f.affordScore}/100` : "—"} accent={accentScore(f.affordScore)} />
-                    <ProfileStat label="DSR current" value={f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—"} accent={accentDSR(f.dsrCurrent)} />
-                    <ProfileStat label="DSR post-loan" value={f.dsrPost != null ? `${f.dsrPost}%` : "—"} accent={accentDSR(f.dsrPost)} />
+                    {isCredit && (
+                      <>
+                        <ProfileStat label="DSR current" value={f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—"} accent={accentDSR(f.dsrCurrent)} />
+                        <ProfileStat label="DSR post-loan" value={f.dsrPost != null ? `${f.dsrPost}%` : "—"} accent={accentDSR(f.dsrPost)} />
+                      </>
+                    )}
                   </div>
-                  {(f.collateralType && f.collateralType !== "none") && (
+                  {isCredit && (f.collateralType && f.collateralType !== "none") && (
                     <div className="pt-2 border-t border-ink/6 grid grid-cols-2 gap-2">
                       <ProfileStat label="Collateral" value={[fmtType(f.collateralType), f.collateralSub].filter(Boolean).join(" / ") || "—"} />
                       <ProfileStat label="LTV" value={f.ltvPct != null ? `${f.ltvPct}%` : "—"} accent={accentLTV(f.ltvPct)} />
@@ -386,39 +424,41 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                 </div>
               </div>
 
-              {/* Existing Obligations */}
-              <div>
-                <SectionLabel icon={<AlertCircle className="w-3.5 h-3.5" />} text="Existing Obligations" />
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <ProfileStat label="Monthly repayment"       value={f.existingRepayment != null ? fmt(f.existingRepayment) : "—"} />
-                  <ProfileStat label="Total outstanding balance" value={f.existingBalance != null ? fmt(f.existingBalance) : "—"} />
-                  <ProfileStat label="Number of existing loans" value={f.loans.length > 0 ? `${f.loans.length}` : "—"} />
-                </div>
-                {f.loans.length > 0 && (
-                  <div className="rounded-xl overflow-hidden border border-ink/8">
-                    <table className="w-full text-[12px]">
-                      <thead>
-                        <tr className="bg-ink/3 border-b border-ink/6">
-                          {["Type","Outstanding","Monthly","Bank","Months left"].map((h, i) => (
-                            <th key={h} className={`py-2.5 px-4 font-bold text-muted uppercase tracking-wide text-[10px] ${i > 0 ? "text-right" : "text-left"} last:text-right`}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {f.loans.map((loan, i) => (
-                          <tr key={i} className="border-b border-ink/4 last:border-0">
-                            <td className="px-4 py-2.5 font-semibold text-ink">{fmtType(loan.type)}</td>
-                            <td className="px-4 py-2.5 text-right text-ink">{fmt(loan.outstanding)}</td>
-                            <td className="px-4 py-2.5 text-right text-ink">{fmt(loan.monthly)}</td>
-                            <td className="px-4 py-2.5 text-muted">{loan.bank ?? "—"}</td>
-                            <td className="px-4 py-2.5 text-right text-muted">{loan.months_left ?? "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              {/* Existing Obligations - credit products only, not deposits/investments */}
+              {isCredit && (
+                <div>
+                  <SectionLabel icon={<AlertCircle className="w-3.5 h-3.5" />} text="Existing Obligations" />
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <ProfileStat label="Monthly repayment"       value={f.existingRepayment != null ? fmt(f.existingRepayment) : "—"} />
+                    <ProfileStat label="Total outstanding balance" value={f.existingBalance != null ? fmt(f.existingBalance) : "—"} />
+                    <ProfileStat label="Number of existing loans" value={f.loans.length > 0 ? `${f.loans.length}` : "—"} />
                   </div>
-                )}
-              </div>
+                  {f.loans.length > 0 && (
+                    <div className="rounded-xl overflow-hidden border border-ink/8">
+                      <table className="w-full text-[12px]">
+                        <thead>
+                          <tr className="bg-ink/3 border-b border-ink/6">
+                            {["Type","Outstanding","Monthly","Bank","Months left"].map((h, i) => (
+                              <th key={h} className={`py-2.5 px-4 font-bold text-muted uppercase tracking-wide text-[10px] ${i > 0 ? "text-right" : "text-left"} last:text-right`}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {f.loans.map((loan, i) => (
+                            <tr key={i} className="border-b border-ink/4 last:border-0">
+                              <td className="px-4 py-2.5 font-semibold text-ink">{fmtType(loan.type)}</td>
+                              <td className="px-4 py-2.5 text-right text-ink">{fmt(loan.outstanding)}</td>
+                              <td className="px-4 py-2.5 text-right text-ink">{fmt(loan.monthly)}</td>
+                              <td className="px-4 py-2.5 text-muted">{loan.bank ?? "—"}</td>
+                              <td className="px-4 py-2.5 text-right text-muted">{loan.months_left ?? "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Comments */}
               <div className="grid grid-cols-2 gap-4 pt-1">
