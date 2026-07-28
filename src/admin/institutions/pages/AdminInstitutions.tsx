@@ -465,13 +465,13 @@ export default function AdminInstitutions() {
   const pendingDocs = docs.filter(d => d.status === 'pending').length
 
   return (
-    <div>
+    <main className="p-6 lg:p-8 max-w-[1440px] mx-auto">
       <ASectionHeader
         title="Institutions"
         subtitle="Manage institution onboarding and compliance documents"
       />
       <TabBar active={tab} onChange={setTab} docPending={pendingDocs} />
       {tab === 'institutions' ? <InstitutionsTab /> : <DocumentsTab />}
-    </div>
+    </main>
   )
 }

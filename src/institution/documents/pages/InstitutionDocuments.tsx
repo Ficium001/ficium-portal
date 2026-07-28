@@ -213,7 +213,7 @@ export default function InstitutionDocuments() {
   }
 
   return (
-    <div className="space-y-6">
+    <main className="p-6 lg:p-8 max-w-[900px] mx-auto space-y-6">
       <SectionHeader
         title="Compliance documents"
         subtitle="Upload required regulatory documents. All mandatory documents must be approved before your institution can submit bids."
@@ -274,6 +274,6 @@ export default function InstitutionDocuments() {
           )}
         </>
       )}
-    </div>
+    </main>
   )
 }

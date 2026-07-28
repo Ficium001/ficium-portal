@@ -33,7 +33,7 @@ export default function ApprovalChainsInbox() {
   const [selected, setSelected] = useState<ApprovalInboxItem | null>(null)
 
   return (
-    <div className="max-w-3xl">
+    <main className="p-6 lg:p-8 max-w-3xl mx-auto">
       <SectionHeader
         title="Approval chains"
         subtitle="Committee votes, secured-lending chains, and other multi-stage approvals awaiting your decision."
@@ -82,6 +82,6 @@ export default function ApprovalChainsInbox() {
       </div>
 
       {selected && <DecisionDrawer item={selected} onClose={() => setSelected(null)} />}
-    </div>
+    </main>
   )
 }

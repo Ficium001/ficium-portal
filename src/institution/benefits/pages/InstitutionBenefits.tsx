@@ -330,7 +330,7 @@ export default function InstitutionBenefits() {
   const closeForm  = () => { setShowForm(false); setEditing(null); setFormError(null) }
 
   return (
-    <div className="space-y-6">
+    <main className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
       <SectionHeader
         title="Benefits"
         subtitle="Define perks shown to clients on your bid cards. Guaranteed benefits require checker approval."
@@ -391,6 +391,6 @@ export default function InstitutionBenefits() {
           onClose={closeForm}
         />
       </Modal>
-    </div>
+    </main>
   )
 }

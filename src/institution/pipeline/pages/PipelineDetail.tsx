@@ -20,10 +20,10 @@ export function PipelineDetail() {
   const { data: pipeline, isLoading } = usePipeline(id!);
 
   if (isLoading) return (
-    <div className="px-4 py-6"><div className="space-y-3">{Array.from({length:3}).map((_,i)=><SkeletonCard key={i}/>)}</div></div>
+    <main className="p-6 lg:p-8 max-w-[1100px] mx-auto"><div className="space-y-3">{Array.from({length:3}).map((_,i)=><SkeletonCard key={i}/>)}</div></main>
   );
   if (!pipeline) return (
-    <div className="px-4 py-16 text-center text-muted">Pipeline not found.</div>
+    <main className="p-6 lg:p-8 max-w-[1100px] mx-auto py-16 text-center text-muted">Pipeline not found.</main>
   );
 
   const activeStageId = pipeline.stages.find(
@@ -31,7 +31,7 @@ export function PipelineDetail() {
   )?.id;
 
   return (
-    <div className="px-4 py-6 space-y-5">
+    <main className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-5">
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="text-muted hover:text-ink transition-colors">
           <ChevronLeft size={20} />
@@ -84,6 +84,6 @@ export function PipelineDetail() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
