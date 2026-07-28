@@ -11,7 +11,7 @@ export function InstitutionPipelines() {
   const { data: pipelines = [], isLoading } = usePipelines();
 
   return (
-    <div className="px-4 py-6 space-y-4">
+    <main className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-4">
       <div>
         <h1 className="font-display font-bold text-[22px] text-ink">Loan Pipelines</h1>
         <p className="text-[13px] text-muted mt-0.5">Active post-acceptance workflows</p>
@@ -31,6 +31,6 @@ export function InstitutionPipelines() {
           ))}
         </div>
       )}
-    </div>
+    </main>
   );
 }

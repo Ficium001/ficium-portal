@@ -476,7 +476,7 @@ export default function DocTemplates() {
   const visible = data?.filter(t => matches(t, filter)) ?? []
 
   return (
-    <div className="max-w-3xl">
+    <main className="p-6 lg:p-8 max-w-3xl mx-auto">
       <SectionHeader
         title="Document templates"
         subtitle="Author agreements in Word with merge fields, publish them through dual control, and generate populated documents per deal."
@@ -544,6 +544,6 @@ export default function DocTemplates() {
       {creating && <CreateTemplateModal onClose={() => setCreating(false)} />}
       {detailFor && <TemplateDetailModal template={detailFor} onClose={() => setDetailFor(null)} />}
       {generateFor && <GenerateModal template={generateFor} onClose={() => setGenerateFor(null)} />}
-    </div>
+    </main>
   )
 }

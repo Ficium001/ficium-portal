@@ -77,7 +77,7 @@ export default function EsignEnvelopes() {
   const visible = data?.filter(e => matches(e, filter)) ?? []
 
   return (
-    <div className="max-w-3xl">
+    <main className="p-6 lg:p-8 max-w-3xl mx-auto">
       <SectionHeader
         title="E-signatures"
         subtitle="Send documents for signature, track progress, and download sealed originals with their audit certificate."
@@ -148,6 +148,6 @@ export default function EsignEnvelopes() {
 
       {creating && <EnvelopeCreateModal onClose={() => setCreating(false)} />}
       {trailFor && <EnvelopeTimeline envelope={trailFor} onClose={() => setTrailFor(null)} />}
-    </div>
+    </main>
   )
 }
