@@ -71,6 +71,11 @@ let _refreshInFlight: Promise<string | null> | null = null
 const REFRESH_COOLDOWN_MS = 10_000
 let _refreshFailedAt: number | null = null
 
+/** Test-only: module state has no other reset hook between tests. */
+export function __resetRefreshCircuitForTests(): void {
+  _refreshFailedAt = null
+}
+
 async function doRefresh(): Promise<string | null> {
   try {
     const res = await fetch(`${AUTH_URL}/auth/refresh`, {
@@ -79,6 +84,15 @@ async function doRefresh(): Promise<string | null> {
     })
     if (!res.ok) {
       _refreshFailedAt = Date.now()
+      // Refresh cookie is dead - the access token still sitting in
+      // sessionStorage is now stale. Leaving it there makes hasSession()
+      // lie (it only checks presence, not validity), which sends the
+      // login page's "already signed in" redirect straight back to a
+      // dashboard that will fail auth again - an infinite bounce between
+      // /login and /dashboard. Clear it here, at the source of truth for
+      // "did the refresh actually work", rather than in every consumer.
+      sessionStorage.removeItem('ficium_at')
+      sessionStorage.removeItem('ficium_at_exp')
       return null
     }
     const data = await res.json()
