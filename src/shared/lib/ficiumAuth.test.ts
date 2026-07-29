@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // ficiumAuth reads from sessionStorage; jsdom provides it but we reset between tests.
-import { getTokenPayload, hasSession, getAccessToken, refreshToken } from "./ficiumAuth";
+import { getTokenPayload, hasSession, getAccessToken, refreshToken, __resetRefreshCircuitForTests } from "./ficiumAuth";
 
 /** Build a fake unsigned JWT with the given payload (base64url, no real signature). */
 function makeJwt(payload: Record<string, unknown>): string {
@@ -64,6 +64,28 @@ describe("refreshToken concurrency + circuit breaker", () => {
     sessionStorage.clear();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    __resetRefreshCircuitForTests();
+  });
+
+  it("clears the stale access token on a failed refresh, so hasSession() stops lying", async () => {
+    sessionStorage.setItem("ficium_at", "stale-tok");
+    sessionStorage.setItem("ficium_at_exp", String(Date.now() - 1000)); // already expired
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 401, json: async () => ({}) }) as Response),
+    );
+
+    expect(hasSession()).toBe(true); // stale token still present before refresh runs
+
+    const result = await refreshToken();
+
+    expect(result).toBeNull();
+    // This is the actual bug fix: without it, hasSession() stays true on a dead
+    // session, which is what sent the login page's "already signed in" redirect
+    // straight back to a dashboard that fails auth again - the infinite
+    // /login <-> /dashboard bounce reported in production.
+    expect(hasSession()).toBe(false);
+    expect(getAccessToken()).toBeNull();
   });
 
   it("dedups concurrent callers into a single network request", async () => {
