@@ -390,7 +390,7 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
   const { data: groups = [],  isLoading } = useInstitutionGroups();
   const { data: pending = [] }            = usePendingGroupActions();
   const { data: grantable = [] }          = useGrantableModules();
-  const { data: licensedProducts = [] }   = useLicensedProducts();
+  const { data: licensedProducts = [], isLoading: productsLoading }   = useLicensedProducts();
   const licensedProductIds = useMemo(() => licensedProducts.map((p) => p.id), [licensedProducts]);
   const { data: grantableProducts = [] }  = useGrantableProducts(licensedProductIds);
 
@@ -544,7 +544,10 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
               const pendingCat = pendingByGroupId.get(g.id);
               const productLabels = (g.product_scope ?? []).length === 0
                 ? null
-                : g.product_scope.map((id) => licensedProducts.find((p) => p.id === id)?.label ?? id);
+                : g.product_scope.map((id) => ({
+                    id,
+                    label: licensedProducts.find((p) => p.id === id)?.label ?? "Unknown product",
+                  }));
               return (
                 <DataRow key={g.id}>
                   <Td>
@@ -583,9 +586,20 @@ export default function GroupsTab({ isAdmin }: { isAdmin: boolean }) {
                     <div className="flex flex-wrap gap-1 max-w-[220px]">
                       {productLabels === null ? (
                         <span className="text-[11px] text-muted">All licensed products</span>
+                      ) : productsLoading ? (
+                        Array.from({ length: Math.min(productLabels.length, 3) }).map((_, i) => (
+                          <span key={i} className="inline-block h-[19px] w-16 rounded-full bg-ink/6 animate-pulse" />
+                        ))
                       ) : (
-                        productLabels.map((label) => (
-                          <span key={label} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-ficium/6 text-ficium border border-ficium/15">
+                        productLabels.map(({ id, label }) => (
+                          <span
+                            key={id}
+                            className={
+                              label === "Unknown product"
+                                ? "text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"
+                                : "text-[10px] font-medium px-2 py-0.5 rounded-full bg-ficium/6 text-ficium border border-ficium/15"
+                            }
+                          >
                             {label}
                           </span>
                         ))
