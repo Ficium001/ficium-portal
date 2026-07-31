@@ -14,7 +14,8 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
 import { useCreateEnvelope } from '@/institution/esign/hooks/useEsign'
-import { useEntityGenerations } from '@/institution/doc-templates/hooks/useDocTemplates'
+import { useEntityGenerations, useDocTemplates } from '@/institution/doc-templates/hooks/useDocTemplates'
+import { SUBJECT_LOAN_PIPELINE, esignEntityTypeForCategory } from '@/shared/lib/entities'
 import { useDocuments, useInstitutionUsers } from '@/institution/hooks/useInstitution'
 import { PortalApiError } from '@/shared/lib/portalApi'
 import { Modal, Btn, FormField, InlineAlert, inputCls } from '@/institution/components/primitives'
@@ -43,6 +44,7 @@ export function EnvelopeCreateModal({
   const create = useCreateEnvelope()
   const { data: docs }  = useDocuments()
   const { data: users } = useInstitutionUsers()
+  const { data: allTemplates } = useDocTemplates()
 
   const [entityType, setEntityType]   = useState<EntityType>('offer_letter')
   const [entityId, setEntityId]       = useState(presetEntityId ?? '')
@@ -59,7 +61,7 @@ export function EnvelopeCreateModal({
   // picker only offered the compliance document library (`/documents`), so a
   // loan agreement generated for this very deal never appeared and the operator
   // had to paste its storage path by hand.
-  const { data: generations } = useEntityGenerations('loan_pipeline', entityId.trim() || null)
+  const { data: generations } = useEntityGenerations(SUBJECT_LOAN_PIPELINE, entityId.trim() || null)
   const signableGenerations = (generations ?? []).filter(
     g => g.status === 'generated' && (g.output_pdf_path || g.output_docx_path),
   )
@@ -137,6 +139,11 @@ export function EnvelopeCreateModal({
                   g => (g.output_pdf_path ?? g.output_docx_path) === path,
                 )
                 setGenerationId(gen?.id ?? null)
+                // Derive the e-sign entity type from the source template's
+                // category, so the two vocabularies stay reconciled in one
+                // place instead of the operator guessing.
+                const tpl = gen && allTemplates?.find(t => t.id === gen.template_id)
+                if (tpl) setEntityType(esignEntityTypeForCategory(tpl.doc_category))
               }}
             >
               <option value="">Choose a document…</option>

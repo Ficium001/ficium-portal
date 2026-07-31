@@ -35,9 +35,8 @@ import type { EntityType } from '@/institution/types/approvalEngine'
  */
 export type DocumentSubject = 'loan_pipeline'
 
-export const DOCUMENT_SUBJECT_LABEL: Record<DocumentSubject, string> = {
-  loan_pipeline: 'Deal',
-}
+/** The deal subject, as a value — avoids re-typing the literal at call sites. */
+export const SUBJECT_LOAN_PIPELINE: DocumentSubject = 'loan_pipeline'
 
 /**
  * Best-fit e-sign entity type for a generated document's category.
@@ -47,7 +46,11 @@ export const DOCUMENT_SUBJECT_LABEL: Record<DocumentSubject, string> = {
  * here means the lossy step is visible and reviewable in one place — and when
  * the e-sign vocabulary is extended, only this map changes.
  */
-export function esignEntityTypeForCategory(category: DocCategory): EntityType {
+export type EsignDocumentEntityType = Extract<
+  EntityType, 'offer_letter' | 'investment_mandate' | 'custom'
+>
+
+export function esignEntityTypeForCategory(category: DocCategory): EsignDocumentEntityType {
   switch (category) {
     case 'facility_letter':
       return 'offer_letter'
