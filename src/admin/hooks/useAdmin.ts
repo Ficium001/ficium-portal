@@ -21,6 +21,7 @@ import type {
   ApproveInstitutionPayload, SuspendInstitutionPayload,
   AdminDoc,
 } from '@/admin/types/admin'
+import { poll30s, poll60s } from '@/shared/lib/polling'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query key registry
@@ -78,7 +79,8 @@ export function useAdminSessions(activeOnly = false) {
     queryFn:  async () => {
       return await portalApi.get<AdminSession[]>(`/admin/sessions?active_only=${activeOnly}`)
     },
-    refetchInterval: 30 * 1000,
+    refetchInterval: poll30s,
+    refetchOnWindowFocus: true,
     staleTime: 2 * 60 * 1000,
   })
 }
@@ -89,7 +91,8 @@ export function useDualControlActions(statusFilter = 'pending') {
     queryFn:  async () => {
       return await portalApi.get<DualControlAction[]>(`/admin/dual-control?status=${encodeURIComponent(statusFilter)}`)
     },
-    refetchInterval: 30 * 1000,
+    refetchInterval: poll30s,
+    refetchOnWindowFocus: true,
     staleTime: 2 * 60 * 1000,
   })
 }
@@ -136,7 +139,8 @@ export function useSystemMetrics() {
         { key: 'audit_fail_rate', label: 'Audit failure rate',   value: `${failRate}%`,      status: failRate > 10 ? 'critical' : failRate > 5 ? 'warn' : 'ok',     updated_at: now },
       ] as SystemMetric[]
     },
-    refetchInterval: 60 * 1000,
+    refetchInterval: poll60s,
+    refetchOnWindowFocus: true,
     staleTime: 2 * 60 * 1000,
   })
 }
