@@ -23,9 +23,10 @@ import {
 import { DOC_CATEGORY_LABEL } from '@/institution/doc-templates/types/docTemplates'
 import { EnvelopeCreateModal } from '@/institution/esign/components/EnvelopeCreateModal'
 import { PortalApiError } from '@/shared/lib/portalApi'
+import type { DocumentSubject } from '@/shared/lib/entities'
 import type { DocGeneration } from '@/institution/doc-templates/types/docTemplates'
 
-const SUBJECT = 'loan_pipeline'
+const SUBJECT: DocumentSubject = 'loan_pipeline'
 
 function GenerateModal({
   pipelineId, onClose,

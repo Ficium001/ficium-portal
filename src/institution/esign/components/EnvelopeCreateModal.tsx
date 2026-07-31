@@ -14,14 +14,14 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
 import { useCreateEnvelope } from '@/institution/esign/hooks/useEsign'
-import { useEntityGenerations } from '@/institution/doc-templates/hooks/useDocTemplates'
+import { useEntityGenerations, useDocTemplates } from '@/institution/doc-templates/hooks/useDocTemplates'
+import { esignEntityTypeForCategory } from '@/shared/lib/entities'
+import type { EsignEntityType } from '@/shared/lib/entities'
 import { useDocuments, useInstitutionUsers } from '@/institution/hooks/useInstitution'
 import { PortalApiError } from '@/shared/lib/portalApi'
 import { Modal, Btn, FormField, InlineAlert, inputCls } from '@/institution/components/primitives'
 
-type EntityType = 'offer_letter' | 'investment_mandate' | 'custom'
-
-const ENTITY_LABELS: { value: EntityType; label: string }[] = [
+const ENTITY_LABELS: { value: EsignEntityType; label: string }[] = [
   { value: 'offer_letter',       label: 'Offer letter' },
   { value: 'investment_mandate', label: 'Investment mandate' },
   { value: 'custom',             label: 'Other document' },
@@ -44,7 +44,7 @@ export function EnvelopeCreateModal({
   const { data: docs }  = useDocuments()
   const { data: users } = useInstitutionUsers()
 
-  const [entityType, setEntityType]   = useState<EntityType>('offer_letter')
+  const [entityType, setEntityType]   = useState<EsignEntityType>('offer_letter')
   const [entityId, setEntityId]       = useState(presetEntityId ?? '')
   const [title, setTitle]             = useState(presetTitle ?? '')
   const [documentPath, setDocumentPath] = useState('')
@@ -60,9 +60,24 @@ export function EnvelopeCreateModal({
   // loan agreement generated for this very deal never appeared and the operator
   // had to paste its storage path by hand.
   const { data: generations } = useEntityGenerations('loan_pipeline', entityId.trim() || null)
+  const { data: allTemplates } = useDocTemplates()
   const signableGenerations = (generations ?? []).filter(
     g => g.status === 'generated' && (g.output_pdf_path || g.output_docx_path),
   )
+
+  /**
+   * Entity type implied by a generated document's template category.
+   *
+   * Without this the operator picks a generated loan agreement and then picks
+   * "Document type" separately, so the two can disagree and the envelope is
+   * filed under the wrong kind. When the document came from a template we know
+   * its category, so derive rather than ask.
+   */
+  const applyGenerationEntityType = (generationId: string) => {
+    const gen = signableGenerations.find(g => g.id === generationId)
+    const tpl = allTemplates?.find(t => t.id === gen?.template_id)
+    if (tpl) setEntityType(esignEntityTypeForCategory(tpl.doc_category))
+  }
 
   const countersigner = users?.find(u => u.id === counterRef)
 
@@ -105,7 +120,7 @@ export function EnvelopeCreateModal({
             <select
               className={inputCls}
               value={entityType}
-              onChange={e => setEntityType(e.target.value as EntityType)}
+              onChange={e => setEntityType(e.target.value as EsignEntityType)}
             >
               {ENTITY_LABELS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -137,6 +152,7 @@ export function EnvelopeCreateModal({
                   g => (g.output_pdf_path ?? g.output_docx_path) === path,
                 )
                 setGenerationId(gen?.id ?? null)
+                if (gen) applyGenerationEntityType(gen.id)
               }}
             >
               <option value="">Choose a document…</option>

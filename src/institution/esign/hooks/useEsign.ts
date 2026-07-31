@@ -14,15 +14,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { portalApi } from '@/shared/lib/portalApi'
 import { poll30s } from '@/shared/lib/polling'
-import type { EsignEnvelope, EsignEventTrail, EntityType } from '@/institution/types/approvalEngine'
+import type { EsignEnvelope, EsignEventTrail } from '@/institution/types/approvalEngine'
+import type { EsignEntityType } from '@/shared/lib/entities'
 
 export const ESQK = {
   envelopes: ['esign', 'envelopes'] as const,
   events:    (id: string) => ['esign', 'events', id] as const,
 } as const
 
-/** Entity types an envelope can be raised against (e-sign's own vocabulary). */
-export type EsignEntityType = Extract<EntityType, 'offer_letter' | 'investment_mandate' | 'custom'>
+export type { EsignEntityType }
 
 export interface CreateEnvelopeBody {
   entity_type: EsignEntityType

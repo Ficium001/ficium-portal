@@ -35,9 +35,16 @@ import type { EntityType } from '@/institution/types/approvalEngine'
  */
 export type DocumentSubject = 'loan_pipeline'
 
-export const DOCUMENT_SUBJECT_LABEL: Record<DocumentSubject, string> = {
-  loan_pipeline: 'Deal',
-}
+/**
+ * The subset of approval-engine entity types an e-sign envelope can carry.
+ *
+ * Declared once here because it was previously re-typed by hand inside
+ * EnvelopeCreateModal, adding a fourth private vocabulary to the three this
+ * module already reconciles.
+ */
+export type EsignEntityType = Extract<
+  EntityType, 'offer_letter' | 'investment_mandate' | 'custom'
+>
 
 /**
  * Best-fit e-sign entity type for a generated document's category.
@@ -47,7 +54,7 @@ export const DOCUMENT_SUBJECT_LABEL: Record<DocumentSubject, string> = {
  * here means the lossy step is visible and reviewable in one place — and when
  * the e-sign vocabulary is extended, only this map changes.
  */
-export function esignEntityTypeForCategory(category: DocCategory): EntityType {
+export function esignEntityTypeForCategory(category: DocCategory): EsignEntityType {
   switch (category) {
     case 'facility_letter':
       return 'offer_letter'
