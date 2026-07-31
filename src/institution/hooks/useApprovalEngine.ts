@@ -11,7 +11,7 @@ import { portalApi } from '@/shared/lib/portalApi'
 import type {
   Committee, CommitteeMember, ApprovalTemplate, DoaRule, DoaConditions,
   ApprovalInboxItem, ApprovalInstanceDetail, SimulateResult, EntityType,
-  VoteAction, EsignEnvelope, EsignEventTrail, Delegation,
+  VoteAction, Delegation,
 } from '@/institution/types/approvalEngine'
 import { poll30s } from '@/shared/lib/polling'
 
@@ -22,7 +22,6 @@ export const AEQK = {
   inbox:      ['approval-engine', 'inbox'] as const,
   instance:   (id: string) => ['approval-engine', 'instance', id] as const,
   analytics:  ['approval-engine', 'analytics'] as const,
-  envelopes:  ['esign', 'envelopes'] as const,
   delegations: ['approval-engine', 'delegations'] as const,
 } as const
 
@@ -103,7 +102,7 @@ export function useApprovalTemplates() {
   })
 }
 
-export function useCreateTemplate() {
+export function useCreateApprovalTemplate() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: { name: string; entity_type: EntityType; stages: ApprovalTemplate['stages'] }) =>
@@ -204,42 +203,6 @@ export function useApprovalAnalytics() {
   })
 }
 
-// ─── E-signature (institution side) ───────────────────────────
-
-export function useEsignEnvelopes() {
-  return useQuery<EsignEnvelope[]>({
-    queryKey: AEQK.envelopes,
-    queryFn: () => portalApi.get<EsignEnvelope[]>('/esign/envelopes'),
-    refetchInterval: poll30s,
-    refetchOnWindowFocus: true,
-  })
-}
-
-export function useCreateEnvelope() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (body: {
-      entity_type: 'offer_letter' | 'investment_mandate' | 'custom'
-      entity_id: string; approval_instance_id?: string; title: string
-      document_path: string; expires_hours?: number
-      borrower_name: string; borrower_email: string; borrower_ref?: string
-      countersigner_name: string; countersigner_email: string; countersigner_ref: string
-    }) => portalApi.post<{ envelope_id: string }>('/esign/envelopes', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: AEQK.envelopes }),
-  })
-}
-
-export function useEnvelopeEvents(envelopeId: string) {
-  return useQuery<EsignEventTrail>({
-    queryKey: ['esign', 'events', envelopeId],
-    queryFn: () => portalApi.get<EsignEventTrail>(`/esign/envelopes/${envelopeId}/events`),
-    enabled: !!envelopeId,
-  })
-}
-
-export function useSealedUrl() {
-  return useMutation({
-    mutationFn: (envelopeId: string) =>
-      portalApi.get<{ url: string; sha256: string }>(`/esign/envelopes/${envelopeId}/sealed-url`),
-  })
-}
+// E-signature hooks now live in institution/esign/hooks/useEsign.ts —
+// e-sign is its own module and should not depend on the approval engine's
+// hook file for its data layer.

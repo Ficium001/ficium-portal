@@ -297,6 +297,15 @@ export function allowedModules(
 // from allowedModules() above, which is per-user RBAC within a group.
 // Modules not listed here (dashboard, settings, team, etc.) aren't priced
 // per-module and are always shown once RBAC allows them.
+// NOTE: the values below look inconsistently named on purpose — they mirror
+// what ficium-portal-api actually checks against institution.modules, and the
+// backend's own keys are not consistent:
+//   pipeline router      require_module("pipeline")          — bare
+//   doc_templates router require_module("inst:doctemplates") — prefixed
+//   autobid router       require_module("AUTOBID")           — upper-case
+// This map is the compensating translation layer. Normalising it here without
+// a matching backend change plus a data migration of existing
+// institution.modules values would silently revoke live entitlements.
 export const MODULE_ENTITLEMENT_KEY: Record<string, string> = {
   'inst:marketplace': 'marketplace',
   'inst:pipeline':     'pipeline',
@@ -371,6 +380,12 @@ export const SYSTEM_GROUPS: GroupSeed[] = [
     slug:               'compliance',
     label:              'Compliance',
     description:        'Document management and read-only audit access',
+    // `inst:documents` has no nav entry (the standalone Documents module was
+    // pulled from the catalogue — its functionality lives under Settings), but
+    // the permission is still load-bearing: ficium-portal-api guards
+    // GET /documents with it, and that endpoint backs both the Settings
+    // compliance tab and the e-sign envelope document picker. Removing it here
+    // would 403 both surfaces.
     module_permissions: ['inst:dashboard', 'inst:documents', 'inst:audit'],
     is_system:          true,
   },

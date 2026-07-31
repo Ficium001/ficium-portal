@@ -13,7 +13,8 @@
  */
 import { useState } from 'react'
 import { Send } from 'lucide-react'
-import { useCreateEnvelope } from '@/institution/hooks/useApprovalEngine'
+import { useCreateEnvelope } from '@/institution/esign/hooks/useEsign'
+import { useEntityGenerations } from '@/institution/doc-templates/hooks/useDocTemplates'
 import { useDocuments, useInstitutionUsers } from '@/institution/hooks/useInstitution'
 import { PortalApiError } from '@/shared/lib/portalApi'
 import { Modal, Btn, FormField, InlineAlert, inputCls } from '@/institution/components/primitives'
@@ -26,20 +27,42 @@ const ENTITY_LABELS: { value: EntityType; label: string }[] = [
   { value: 'custom',             label: 'Other document' },
 ]
 
-export function EnvelopeCreateModal({ onClose }: { onClose: () => void }) {
+export function EnvelopeCreateModal({
+  onClose,
+  presetEntityId,
+  presetTitle,
+  presetApprovalInstanceId,
+}: {
+  onClose: () => void
+  /** Deal id to prefill, when opened from a pipeline deal rather than the e-sign list. */
+  presetEntityId?: string
+  presetTitle?: string
+  /** Approval decision that authorised this envelope, when raised from an approval. */
+  presetApprovalInstanceId?: string
+}) {
   const create = useCreateEnvelope()
   const { data: docs }  = useDocuments()
   const { data: users } = useInstitutionUsers()
 
   const [entityType, setEntityType]   = useState<EntityType>('offer_letter')
-  const [entityId, setEntityId]       = useState('')
-  const [title, setTitle]             = useState('')
+  const [entityId, setEntityId]       = useState(presetEntityId ?? '')
+  const [title, setTitle]             = useState(presetTitle ?? '')
   const [documentPath, setDocumentPath] = useState('')
+  const [generationId, setGenerationId] = useState<string | null>(null)
   const [expiresHours, setExpiresHours] = useState(72)
   const [borrowerName, setBorrowerName]   = useState('')
   const [borrowerEmail, setBorrowerEmail] = useState('')
   const [counterRef, setCounterRef]       = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  // Documents generated from a doc template against this deal. Previously the
+  // picker only offered the compliance document library (`/documents`), so a
+  // loan agreement generated for this very deal never appeared and the operator
+  // had to paste its storage path by hand.
+  const { data: generations } = useEntityGenerations('loan_pipeline', entityId.trim() || null)
+  const signableGenerations = (generations ?? []).filter(
+    g => g.status === 'generated' && (g.output_pdf_path || g.output_docx_path),
+  )
 
   const countersigner = users?.find(u => u.id === counterRef)
 
@@ -55,8 +78,10 @@ export function EnvelopeCreateModal({ onClose }: { onClose: () => void }) {
       await create.mutateAsync({
         entity_type: entityType,
         entity_id: entityId.trim(),
+        approval_instance_id: presetApprovalInstanceId,
         title: title.trim(),
         document_path: documentPath.trim(),
+        doc_generation_id: generationId ?? undefined,
         expires_hours: expiresHours,
         borrower_name: borrowerName.trim(),
         borrower_email: borrowerEmail.trim(),
@@ -99,12 +124,42 @@ export function EnvelopeCreateModal({ onClose }: { onClose: () => void }) {
           required
           hint="A PDF in the institution-docs storage bucket. Its SHA-256 is fixed at creation and verified again at sealing."
         >
-          {docs && docs.length > 0 ? (
-            <select className={inputCls} value={documentPath} onChange={e => setDocumentPath(e.target.value)}>
-              <option value="">Choose from your document library…</option>
-              {docs.map(d => (
-                <option key={d.id} value={d.storage_path}>{d.file_name} ({d.doc_type_label})</option>
-              ))}
+          {(signableGenerations.length > 0 || (docs && docs.length > 0)) ? (
+            <select
+              className={inputCls}
+              value={documentPath}
+              onChange={e => {
+                const path = e.target.value
+                setDocumentPath(path)
+                // Track the generation when the chosen document came from a
+                // template, so the envelope records what produced it.
+                const gen = signableGenerations.find(
+                  g => (g.output_pdf_path ?? g.output_docx_path) === path,
+                )
+                setGenerationId(gen?.id ?? null)
+              }}
+            >
+              <option value="">Choose a document…</option>
+              {signableGenerations.length > 0 && (
+                <optgroup label="Generated for this deal">
+                  {signableGenerations.map(g => {
+                    const path = g.output_pdf_path ?? g.output_docx_path ?? ''
+                    const when = g.generated_at ? new Date(g.generated_at).toLocaleDateString() : 'pending'
+                    return (
+                      <option key={g.id} value={path}>
+                        {path.split('/').pop()} — generated {when}
+                      </option>
+                    )
+                  })}
+                </optgroup>
+              )}
+              {docs && docs.length > 0 && (
+                <optgroup label="Document library">
+                  {docs.map(d => (
+                    <option key={d.id} value={d.storage_path}>{d.file_name} ({d.doc_type_label})</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           ) : (
             <input className={inputCls} value={documentPath} onChange={e => setDocumentPath(e.target.value)} placeholder="storage path, e.g. offers/2026/xyz.pdf" />

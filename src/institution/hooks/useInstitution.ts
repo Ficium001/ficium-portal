@@ -128,10 +128,24 @@ export function useRejectRequest() {
 }
 
 // ─── usePendingActions ─── portal-api /approvals/pending ─────
-export function usePendingActions() {
+/**
+ * Pending maker-checker actions.
+ *
+ * `scope` selects one half of the queue server-side:
+ *   bids     — bid.* only          (Marketplace > Approvals)
+ *   internal — everything but bid.* (Dual Control)
+ *
+ * Both screens previously fetched the whole list and filtered client-side,
+ * so each polled for rows it then threw away and the split rule was
+ * duplicated in two components that could drift apart. The server owns the
+ * partition now; omit `scope` to get everything the caller may see.
+ */
+export function usePendingActions(scope?: 'bids' | 'internal') {
   return useQuery<PendingAction[]>({
-    queryKey: QK.pendingActions,
-    queryFn: () => portalApi.get<PendingAction[]>('/approvals/pending'),
+    queryKey: [...QK.pendingActions, scope ?? 'all'],
+    queryFn: () => portalApi.get<PendingAction[]>(
+      scope ? `/approvals/pending?scope=${scope}` : '/approvals/pending',
+    ),
     refetchInterval: poll60s,
     refetchOnWindowFocus: true,
   })

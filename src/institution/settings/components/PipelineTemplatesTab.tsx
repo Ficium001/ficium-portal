@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import {
   useTemplates, useTemplate,
-  useCreateTemplate, useUpdateTemplate,
+  useCreatePipelineTemplate, useUpdateTemplate,
   useAddStageDef, useUpdateStageDef, useDeleteStageDef,
 } from "@/institution/pipeline/hooks/usePipeline";
 import {
@@ -68,7 +68,7 @@ function CreateTemplateModal({
   const [productCode, setProductCode] = useState<string>("__default__");
   const [description, setDescription] = useState("");
   const [error,       setError]       = useState("");
-  const create = useCreateTemplate();
+  const create = useCreatePipelineTemplate();
 
   async function handleSubmit() {
     setError("");

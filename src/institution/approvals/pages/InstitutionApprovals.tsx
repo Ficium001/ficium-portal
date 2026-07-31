@@ -358,11 +358,12 @@ function ActionCard({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function InstitutionApprovals() {
-  const { data: actions = [], isLoading } = usePendingActions();
+  const { data: actions = [], isLoading } = usePendingActions("bids");
   const approveAction = useApproveAction();
   const rejectAction  = useRejectAction();
 
-  const pending = actions.filter((a) => a.action_status === "pending" && a.action_category.startsWith("bid."));
+  // Server returns bid.* only (scope=bids); just drop non-pending statuses.
+  const pending = actions.filter((a) => a.action_status === "pending");
   const urgent  = pending.filter(
     (a) => new Date(a.expires_at).getTime() - Date.now() < 4 * 3_600_000
   ).length;

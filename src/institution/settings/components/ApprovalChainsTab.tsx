@@ -30,7 +30,7 @@ import { useState } from 'react'
 import { Users, GitBranch, Route, Plus, ChevronUp, ChevronDown, Trash2, UserPlus, Repeat } from 'lucide-react'
 import {
   useApprovalCommittees, useCreateCommittee, useAddCommitteeMember, useEndCommitteeMembership,
-  useApprovalTemplates, useCreateTemplate, useActivateTemplate,
+  useApprovalTemplates, useCreateApprovalTemplate, useActivateTemplate,
   useDoaRules, useCreateDoaRule, useSimulateRouting,
   useDelegations, useCreateDelegation, useRevokeDelegation,
 } from '@/institution/hooks/useApprovalEngine'
@@ -362,7 +362,7 @@ function TemplatesSection({ isAdmin }: { isAdmin: boolean }) {
 function TemplateBuilderModal({
   committees, onClose,
 }: { committees: Committee[]; onClose: () => void }) {
-  const create = useCreateTemplate()
+  const create = useCreateApprovalTemplate()
   const [name, setName] = useState('')
   const [entityType, setEntityType] = useState<EntityType>('bid')
   const [stages, setStages] = useState<StageDef[]>([])
