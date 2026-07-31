@@ -20,6 +20,7 @@ import {
   Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
 } from "@/institution/components/primitives";
 import GroupsTab from "@/institution/settings/components/GroupsTab";
+import { poll60s } from '@/shared/lib/polling'
 
 // ─── Data hooks ───────────────────────────────────────────────
 
@@ -34,7 +35,8 @@ function usePendingUserActions() {
   return useQuery<PendingAction[]>({
     queryKey: ["institution", "users", "pending"],
     queryFn:  () => portalApi.get("/members/pending"),
-    refetchInterval: 60_000,
+    refetchInterval: poll60s,
+    refetchOnWindowFocus: true,
   });
 }
 

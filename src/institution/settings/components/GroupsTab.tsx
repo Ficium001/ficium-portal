@@ -33,6 +33,7 @@ import {
   InlineAlert, DataTable, DataRow, Td,
   Modal, FormField, inputCls, Btn, SkeletonRow, EmptyState,
 } from "@/institution/components/primitives";
+import { poll60s } from '@/shared/lib/polling'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,8 @@ function usePendingGroupActions() {
         return [];
       }
     },
-    refetchInterval: 60 * 1000,
+    refetchInterval: poll60s,
+    refetchOnWindowFocus: true,
   });
 }
 

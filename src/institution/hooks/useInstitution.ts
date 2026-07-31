@@ -23,6 +23,7 @@ import type {
   BenefitCategory, Benefit, DocType, InstitutionDoc, ComplianceGate,
   ApiKey, WebhookDeliveryPage,
 } from '@/institution/types/institution'
+import { poll30s, poll60s } from '@/shared/lib/polling'
 
 export const QK = {
   institution:      ['institution'] as const,
@@ -69,7 +70,8 @@ export function useMarketplace(productCode?: string) {
         : '/marketplace/requests'
       return portalApi.get<MarketplaceRequest[]>(path)
     },
-    refetchInterval: 30 * 1000,
+    refetchInterval: poll30s,
+    refetchOnWindowFocus: true,
     staleTime: 60 * 1000,
   })
 }
@@ -130,7 +132,8 @@ export function usePendingActions() {
   return useQuery<PendingAction[]>({
     queryKey: QK.pendingActions,
     queryFn: () => portalApi.get<PendingAction[]>('/approvals/pending'),
-    refetchInterval: 60 * 1000,
+    refetchInterval: poll60s,
+    refetchOnWindowFocus: true,
   })
 }
 

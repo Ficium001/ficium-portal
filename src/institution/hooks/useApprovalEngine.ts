@@ -13,6 +13,7 @@ import type {
   ApprovalInboxItem, ApprovalInstanceDetail, SimulateResult, EntityType,
   VoteAction, EsignEnvelope, EsignEventTrail, Delegation,
 } from '@/institution/types/approvalEngine'
+import { poll30s } from '@/shared/lib/polling'
 
 export const AEQK = {
   committees: ['approval-engine', 'committees'] as const,
@@ -153,7 +154,8 @@ export function useApprovalInbox() {
   return useQuery<ApprovalInboxItem[]>({
     queryKey: AEQK.inbox,
     queryFn: () => portalApi.get<ApprovalInboxItem[]>('/approval-engine/inbox'),
-    refetchInterval: 30 * 1000, // keep SLA countdowns honest
+    refetchInterval: poll30s, // keep SLA countdowns honest (backs off when tab hidden)
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -208,7 +210,8 @@ export function useEsignEnvelopes() {
   return useQuery<EsignEnvelope[]>({
     queryKey: AEQK.envelopes,
     queryFn: () => portalApi.get<EsignEnvelope[]>('/esign/envelopes'),
-    refetchInterval: 30 * 1000,
+    refetchInterval: poll30s,
+    refetchOnWindowFocus: true,
   })
 }
 
