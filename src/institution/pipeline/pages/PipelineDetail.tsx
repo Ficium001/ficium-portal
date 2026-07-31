@@ -10,6 +10,7 @@ import { DealSummaryPanel }        from "@/institution/pipeline/components/DealS
 import { BorrowerIdentityPanel }   from "@/institution/pipeline/components/BorrowerIdentityPanel";
 import { StageCard }               from "@/institution/pipeline/components/StageCard";
 import { usePipeline }             from "@/institution/pipeline/hooks/usePipeline";
+import { DealDocumentsPanel }      from "@/institution/pipeline/components/DealDocumentsPanel";
 
 const fmtDate = (s: string | null) =>
   s ? new Date(s).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -70,6 +71,11 @@ export function PipelineDetail() {
             ))}
           </div>
         </div>
+
+        <DealDocumentsPanel
+          pipelineId={pipeline.id}
+          dealLabel={`${pipeline.product_label} — ref ${pipeline.consumer_ref}`}
+        />
 
         {pipeline.status === "completed" && (
           <div className="flex items-center gap-3 bg-green-50 border border-green-200

@@ -14,9 +14,7 @@
  */
 import { useState } from 'react'
 import { PenLine, Plus, History, FileDown, CheckCircle2, Circle } from 'lucide-react'
-import {
-  useEsignEnvelopes, useSealedUrl,
-} from '@/institution/hooks/useApprovalEngine'
+import { useEsignEnvelopes, useSealedUrl } from '@/institution/esign/hooks/useEsign'
 import type { EsignEnvelope } from '@/institution/types/approvalEngine'
 import {
   SectionHeader, EmptyState, InlineAlert, SkeletonCard, Btn, StatusBadge, FilterPills,

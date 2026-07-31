@@ -10,7 +10,7 @@
  * @owner Ficium Engineering
  */
 import { ShieldCheck, ShieldAlert } from 'lucide-react'
-import { useEnvelopeEvents } from '@/institution/hooks/useApprovalEngine'
+import { useEnvelopeEvents } from '@/institution/esign/hooks/useEsign'
 import type { EsignEnvelope } from '@/institution/types/approvalEngine'
 import { Modal, InlineAlert, SkeletonRow, MonoRef } from '@/institution/components/primitives'
 

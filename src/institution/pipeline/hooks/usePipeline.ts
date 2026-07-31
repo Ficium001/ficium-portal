@@ -84,7 +84,7 @@ export function useTemplate(id: string) {
   });
 }
 
-export function useCreateTemplate() {
+export function useCreatePipelineTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (p: CreateTemplatePayload) => createTemplate(p),

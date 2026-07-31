@@ -296,7 +296,7 @@ function TempPasswordModal({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function InstitutionDualControl() {
-  const { data: actions = [], isLoading } = usePendingActions();
+  const { data: actions = [], isLoading } = usePendingActions("internal");
   const approveAction = useApproveAction();
   const rejectAction  = useRejectAction();
 
@@ -304,11 +304,9 @@ export default function InstitutionDualControl() {
     email: string; fullName: string; tempPassword: string; username?: string;
   } | null>(null);
 
-  // Server already filters by caller's module_permissions via GET /approvals/pending.
-  // Client only needs to exclude bid.* (those go through the Marketplace Approvals screen).
-  const pending = actions.filter(
-    a => a.action_status === "pending" && !a.action_category.startsWith("bid.")
-  );
+  // Server filters by module_permissions AND excludes bid.* (scope=internal);
+  // those go through the Marketplace Approvals screen.
+  const pending = actions.filter(a => a.action_status === "pending");
   const urgent = pending.filter(
     a => new Date(a.expires_at).getTime() - Date.now() < 4 * 3_600_000
   ).length;

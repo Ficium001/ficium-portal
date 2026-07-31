@@ -14,7 +14,27 @@ export const DTQK = {
   templates:   ['doc-templates', 'list'] as const,
   versions:    (tid: string) => ['doc-templates', 'versions', tid] as const,
   mergeFields: ['doc-templates', 'merge-fields'] as const,
+  generations: (etype: string, eid: string) =>
+    ['doc-templates', 'generations', etype, eid] as const,
 } as const
+
+/**
+ * Documents already generated against one entity (e.g. a deal).
+ *
+ * Lets a deal show its own documents, and lets the e-sign envelope flow offer
+ * a real document to send rather than asking an operator to paste a storage
+ * path by hand.
+ */
+export function useEntityGenerations(entityType: string, entityId: string | null) {
+  return useQuery<DocGeneration[]>({
+    queryKey: DTQK.generations(entityType, entityId ?? ''),
+    queryFn: () => portalApi.get<DocGeneration[]>(
+      `${BASE}/generations?entity_type=${encodeURIComponent(entityType)}`
+      + `&entity_id=${encodeURIComponent(entityId ?? '')}`,
+    ),
+    enabled: !!entityId,
+  })
+}
 
 // ─── Templates ────────────────────────────────────────────────
 
@@ -25,7 +45,7 @@ export function useDocTemplates() {
   })
 }
 
-export function useCreateTemplate() {
+export function useCreateDocTemplate() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: {

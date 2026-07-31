@@ -29,7 +29,7 @@ import { getTokenPayload } from '@/shared/lib/ficiumAuth'
 import { fetchPipelines } from '@/institution/pipeline/api/pipeline'
 import { useQuery } from '@tanstack/react-query'
 import {
-  useDocTemplates, useCreateTemplate, useRetireTemplate,
+  useDocTemplates, useCreateDocTemplate, useRetireTemplate,
   useTemplateVersions, useUploadVersion, useDecideVersion,
   useMergeFields, useGenerateDocument, downloadGeneration,
 } from '../hooks/useDocTemplates'
@@ -114,7 +114,7 @@ function MergeFieldReference() {
 // ─── Create template modal ────────────────────────────────────
 
 function CreateTemplateModal({ onClose }: { onClose: () => void }) {
-  const create = useCreateTemplate()
+  const create = useCreateDocTemplate()
   const [name, setName] = useState('')
   const [category, setCategory] = useState<DocCategory>('loan_agreement')
   const [description, setDescription] = useState('')
