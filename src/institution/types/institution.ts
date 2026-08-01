@@ -141,6 +141,17 @@ export interface RequestMetadata {
   loan_breakdown?: LoanRecord[] | null
   // Legacy
   income_band?: string | null
+  // Investment/deposit-side profile (non-credit products) — populated
+  // instead of the employment/DSR fields above. See CREDIT_PRODUCT_CODES
+  // in RequestDetailDrawer.tsx for which product_code values get which shape.
+  risk_appetite?: string | null
+  investment_horizon?: string | null
+  liquidity_pref?: string | null
+  investment_style?: string | null
+  target_amount?: number | null
+  monthly_contribution?: number | null
+  investment_objective?: string | null
+  investment_product_answers?: Record<string, string> | null
 }
 
 // Bidding context (from params column) — no PII

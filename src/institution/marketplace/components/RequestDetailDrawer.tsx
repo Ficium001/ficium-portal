@@ -47,6 +47,15 @@ function useFields(r: MarketplaceRequest) {
     collateralType:   p?.collateral_type,
     collateralSub:    p?.collateral_sub,
     ltvPct:           p?.ltv_pct,
+    // Investment/deposit-side profile
+    riskAppetite:     m?.risk_appetite,
+    investmentHorizon:m?.investment_horizon,
+    liquidityPref:    m?.liquidity_pref,
+    investmentStyle:  m?.investment_style,
+    targetAmount:     m?.target_amount,
+    monthlyContrib:   m?.monthly_contribution,
+    investmentObjective: m?.investment_objective,
+    investmentAnswers: m?.investment_product_answers,
   };
 }
 
@@ -222,24 +231,49 @@ function buildPDFHtml(f: ReturnType<typeof useFields>, request: MarketplaceReque
         statCard("Age", f.age != null ? `${f.age} yrs` : "—") +
         statCard("Net Worth", f.netWorthBand ? `${f.netWorthBand} MUR` : "—")
       )}
+      ${isCredit ? `
       <div style="height:10px;"></div>
-      ${grid(isCredit ? 4 : 2,
+      ${grid(4,
         statCard("Credit Score", f.healthScore != null ? `${f.healthScore}/100` : "—", scoreColor(f.healthScore)) +
         statCard("Affordability", f.affordScore != null ? `${f.affordScore}/100` : "—", scoreColor(f.affordScore)) +
-        (isCredit ? statCard("DSR Current", f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—", dsrColor(f.dsrCurrent)) : "") +
-        (isCredit ? statCard("DSR Post-Loan", f.dsrPost != null ? `${f.dsrPost}%` : "—", dsrColor(f.dsrPost)) : "")
-      )}
+        statCard("DSR Current", f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—", dsrColor(f.dsrCurrent)) +
+        statCard("DSR Post-Loan", f.dsrPost != null ? `${f.dsrPost}%` : "—", dsrColor(f.dsrPost))
+      )}` : ""}
       <div style="margin-top:8px;font-size:10px;color:${c.muted};">Client identity not disclosed at this stage.</div>
     `)}
 
+    <!-- Investment Profile - non-credit (deposit/investment) products only -->
+    ${!isCredit ? section("Investment Profile", `
+      ${grid(4,
+        statCard("Risk Appetite",       dash(f.riskAppetite)) +
+        statCard("Investment Horizon",  dash(f.investmentHorizon)) +
+        statCard("Liquidity Needs",     dash(f.liquidityPref)) +
+        statCard("Investment Style",    dash(f.investmentStyle))
+      )}
+      <div style="height:10px;"></div>
+      ${grid(3,
+        statCard("Target Amount",         f.targetAmount != null ? fmt(f.targetAmount) : "—") +
+        statCard("Monthly Contribution",  f.monthlyContrib != null ? fmt(f.monthlyContrib) : "—") +
+        statCard("Objective",             dash(f.investmentObjective))
+      )}
+      ${f.investmentAnswers && Object.keys(f.investmentAnswers).length > 0 ? `
+        <div style="height:10px;"></div>
+        ${grid(3, Object.entries(f.investmentAnswers)
+          .filter(([k]) => !["risk_appetite","investment_horizon","liquidity","withdrawal","flexibility","investment_style","target_amount","monthly_contribution","objective"].includes(k))
+          .map(([k, v]) => statCard(fmtType(k), String(v)))
+          .join("")
+        )}
+      ` : ""}
+    `) : ""}
+
     <!-- Employment -->
-    ${section("Employment", grid(4,
+    ${isCredit ? section("Employment", grid(4,
       statCard("Employer",         dash(f.employer)) +
       statCard("Employment Type",  fmtType(f.employmentType)) +
       statCard("Status",           fmtType(f.employmentStatus)) +
       statCard("Years in Role",    f.yearsEmployed != null ? `${f.yearsEmployed} yrs` : "—", yearsColor(f.yearsEmployed)) +
       statCard("Gross Monthly Income", f.grossIncome != null ? fmt(f.grossIncome) : "—", c.ink, 4, true)
-    ))}
+    )) : ""}
 
     <!-- Existing Obligations - credit products only -->
     ${isCredit ? section("Existing Obligations", `
@@ -376,10 +410,10 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                     <ProfileStat label="Risk tier" value={dash(f.riskTier)} accent={accentTier(f.riskTier)} />
                     <ProfileStat label="Age" value={f.age != null ? `${f.age} yrs` : "—"} />
                     <ProfileStat label="Net worth" value={f.netWorthBand ? `${f.netWorthBand} MUR` : "—"} />
-                    <ProfileStat label="Credit score" value={f.healthScore != null ? `${f.healthScore}/100` : "—"} accent={accentScore(f.healthScore)} />
-                    <ProfileStat label="Affordability" value={f.affordScore != null ? `${f.affordScore}/100` : "—"} accent={accentScore(f.affordScore)} />
                     {isCredit && (
                       <>
+                        <ProfileStat label="Credit score" value={f.healthScore != null ? `${f.healthScore}/100` : "—"} accent={accentScore(f.healthScore)} />
+                        <ProfileStat label="Affordability" value={f.affordScore != null ? `${f.affordScore}/100` : "—"} accent={accentScore(f.affordScore)} />
                         <ProfileStat label="DSR current" value={f.dsrCurrent != null ? `${f.dsrCurrent}%` : "—"} accent={accentDSR(f.dsrCurrent)} />
                         <ProfileStat label="DSR post-loan" value={f.dsrPost != null ? `${f.dsrPost}%` : "—"} accent={accentDSR(f.dsrPost)} />
                       </>
@@ -394,17 +428,32 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                   <p className="text-[10px] text-muted">Client identity not disclosed at this stage.</p>
                 </div>
 
-                {/* Employment */}
-                <div className="space-y-3">
-                  <SectionLabel icon={<Briefcase className="w-3.5 h-3.5" />} text="Employment" />
-                  <div className="grid grid-cols-1 gap-2">
-                    <ProfileStat label="Employer"            value={dash(f.employer)} />
-                    <ProfileStat label="Employment type"     value={fmtType(f.employmentType)} />
-                    <ProfileStat label="Status"              value={fmtType(f.employmentStatus)} />
-                    <ProfileStat label="Years in current role" value={f.yearsEmployed != null ? `${f.yearsEmployed} yrs` : "—"} accent={accentYears(f.yearsEmployed)} />
-                    <ProfileStat label="Gross monthly income" value={f.grossIncome != null ? fmt(f.grossIncome) : "—"} />
+                {/* Employment (credit) or Investment Profile (deposit/investment) */}
+                {isCredit ? (
+                  <div className="space-y-3">
+                    <SectionLabel icon={<Briefcase className="w-3.5 h-3.5" />} text="Employment" />
+                    <div className="grid grid-cols-1 gap-2">
+                      <ProfileStat label="Employer"            value={dash(f.employer)} />
+                      <ProfileStat label="Employment type"     value={fmtType(f.employmentType)} />
+                      <ProfileStat label="Status"              value={fmtType(f.employmentStatus)} />
+                      <ProfileStat label="Years in current role" value={f.yearsEmployed != null ? `${f.yearsEmployed} yrs` : "—"} accent={accentYears(f.yearsEmployed)} />
+                      <ProfileStat label="Gross monthly income" value={f.grossIncome != null ? fmt(f.grossIncome) : "—"} />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-3">
+                    <SectionLabel icon={<TrendingUp className="w-3.5 h-3.5" />} text="Investment Profile" />
+                    <div className="grid grid-cols-1 gap-2">
+                      <ProfileStat label="Risk appetite"      value={dash(f.riskAppetite)} />
+                      <ProfileStat label="Investment horizon" value={dash(f.investmentHorizon)} />
+                      <ProfileStat label="Liquidity needs"    value={dash(f.liquidityPref)} />
+                      <ProfileStat label="Investment style"   value={dash(f.investmentStyle)} />
+                      <ProfileStat label="Target amount"      value={f.targetAmount != null ? fmt(f.targetAmount) : "—"} />
+                      <ProfileStat label="Monthly contribution" value={f.monthlyContrib != null ? fmt(f.monthlyContrib) : "—"} />
+                      <ProfileStat label="Objective"          value={dash(f.investmentObjective)} />
+                    </div>
+                  </div>
+                )}
 
                 {/* Requested + Rate Guidance */}
                 <div className="space-y-4">
