@@ -1,6 +1,5 @@
 import { useState }        from "react";
 import { X, FileText, MessageSquare, Download, User, DollarSign, TrendingUp, Zap, Briefcase, AlertCircle, Layers } from "lucide-react";
-import institutionSupabase from "@/institution/lib/institutionSupabase";
 import RequestChat         from "@/shared/components/RequestChat";
 import type { MarketplaceRequest, LoanRecord } from "@/institution/types/institution";
 import { SectionLabel, DetailStat, ProfileStat } from "./MarketplacePrimitives";
@@ -531,7 +530,7 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <RequestChat requestId={request.id} senderType="institution" client={institutionSupabase} />
+            <RequestChat requestId={request.id} />
           </div>
         )}
 
