@@ -24,6 +24,7 @@ import { DOC_CATEGORY_LABEL } from '@/institution/doc-templates/types/docTemplat
 import { EnvelopeCreateModal } from '@/institution/esign/components/EnvelopeCreateModal'
 import { PortalApiError } from '@/shared/lib/portalApi'
 import type { DocumentSubject } from '@/shared/lib/entities'
+import { useModuleAccess } from '@/shared/hooks/useModuleAccess'
 import type { DocGeneration } from '@/institution/doc-templates/types/docTemplates'
 
 const SUBJECT: DocumentSubject = 'loan_pipeline'
@@ -83,9 +84,22 @@ function GenerateModal({
 export function DealDocumentsPanel({
   pipelineId, dealLabel,
 }: { pipelineId: string; dealLabel: string }) {
-  const { data: generations, isLoading } = useEntityGenerations(SUBJECT, pipelineId)
+  // inst:pipeline gates this page, but documents and signatures are separate
+  // licensed modules. The whole doc-templates router is guarded by
+  // require_module('inst:doctemplates'), so for a pipeline-only user the
+  // generations query itself 403s — gate the query, not just the button.
+  const docs    = useModuleAccess('inst:doctemplates')
+  const canSign = useModuleAccess('inst:esign').allowed
+
+  const { data: generations, isLoading } = useEntityGenerations(
+    SUBJECT, docs.allowed ? pipelineId : null,
+  )
   const [showGenerate, setShowGenerate] = useState(false)
   const [signFor, setSignFor] = useState<DocGeneration | null>(null)
+
+  // Nothing to show and nothing to do without the module — render nothing
+  // rather than an empty section the user can never populate.
+  if (docs.isLoading || !docs.allowed) return null
 
   const rows = generations ?? []
 
@@ -142,7 +156,7 @@ export function DealDocumentsPanel({
                     >
                       <Download size={14} />
                     </Btn>
-                    {!g.esign_envelope_id && (
+                    {canSign && !g.esign_envelope_id && (
                       <Btn variant="ghost" onClick={() => setSignFor(g)}>
                         <PenLine size={14} /> Sign
                       </Btn>

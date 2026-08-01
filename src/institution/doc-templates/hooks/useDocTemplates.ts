@@ -38,10 +38,17 @@ export function useEntityGenerations(entityType: string, entityId: string | null
 
 // ─── Templates ────────────────────────────────────────────────
 
-export function useDocTemplates() {
+/**
+ * `enabled` exists because the whole doc-templates router is guarded by
+ * require_module('inst:doctemplates'). Callers outside that module (e.g. the
+ * e-sign envelope modal, reachable with only inst:esign) must be able to skip
+ * the request rather than fire a guaranteed 403.
+ */
+export function useDocTemplates(opts?: { enabled?: boolean }) {
   return useQuery<DocTemplate[]>({
     queryKey: DTQK.templates,
     queryFn: () => portalApi.get<DocTemplate[]>(BASE),
+    enabled: opts?.enabled ?? true,
   })
 }
 
