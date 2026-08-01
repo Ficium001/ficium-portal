@@ -17,6 +17,7 @@ import { useCreateEnvelope } from '@/institution/esign/hooks/useEsign'
 import { useEntityGenerations, useDocTemplates } from '@/institution/doc-templates/hooks/useDocTemplates'
 import { esignEntityTypeForCategory } from '@/shared/lib/entities'
 import type { EsignEntityType } from '@/shared/lib/entities'
+import { useModuleAccess } from '@/shared/hooks/useModuleAccess'
 import { useDocuments, useInstitutionUsers } from '@/institution/hooks/useInstitution'
 import { PortalApiError } from '@/shared/lib/portalApi'
 import { Modal, Btn, FormField, InlineAlert, inputCls } from '@/institution/components/primitives'
@@ -59,8 +60,16 @@ export function EnvelopeCreateModal({
   // picker only offered the compliance document library (`/documents`), so a
   // loan agreement generated for this very deal never appeared and the operator
   // had to paste its storage path by hand.
-  const { data: generations } = useEntityGenerations('loan_pipeline', entityId.trim() || null)
-  const { data: allTemplates } = useDocTemplates()
+  // Both of these hit the doc-templates router, which is guarded by
+  // require_module('inst:doctemplates'). This modal is reachable from the
+  // e-sign page with only inst:esign, so skip the calls without that module
+  // instead of firing requests that are guaranteed to 403. The picker then
+  // falls back to the document library alone.
+  const canReadTemplates = useModuleAccess('inst:doctemplates').allowed
+  const { data: generations } = useEntityGenerations(
+    'loan_pipeline', canReadTemplates ? (entityId.trim() || null) : null,
+  )
+  const { data: allTemplates } = useDocTemplates({ enabled: canReadTemplates })
   const signableGenerations = (generations ?? []).filter(
     g => g.status === 'generated' && (g.output_pdf_path || g.output_docx_path),
   )
