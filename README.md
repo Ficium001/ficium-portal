@@ -81,10 +81,11 @@ Key files: `ficiumAuth.ts` (token lifecycle), `portalApi.ts` (authenticated fetc
 | Doc | Scope |
 |---|---|
 | `README.md` | This file |
-| `ARCHITECTURE.md` | **Full platform architecture** (services, flows, data split, security) |
+| `ARCHITECTURE.md` | Portal-specific architecture (services, flows, data split, security) |
 | `DATABASE.md` | Portal DB schema — institution, marketplace, governance, catalog schemas |
 | `DESIGN.md` | UX, navigation-as-RBAC, design system, component patterns |
 | `INSTALLATION.md` | Environment setup and configuration |
+| `docs/platform/` | **Cross-repo platform docs** — full data dictionary (both DBs), full API reference, functional spec, security model. Kept identical across all three repos. |
 
 ---
 
