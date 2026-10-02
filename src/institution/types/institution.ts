@@ -125,7 +125,6 @@ export interface RequestMetadata {
   // Employment
   employment_status?: string | null
   employment_type?: string | null
-  employer?: string | null
   years_employed?: number | null
   gross_monthly_income?: number | null
   income_verified?: boolean
