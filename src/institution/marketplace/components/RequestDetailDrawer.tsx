@@ -34,7 +34,6 @@ function useFields(r: MarketplaceRequest) {
     age:              m?.age,
     employmentStatus: m?.employment_status  ?? r.client_employment_status,
     employmentType:   m?.employment_type,
-    employer:         m?.employer,
     yearsEmployed:    m?.years_employed,
     grossIncome:      m?.gross_monthly_income ?? r.client_monthly_income,
     dsrCurrent:       m?.dsr_current_pct,
@@ -266,12 +265,11 @@ function buildPDFHtml(f: ReturnType<typeof useFields>, request: MarketplaceReque
     `) : ""}
 
     <!-- Employment -->
-    ${isCredit ? section("Employment", grid(4,
-      statCard("Employer",         dash(f.employer)) +
+    ${isCredit ? section("Employment", grid(3,
       statCard("Employment Type",  fmtType(f.employmentType)) +
       statCard("Status",           fmtType(f.employmentStatus)) +
       statCard("Years in Role",    f.yearsEmployed != null ? `${f.yearsEmployed} yrs` : "—", yearsColor(f.yearsEmployed)) +
-      statCard("Gross Monthly Income", f.grossIncome != null ? fmt(f.grossIncome) : "—", c.ink, 4, true)
+      statCard("Gross Monthly Income", f.grossIncome != null ? fmt(f.grossIncome) : "—", c.ink, 3, true)
     )) : ""}
 
     <!-- Existing Obligations - credit products only -->
@@ -432,7 +430,6 @@ export function RequestDetailDrawer({ request, onClose, onBid, onReject, isRejec
                   <div className="space-y-3">
                     <SectionLabel icon={<Briefcase className="w-3.5 h-3.5" />} text="Employment" />
                     <div className="grid grid-cols-1 gap-2">
-                      <ProfileStat label="Employer"            value={dash(f.employer)} />
                       <ProfileStat label="Employment type"     value={fmtType(f.employmentType)} />
                       <ProfileStat label="Status"              value={fmtType(f.employmentStatus)} />
                       <ProfileStat label="Years in current role" value={f.yearsEmployed != null ? `${f.yearsEmployed} yrs` : "—"} accent={accentYears(f.yearsEmployed)} />
