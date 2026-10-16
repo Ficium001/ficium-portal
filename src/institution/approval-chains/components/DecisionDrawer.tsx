@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useCastApprovalVote } from '@/institution/hooks/useApprovalEngine'
 import type { ApprovalInboxItem, VoteAction } from '@/institution/types/approvalEngine'
 import { Modal, Btn, InlineAlert } from '@/institution/components/primitives'
@@ -18,8 +19,13 @@ export function DecisionDrawer({
   const [comment, setComment] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const rows = Object.entries(item.entity_snapshot ?? {})
-    .filter(([, v]) => v !== null && typeof v !== 'object')
+  const snapshot = item.entity_snapshot ?? {}
+  const isFacility = item.entity_type === 'facility'
+  const rows: [string, string][] = isFacility
+    ? facilityRows(snapshot)
+    : Object.entries(snapshot)
+        .filter(([, v]) => v !== null && typeof v !== 'object')
+        .map(([k, v]) => [k.replace(/_/g, ' '), String(v)])
 
   async function vote(action: VoteAction) {
     setError(null)
@@ -60,11 +66,23 @@ export function DecisionDrawer({
           <dl className="divide-y divide-ink/[0.06] rounded-lg border border-ink/[0.07]">
             {rows.map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 px-3 py-2 text-[13px]">
-                <dt className="capitalize text-muted">{k.replace(/_/g, ' ')}</dt>
-                <dd className="font-medium text-ink">{String(v)}</dd>
+                <dt className="capitalize text-muted">{k}</dt>
+                <dd className="font-medium text-ink text-right">{v}</dd>
               </div>
             ))}
           </dl>
+          {isFacility && typeof snapshot.maker_notes === 'string' && snapshot.maker_notes && (
+            <div className="mt-3 rounded-lg bg-ink/[0.03] px-3 py-2 text-[13px] text-ink">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Credit memo</p>
+              {snapshot.maker_notes}
+            </div>
+          )}
+          {isFacility && typeof snapshot.pipeline_id === 'string' && (
+            <Link to={`/deals/${snapshot.pipeline_id}`} onClick={onClose}
+                  className="mt-2 inline-block text-[13px] font-semibold text-ficium underline underline-offset-2">
+              Open the deal: documents, borrower, messages
+            </Link>
+          )}
         </div>
 
         {item.my_vote ? (
@@ -97,4 +115,17 @@ export function DecisionDrawer({
       </div>
     </Modal>
   )
+}
+
+/** A facility snapshot in the order a credit approver reads it. */
+function facilityRows(s: Record<string, unknown>): [string, string][] {
+  const ccy = typeof s.currency === 'string' ? s.currency : 'MUR'
+  const out: [string, string][] = []
+  if (s.borrower_name) out.push(['Borrower', String(s.borrower_name)])
+  if (s.consumer_ref) out.push(['Reference', String(s.consumer_ref)])
+  if (s.product_label) out.push(['Product', String(s.product_label)])
+  if (s.amount != null) out.push(['Amount', `${ccy} ${Number(s.amount).toLocaleString()}`])
+  if (s.rate != null) out.push(['Rate', `${s.rate}%`])
+  if (s.term_months != null) out.push(['Term', `${s.term_months} months`])
+  return out
 }

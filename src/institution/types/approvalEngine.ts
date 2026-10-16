@@ -5,7 +5,7 @@
 
 export type StageType = 'single' | 'dual' | 'committee' | 'checklist' | 'external_hold'
 export type EntityType =
-  | 'bid' | 'offer_letter' | 'countersign' | 'investment_mandate'
+  | 'facility' | 'bid' | 'offer_letter' | 'countersign' | 'investment_mandate'
   | 'api_key' | 'webhook' | 'user_admin' | 'custom'
 export type InstanceStatus =
   | 'in_progress' | 'approved' | 'rejected' | 'expired' | 'escalated' | 'withdrawn'

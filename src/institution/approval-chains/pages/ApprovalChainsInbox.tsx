@@ -23,8 +23,13 @@ import { PageFrame } from '@/shared/components/PageFrame'
 
 function summarise(snapshot: Record<string, unknown>): string {
   const parts: string[] = []
-  if (snapshot.amount != null) parts.push(`MUR ${Number(snapshot.amount).toLocaleString()}`)
-  if (snapshot.product_type) parts.push(String(snapshot.product_type).replace(/_/g, ' '))
+  const ccy = typeof snapshot.currency === 'string' ? snapshot.currency : 'MUR'
+  if (snapshot.amount != null) parts.push(`${ccy} ${Number(snapshot.amount).toLocaleString()}`)
+  if (snapshot.product_label) parts.push(String(snapshot.product_label))
+  else if (snapshot.product_type) parts.push(String(snapshot.product_type).replace(/_/g, ' '))
+  if (snapshot.rate != null) parts.push(`${snapshot.rate}%`)
+  if (snapshot.term_months != null) parts.push(`${snapshot.term_months} months`)
+  if (snapshot.borrower_name) parts.push(String(snapshot.borrower_name))
   if (snapshot.risk_tier) parts.push(`Tier ${snapshot.risk_tier}`)
   return parts.join(' · ') || 'View details'
 }

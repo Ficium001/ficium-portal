@@ -39,6 +39,11 @@ export interface StageInstance {
   borrower_visible:       boolean;
   requires_maker_checker: boolean;
   requires_documents:     boolean;
+  /** Decided by credit approval (DoA rules / approval chain), not a checker click. */
+  approval_route:         boolean;
+  approval_instance_id:   string | null;
+  approval_status:        "in_progress" | "approved" | "rejected" | "expired" | "escalated" | "withdrawn" | null;
+  rejection_reason:       string | null;
   sla_hours:              number;
   sla_due_at:             string | null;
   sla_breached:           boolean;
@@ -91,6 +96,9 @@ export interface PipelineDetail {
   borrower_address: string | null;
   started_at:       string;
   completed_at:     string | null;
+  /** Why the deal was declined or withdrawn (set with status). */
+  closed_reason:    string | null;
+  closed_at:        string | null;
   stages:           StageInstance[];
 }
 
@@ -114,6 +122,7 @@ export interface PipelineStageDef {
   sla_hours:              number;           // default 48
   requires_maker_checker: boolean;          // stage needs checker sign-off
   requires_documents:     boolean;          // stage is gated on documents
+  approval_route:         boolean;
   borrower_label:         string | null;    // what borrower sees in loan tracker
   borrower_visible:       boolean;          // show this stage to borrower?
   is_active:              boolean;
@@ -152,6 +161,7 @@ export interface CreateStageDefPayload {
   sla_hours?:              number;
   requires_maker_checker?: boolean;
   requires_documents?:     boolean;
+  approval_route?:         boolean;
   borrower_label?:         string;
   borrower_visible?:       boolean;
 }
@@ -163,6 +173,7 @@ export interface UpdateStageDefPayload {
   sla_hours?:              number;
   requires_maker_checker?: boolean;
   requires_documents?:     boolean;
+  approval_route?:         boolean;
   borrower_label?:         string;
   borrower_visible?:       boolean;
 }

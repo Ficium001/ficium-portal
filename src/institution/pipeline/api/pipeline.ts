@@ -49,3 +49,14 @@ export const updateStageDef = (templateId: string, stageId: string, payload: Upd
 
 export const deleteStageDef = (templateId: string, stageId: string) =>
   portalApi.delete(`/pipelines/templates/${templateId}/stages/${stageId}`);
+
+/** Decline (bank) or withdraw (borrower) a deal. Reason is mandatory. */
+export const closeDeal = (
+  pipelineId: string,
+  outcome: "declined" | "withdrawn",
+  reason: string,
+) =>
+  portalApi.post<{ pipeline_id: string; status: string; reason: string }>(
+    `/pipelines/${pipelineId}/close`,
+    { outcome, reason },
+  );
