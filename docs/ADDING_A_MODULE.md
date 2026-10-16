@@ -7,7 +7,7 @@ origination flow:
 |---|---|---|
 | Origination | Find a request, make an offer | Marketplace, My bids |
 | Authorisation | Second pair of eyes (maker-checker) | Inbox: Bids, Credit, Team & setup |
-| Fulfilment | Accepted offer becomes a deal and is processed | Deals: overview, documents, signatures, messages |
+| Fulfilment | Accepted offer becomes a deal, is processed, and is booked in the bank's core system | Deals: overview, documents, signatures, booking, messages |
 | Servicing | Booked loan is serviced | *(no module yet)* |
 | Reports | Performance | Analytics |
 | Configuration | Product factory, templates, team, integrations | Setup |
@@ -18,9 +18,15 @@ none of them name a feature.
 
 ## Steps
 
-1. **Permission.** Add the module key to `catalog.module` (DB migration) and to
-   `MODULE_CATALOGUE` in `src/shared/lib/modules.ts`. Keys are a contract with
-   `user_groups.module_permissions`; never rename one without a migration.
+1. **Permission.** Add the module key to `MODULE_CATALOGUE` in
+   `src/shared/lib/modules.ts` (set `embeddedIn` if it is only a tab inside
+   another page). Grant it in a portal-api migration to the groups that need
+   it: `portal_admin.user_groups` (system groups) and `institution."group"`
+   (custom groups). Keys are stored in those arrays; never rename one without
+   a migration. (`catalog.module` is a legacy table nothing reads; don't use it.)
+   If the backend checks the key, read live group permissions
+   (`institution.current_member_ctx_v2()`), not the JWT, so a grant works
+   without signing out.
 2. **Manifest.** Create `src/institution/<feature>/manifest.tsx` exporting a
    `ModuleManifest` (`src/app/registry/types.ts`). Pick its `stage` and declare
    only the extension points it uses:
@@ -37,7 +43,7 @@ none of them name a feature.
 
 3. **Register.** Add the manifest to `FEATURE_MODULES` in
    `src/app/registry/features.ts`.
-4. **Grant.** Give the key to the groups that should see it.
+4. **Grant.** Covered by the migration in step 1; admins can adjust groups later.
 
 Run `npm test`: `registry.test.ts` fails if the manifest references an unknown
 key, collides with another module, points nav at a missing route, or leaves a
@@ -52,6 +58,12 @@ catalogue key with no surface.
 - A page shown inside a hub renders through `PageFrame` and `SectionHeader`;
   both drop the page's own title when embedded.
 - No redirects for renamed routes before go-live: rename and fix the links.
+
+## Worked example: booking (Oct 2026)
+
+`src/institution/booking/manifest.tsx` — one file adds a **Booking** tab and a
+**Booked** step to every deal, and an **Awaiting booking** step to the flow bar.
+Backend: portal-api `db/025_deal_booking.sql` + `app/core/booking.py`.
 
 ## Example: a servicing module
 

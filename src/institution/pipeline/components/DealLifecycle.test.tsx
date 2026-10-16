@@ -46,9 +46,9 @@ const steps = () => [...host.querySelectorAll('li')].map((li) => li.textContent 
 
 describe('DealLifecycle', () => {
   it('shows every step the user can see, in order', () => {
-    for (const k of ['inst:pipeline', 'inst:doctemplates', 'inst:esign']) allowed.add(k)
+    for (const k of ['inst:pipeline', 'inst:doctemplates', 'inst:esign', 'inst:booking']) allowed.add(k)
     render(deal())
-    const labels = ['Bid accepted', 'Processing', 'Documents', 'Signature', 'Complete']
+    const labels = ['Bid accepted', 'Processing', 'Documents', 'Signature', 'Booked']
     expect(steps()).toHaveLength(labels.length)
     labels.forEach((l, i) => expect(steps()[i]).toContain(l))
   })
@@ -67,11 +67,20 @@ describe('DealLifecycle', () => {
     expect(host.querySelector('[aria-current=step]')?.textContent).toContain('Processing')
   })
 
-  it('marks a completed deal complete', () => {
+  it('a fully processed deal waits on booking', () => {
+    for (const k of ['inst:pipeline', 'inst:booking']) allowed.add(k)
+    render(deal({ status: 'completed', completed_at: '2026-10-10T00:00:00Z',
+      stages: [{ id: 's1', status: 'completed' }] as PipelineDetail['stages'] }))
+    expect(host.querySelector('[aria-current=step]')?.textContent).toContain('Booked')
+    expect(host.textContent).toContain('Record reference')
+  })
+
+  it('without the booking module, processing is the last step and is done', () => {
     allowed.add('inst:pipeline')
     render(deal({ status: 'completed', completed_at: '2026-10-10T00:00:00Z',
       stages: [{ id: 's1', status: 'completed' }] as PipelineDetail['stages'] }))
     expect(host.querySelector('[aria-current=step]')).toBeNull()
+    expect(host.textContent).not.toContain('Booked')
   })
 
   it('makes a step clickable only when its tab is available', () => {

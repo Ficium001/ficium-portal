@@ -71,6 +71,8 @@ export interface PipelineSummary {
   stages_total:              number;
   sla_breached:              boolean;
   started_at:                string;
+  /** Booked in the bank's core banking system (booking module). */
+  booked?:                   boolean;
 }
 
 export interface PipelineDetail {
