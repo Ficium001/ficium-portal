@@ -19,6 +19,7 @@ import type { ApprovalInboxItem } from '@/institution/types/approvalEngine'
 import { SectionHeader, EmptyState, InlineAlert, SkeletonCard } from '@/institution/components/primitives'
 import { DecisionDrawer } from '../components/DecisionDrawer'
 import { SlaChip } from '../components/SlaChip'
+import { PageFrame } from '@/shared/components/PageFrame'
 
 function summarise(snapshot: Record<string, unknown>): string {
   const parts: string[] = []
@@ -33,7 +34,7 @@ export default function ApprovalChainsInbox() {
   const [selected, setSelected] = useState<ApprovalInboxItem | null>(null)
 
   return (
-    <main className="p-6 lg:p-8 max-w-3xl mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-3xl mx-auto">
       <SectionHeader
         title="Approval chains"
         subtitle="Committee votes, secured-lending chains, and other multi-stage approvals awaiting your decision."
@@ -82,6 +83,6 @@ export default function ApprovalChainsInbox() {
       </div>
 
       {selected && <DecisionDrawer item={selected} onClose={() => setSelected(null)} />}
-    </main>
+    </PageFrame>
   )
 }

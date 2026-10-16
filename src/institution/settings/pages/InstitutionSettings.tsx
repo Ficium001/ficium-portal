@@ -42,6 +42,7 @@ import { PipelineTemplatesTab } from "@/institution/settings/components/Pipeline
 import { ApprovalChainsTab }    from "@/institution/settings/components/ApprovalChainsTab";
 import { ApiKeysTab }           from "@/institution/settings/components/ApiKeysTab";
 import { WebhooksTab }          from "@/institution/settings/components/WebhooksTab";
+import { PageFrame } from "@/shared/components/PageFrame"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab types
@@ -434,7 +435,7 @@ export default function InstitutionSettings() {
   );
 
   return (
-    <main className="p-6 lg:p-8 max-w-[900px] mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-[900px] mx-auto">
       <SectionHeader
         title="Settings"
         subtitle={institution?.name}
@@ -471,6 +472,6 @@ export default function InstitutionSettings() {
       {tab === "documents" && <DocumentsTab />}
       {tab === "pipeline"  && <PipelineTemplatesTab />}
       {tab === "approval-chains" && <ApprovalChainsTab isAdmin={isAdmin} />}
-    </main>
+    </PageFrame>
   );
 }

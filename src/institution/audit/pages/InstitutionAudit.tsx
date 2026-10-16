@@ -39,6 +39,7 @@ import {
   KpiCard, FilterPills, EmptyState,
   SkeletonRow, Btn, inputCls,
 } from "@/institution/components/primitives";
+import { PageFrame } from "@/shared/components/PageFrame"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -507,7 +508,7 @@ export default function InstitutionAudit() {
   const failCount    = events.filter((e) => ["rejected", "failed"].includes(e.outcome)).length;
 
   return (
-    <main className="p-6 lg:p-8 max-w-[1440px] mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-[1440px] mx-auto">
       {/* Event detail drawer */}
       <AuditEventDrawer event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       <SectionHeader
@@ -668,6 +669,6 @@ export default function InstitutionAudit() {
           )}
         </>
       )}
-    </main>
+    </PageFrame>
   );
 }

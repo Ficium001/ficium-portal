@@ -28,6 +28,7 @@ import {
   SectionHeader, FilterPills, EmptyState, InlineAlert,
   FormField, inputCls, Btn, Modal,
 } from "@/institution/components/primitives";
+import { PageFrame } from "@/shared/components/PageFrame"
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -478,7 +479,7 @@ export default function InstitutionProducts() {
   };
 
   return (
-    <main className="p-6 lg:p-8 max-w-[1100px] mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-[1100px] mx-auto">
       <SectionHeader
         title="Products"
         subtitle={`${filtered.length} product${filtered.length !== 1 ? "s" : ""} · configure limits and benefits`}
@@ -524,6 +525,6 @@ export default function InstitutionProducts() {
           ))}
         </div>
       )}
-    </main>
+    </PageFrame>
   );
 }

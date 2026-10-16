@@ -24,20 +24,44 @@ export interface ModuleAccess {
 }
 
 export function useModuleAccess(moduleKey: string): ModuleAccess {
+  const many = useModulesAccess([moduleKey])
+  return { allowed: many.allowed[moduleKey] ?? false, isLoading: many.isLoading }
+}
+
+export interface ModulesAccess {
+  /** Per-key result; false while loading. */
+  allowed:   Record<string, boolean>
+  isLoading: boolean
+}
+
+/**
+ * Same rule as useModuleAccess, for several keys at once (hub pages that
+ * show one tab per module). One group query, at most one institution query.
+ */
+export function useModulesAccess(moduleKeys: readonly string[]): ModulesAccess {
   const { data: myGroup, isLoading: groupLoading } = useMyGroup()
-  const category       = moduleKey.startsWith('admin:') ? 'admin' : 'institution'
-  const entitlementKey = MODULE_ENTITLEMENT_KEY[moduleKey]
+  const needsEntitlement = moduleKeys.some(
+    (k) => !k.startsWith('admin:') && !!MODULE_ENTITLEMENT_KEY[k],
+  )
   const { data: myInstitution, isLoading: instLoading } = useMyInstitution({
-    enabled: category === 'institution' && !!entitlementKey,
+    enabled: needsEntitlement,
   })
 
-  const isLoading = groupLoading || (category === 'institution' && !!entitlementKey && instLoading)
-  if (isLoading) return { allowed: false, isLoading: true }
+  const isLoading = groupLoading || (needsEntitlement && instLoading)
+  const allowed: Record<string, boolean> = {}
+  if (isLoading) {
+    for (const k of moduleKeys) allowed[k] = false
+    return { allowed, isLoading: true }
+  }
 
   const permissions = myGroup?.module_permissions ?? []
-  const isWildcard  = permissions.includes('*') && myGroup?.user_type === category
-  const rbacAllowed = isWildcard || permissions.includes(moduleKey)
-  const entitled    = !entitlementKey || (myInstitution?.modules ?? []).includes(entitlementKey)
-
-  return { allowed: rbacAllowed && entitled, isLoading: false }
+  for (const k of moduleKeys) {
+    const category       = k.startsWith('admin:') ? 'admin' : 'institution'
+    const entitlementKey = category === 'institution' ? MODULE_ENTITLEMENT_KEY[k] : undefined
+    const isWildcard     = permissions.includes('*') && myGroup?.user_type === category
+    const rbacAllowed    = isWildcard || permissions.includes(k)
+    const entitled       = !entitlementKey || (myInstitution?.modules ?? []).includes(entitlementKey)
+    allowed[k] = rbacAllowed && entitled
+  }
+  return { allowed, isLoading: false }
 }

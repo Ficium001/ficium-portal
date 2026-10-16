@@ -22,7 +22,7 @@ import { BorrowerIdentityPanel }   from "@/institution/pipeline/components/Borro
 import { StageCard }               from "@/institution/pipeline/components/StageCard";
 import { DealDocumentsPanel }      from "@/institution/pipeline/components/DealDocumentsPanel";
 import { DealSignaturesPanel }     from "@/institution/pipeline/components/DealSignaturesPanel";
-import { DealTabs, type DealTab }  from "@/institution/pipeline/components/DealTabs";
+import { SectionTabs, type SectionTab } from "@/shared/components/SectionTabs";
 import { usePipeline }             from "@/institution/pipeline/hooks/usePipeline";
 import { useDealEnvelopes }        from "@/institution/pipeline/hooks/useDealEnvelopes";
 import { useModuleAccess }         from "@/shared/hooks/useModuleAccess";
@@ -56,7 +56,7 @@ export function PipelineDetail() {
     (e) => e.status === "sent" || e.status === "partially_signed",
   ).length;
 
-  const tabs: DealTab<TabKey>[] = [
+  const tabs: SectionTab<TabKey>[] = [
     { key: "overview",   label: "Overview",   badge: `${completed}/${pipeline.stages.length}` },
     ...(docs.allowed  ? [{ key: "documents"  as const, label: "Documents" }] : []),
     ...(esign.allowed ? [{ key: "signatures" as const, label: "Signatures",
@@ -95,7 +95,7 @@ export function PipelineDetail() {
         </div>
       </div>
 
-      <DealTabs tabs={tabs} active={active} onChange={setTab} />
+      <SectionTabs tabs={tabs} active={active} onChange={setTab} idPrefix="deal" label="Deal sections" />
 
       <div role="tabpanel" id={`deal-panel-${active}`} aria-labelledby={`deal-tab-${active}`}>
         {active === "overview" && (

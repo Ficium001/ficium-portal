@@ -1,5 +1,5 @@
 /**
- * DealTabs — the deal page's section switcher.
+ * SectionTabs — in-page section switcher (deal page, Inbox, Setup).
  *
  * WAI-ARIA tabs pattern: arrow keys move between tabs, Home/End jump to the
  * ends, only the active tab is in the tab order. Scrolls horizontally on
@@ -7,17 +7,20 @@
  */
 import { useRef, type KeyboardEvent } from "react";
 
-export interface DealTab<K extends string> {
+export interface SectionTab<K extends string> {
   key:    K;
   label:  string;
   /** Small status text after the label, e.g. "3/5" or "2 waiting". */
   badge?: string;
 }
 
-export function DealTabs<K extends string>({
-  tabs, active, onChange,
+export function SectionTabs<K extends string>({
+  tabs, active, onChange, idPrefix, label,
 }: {
-  tabs:     DealTab<K>[];
+  tabs:     SectionTab<K>[];
+  /** Prefix for tab/panel ids, e.g. "deal" → deal-tab-x / deal-panel-x. */
+  idPrefix: string;
+  label:    string;
   active:   K;
   onChange: (key: K) => void;
 }) {
@@ -37,7 +40,7 @@ export function DealTabs<K extends string>({
   };
 
   return (
-    <div role="tablist" aria-label="Deal sections"
+    <div role="tablist" aria-label={label}
          className="flex gap-1 border-b border-line overflow-x-auto">
       {tabs.map((t, i) => {
         const selected = t.key === active;
@@ -46,9 +49,9 @@ export function DealTabs<K extends string>({
             key={t.key}
             ref={(el) => { refs.current[t.key] = el; }}
             role="tab"
-            id={`deal-tab-${t.key}`}
+            id={`${idPrefix}-tab-${t.key}`}
             aria-selected={selected}
-            aria-controls={`deal-panel-${t.key}`}
+            aria-controls={`${idPrefix}-panel-${t.key}`}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(t.key)}
             onKeyDown={(e) => onKeyDown(e, i)}

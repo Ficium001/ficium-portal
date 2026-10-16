@@ -34,7 +34,7 @@ import {
   Package, ScrollText, Settings,
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
-  BarChart2, Gift, FolderCheck, GitBranch, PenLine, FileType2,
+  BarChart2, Gift, FolderCheck, GitBranch, PenLine, FileType2, Inbox,
 } from 'lucide-react'
 import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '@/shared/lib/ficiumAuth'
 import { useMyGroup } from '@/admin/hooks/useAdmin'
@@ -42,6 +42,7 @@ import { MODULE_CATALOGUE, allowedModules, filterByEntitlement, type PortalModul
 import { useMyInstitution } from '@/institution/hooks/useInstitution'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
 import { usePortalUnreadCount } from '@/institution/notifications/hooks/usePortalNotifications'
+import { useInboxCounts } from '@/institution/inbox/hooks/useInboxCounts'
 
 // ─── Constants ───────────────────────────────────────────────
 const IDLE_WARN_MS   = 4 * 60 * 1000
@@ -52,7 +53,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Store, FileText, Clock, Package,
   ScrollText, Settings, Shield, Users,
   GitMerge, Radio, MonitorDot, Building2,
-  BarChart2, Bell, Gift, FolderCheck, GitBranch, PenLine, FileType2,
+  BarChart2, Bell, Gift, FolderCheck, GitBranch, PenLine, FileType2, Inbox,
 }
 function resolveIcon(key: string): React.ElementType {
   return ICON_MAP[key] ?? LayoutDashboard
@@ -135,26 +136,52 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
 }
 
 // ─── Drawer nav ───────────────────────────────────────────────
-// Section layout. 'Home' deduped by path so wildcard users don't
-// see Dashboard twice.
-const NAV_SECTIONS = [
-  { label: 'Home',        keys: ['inst:dashboard', 'admin:dashboard'] },
-  { label: 'Marketplace', keys: ['inst:marketplace', 'inst:bids', 'inst:bid_approval', 'inst:approvals'] },
-  { label: 'Insights',    keys: ['inst:analytics', 'inst:notifications'] },
-  { label: 'Manage',      keys: ['inst:dual_control', 'inst:team', 'inst:products', 'inst:settings', 'inst:benefits'] },
-  { label: 'Operations',  keys: ['inst:pipeline', 'inst:audit', 'inst:esign', 'inst:doctemplates'] },
-  { label: 'Admin',       keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
-  { label: 'System',      keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
+// Organised around a banker's day, not around modules:
+//   Marketplace → Deals → Inbox → Insights → Setup
+// A HUB item (Inbox, Setup) is one link standing for several module keys;
+// it shows if the user can open ANY of them, and the hub page itself shows
+// one tab per module the user can open.
+// 'Home' deduped by path so wildcard users don't see Dashboard twice.
+interface NavHub { hub: string; label: string; path: string; iconKey: string; keys: string[] }
+type NavEntry = string | NavHub
+
+const INBOX_HUB: NavHub = {
+  hub: 'hub:inbox', label: 'Inbox', path: '/inbox', iconKey: 'Inbox',
+  keys: ['inst:bid_approval', 'inst:approvals', 'inst:dual_control'],
+}
+const SETUP_HUB: NavHub = {
+  hub: 'hub:setup', label: 'Setup', path: '/setup', iconKey: 'Settings',
+  keys: ['inst:settings', 'inst:products', 'inst:benefits', 'inst:doctemplates', 'inst:team', 'inst:audit'],
+}
+
+const NAV_SECTIONS: { label: string; entries: NavEntry[] }[] = [
+  { label: 'Home',        entries: ['inst:dashboard', 'admin:dashboard'] },
+  { label: 'Marketplace', entries: ['inst:marketplace', 'inst:bids'] },
+  { label: 'Deals',       entries: ['inst:pipeline', 'inst:esign', INBOX_HUB] },
+  { label: 'Insights',    entries: ['inst:analytics'] },
+  { label: 'Setup',       entries: [SETUP_HUB] },
+  { label: 'Admin',       entries: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
+  { label: 'System',      entries: ['admin:sessions', 'admin:audit', 'admin:system'] },
 ]
 
+/** Reachable elsewhere, so deliberately not in the drawer. */
+const NAV_HIDDEN = new Set([
+  'inst:notifications', // header bell
+])
+
+const NAMED_KEYS = new Set(
+  NAV_SECTIONS.flatMap(s => s.entries.flatMap(e => (typeof e === 'string' ? [e] : e.keys))),
+)
+
 function Drawer({
-  open, onClose, visibleModules, pendingCount, groupLoading, groupError, onRetry,
+  open, onClose, visibleModules, inboxCount, groupLoading, groupError, onRetry,
   userName, groupLabel, orgName,
 }: {
   open:           boolean
   onClose:        () => void
   visibleModules: PortalModule[]
-  pendingCount:   number
+  /** Items waiting in the Inbox hub; drives its nav badge. */
+  inboxCount:     number
   groupLoading:   boolean
   groupError:     boolean
   onRetry:        () => void
@@ -183,25 +210,33 @@ function Drawer({
     .map(s => {
       const mods: PortalModule[] = []
       const seenPaths = new Set<string>()
-      for (const k of s.keys) {
-        if (!visibleKeys.has(k)) continue
-        const mod = byKey[k]
-        if (!mod) continue
-        if (seenPaths.has(mod.path)) continue
+      for (const entry of s.entries) {
+        let mod: PortalModule | undefined
+        if (typeof entry === 'string') {
+          if (!visibleKeys.has(entry)) continue
+          mod = byKey[entry]
+        } else if (entry.keys.some(k => visibleKeys.has(k))) {
+          mod = {
+            key: entry.hub, label: entry.label, path: entry.path, iconKey: entry.iconKey,
+            description: entry.label, category: 'institution',
+          }
+        }
+        if (!mod || seenPaths.has(mod.path)) continue
         seenPaths.add(mod.path)
         mods.push(mod)
       }
-      return { ...s, modules: mods }
+      return { label: s.label, modules: mods }
     })
     .filter(s => s.modules.length > 0)
 
-  // Catch-all: any visible module not covered by a named section above
-  // (e.g. a new module added to the catalogue before NAV_SECTIONS is
-  // updated) still renders here instead of silently vanishing from nav.
-  const namedKeys = new Set(NAV_SECTIONS.flatMap(s => s.keys))
+  // Catch-all: any visible module not covered above (e.g. a new module added
+  // to the catalogue before NAV_SECTIONS is updated) still renders here
+  // instead of silently vanishing from nav.
   const seenPaths = new Set(sections.flatMap(s => s.modules.map(m => m.path)))
-  const other = visibleModules.filter(m => !namedKeys.has(m.key) && !seenPaths.has(m.path))
-  if (other.length > 0) sections.push({ label: 'Other', keys: [], modules: other })
+  const other = visibleModules.filter(
+    m => !NAMED_KEYS.has(m.key) && !NAV_HIDDEN.has(m.key) && !seenPaths.has(m.path),
+  )
+  if (other.length > 0) sections.push({ label: 'Other', modules: other })
 
   const empty = sections.length === 0
 
@@ -285,8 +320,7 @@ function Drawer({
                 </p>
                 {section.modules.map(mod => {
                   const Icon  = resolveIcon(mod.iconKey)
-                  const badge = (mod.key === 'inst:bid_approval' || mod.key === 'inst:dual_control' || mod.key === 'admin:dual_control')
-                    ? pendingCount : 0
+                  const badge = mod.key === 'hub:inbox' ? inboxCount : 0
                   const delay = 40 + itemIndex++ * 30
                   return (
                     <NavLink
@@ -492,6 +526,7 @@ export default function PortalShell() {
   const [userName,     setUserName]     = useState('')
   const { data: notifUnread = 0 } = usePortalUnreadCount()
   const pendingCount = notifUnread
+  const inboxCount   = useInboxCounts().total
 
   // User display name from the verified ficium-auth JWT payload (no network).
   useEffect(() => {
@@ -566,7 +601,7 @@ export default function PortalShell() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         visibleModules={visibleModules}
-        pendingCount={pendingCount}
+        inboxCount={inboxCount}
         groupLoading={groupLoading}
         groupError={groupError}
         onRetry={() => refetchGroup()}

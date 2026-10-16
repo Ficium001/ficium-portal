@@ -380,7 +380,7 @@ export default function InstitutionMarketplace() {
 
       <InlineAlert variant="info">
         Bids require a second admin to approve in{" "}
-        <a href="/approvals" className="font-semibold underline underline-offset-2">
+        <a href="/inbox?section=bids" className="font-semibold underline underline-offset-2">
           Approvals
         </a>{" "}
         before submission to the client.

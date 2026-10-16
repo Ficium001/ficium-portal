@@ -149,9 +149,10 @@ export function useSimulateRouting() {
 
 // ─── Runtime: inbox, instance, cast, withdraw ─────────────────
 
-export function useApprovalInbox() {
+export function useApprovalInbox(options?: { enabled?: boolean }) {
   return useQuery<ApprovalInboxItem[]>({
     queryKey: AEQK.inbox,
+    enabled: options?.enabled ?? true,
     queryFn: () => portalApi.get<ApprovalInboxItem[]>('/approval-engine/inbox'),
     refetchInterval: poll30s, // keep SLA countdowns honest (backs off when tab hidden)
     refetchOnWindowFocus: true,

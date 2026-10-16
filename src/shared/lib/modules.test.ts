@@ -90,3 +90,15 @@ describe("MODULE_CATALOGUE integrity", () => {
     }
   });
 });
+
+describe("hub consolidation", () => {
+  it("approval queues open in the Inbox and configuration screens in Setup", () => {
+    const pathOf = (k: string) => MODULE_CATALOGUE.find((m) => m.key === k)?.path;
+    for (const k of ["inst:bid_approval", "inst:approvals", "inst:dual_control"]) {
+      expect(pathOf(k)?.startsWith("/inbox")).toBe(true);
+    }
+    for (const k of ["inst:settings", "inst:products", "inst:benefits", "inst:doctemplates", "inst:team", "inst:audit"]) {
+      expect(pathOf(k)?.startsWith("/setup")).toBe(true);
+    }
+  });
+});

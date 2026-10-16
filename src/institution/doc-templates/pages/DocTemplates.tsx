@@ -36,6 +36,7 @@ import {
 import {
   DOC_CATEGORY_LABEL, type DocCategory, type DocTemplate, type DocTemplateVersion,
 } from '../types/docTemplates'
+import { PageFrame } from '@/shared/components/PageFrame'
 
 type Filter = 'all' | 'active' | 'draft' | 'retired'
 
@@ -476,7 +477,7 @@ export default function DocTemplates() {
   const visible = data?.filter(t => matches(t, filter)) ?? []
 
   return (
-    <main className="p-6 lg:p-8 max-w-3xl mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-3xl mx-auto">
       <SectionHeader
         title="Document templates"
         subtitle="Author agreements in Word with merge fields, publish them through dual control, and generate populated documents per deal."
@@ -544,6 +545,6 @@ export default function DocTemplates() {
       {creating && <CreateTemplateModal onClose={() => setCreating(false)} />}
       {detailFor && <TemplateDetailModal template={detailFor} onClose={() => setDetailFor(null)} />}
       {generateFor && <GenerateModal template={generateFor} onClose={() => setGenerateFor(null)} />}
-    </main>
+    </PageFrame>
   )
 }

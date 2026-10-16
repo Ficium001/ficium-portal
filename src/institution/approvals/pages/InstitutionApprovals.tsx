@@ -40,6 +40,7 @@ import {
   SectionHeader, InlineAlert, EmptyState,
   Btn, inputCls,
 } from "@/institution/components/primitives";
+import { PageFrame } from "@/shared/components/PageFrame"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Action category metadata
@@ -409,7 +410,7 @@ export default function InstitutionApprovals() {
   );
 
   return (
-    <main className="p-6 lg:p-8 max-w-[1000px] mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-[1000px] mx-auto">
       <SectionHeader
         title="Approvals"
         subtitle={`Maker-checker queue · ${pending.length} pending`}
@@ -471,6 +472,6 @@ export default function InstitutionApprovals() {
           />
         ))}
       </div>
-    </main>
+    </PageFrame>
   );
 }
