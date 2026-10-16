@@ -95,6 +95,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     embeddedIn:  'inst:pipeline',
   },
   {
+    key:         'inst:booking',
+    label:       'Booking',
+    description: 'Record the loan booking from your core banking system (Booking tab on a deal)',
+    category:    'institution',
+    path:        '/deals',
+    iconKey:     'Landmark',
+    embeddedIn:  'inst:pipeline',
+  },
+  {
     key:         'inst:doctemplates',
     label:       'Doc Templates',
     description: 'Design loan agreements and facility letters, generate populated Word/PDF per deal',

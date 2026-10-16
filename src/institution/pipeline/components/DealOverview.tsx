@@ -36,9 +36,9 @@ export function DealOverview({ deal }: { deal: PipelineDetail }) {
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-3 text-[13px] text-green-800">
           <CheckCircle2 size={18} className="text-green-600 shrink-0" />
           <div>
-            <div className="font-semibold">Deal complete</div>
+            <div className="font-semibold">Processing complete</div>
             <div className="text-[12px] text-green-700 mt-0.5">
-              Completed {fmtDate(deal.completed_at)}. Commission event raised.
+              Processing completed {fmtDate(deal.completed_at)}.
             </div>
           </div>
         </div>

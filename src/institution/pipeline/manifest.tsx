@@ -36,10 +36,6 @@ export const dealsModule: ModuleManifest = {
         const all  = deal.stages.length
         return { state: all > 0 && done === all ? 'done' : 'current', detail: `${done}/${all} stages` }
       } },
-    { key: 'complete', label: 'Complete', moduleKey: 'inst:pipeline', order: 90,
-      useStep: (deal) => deal.status === 'completed'
-        ? { state: 'done', detail: fmtShort(deal.completed_at) }
-        : { state: 'todo' } },
   ],
   dealTabs: [{
     key: 'overview', label: 'Overview', moduleKey: 'inst:pipeline', order: 10,

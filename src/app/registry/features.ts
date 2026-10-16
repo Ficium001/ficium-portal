@@ -15,6 +15,7 @@ import { dualControlModule }   from '@/institution/dual-control/manifest'
 import { dealsModule }         from '@/institution/pipeline/manifest'
 import { docTemplatesModule }  from '@/institution/doc-templates/manifest'
 import { esignModule }         from '@/institution/esign/manifest'
+import { bookingModule }       from '@/institution/booking/manifest'
 import { analyticsModule }     from '@/institution/analytics/manifest'
 import { notificationsModule } from '@/institution/notifications/manifest'
 import { settingsModule }      from '@/institution/settings/manifest'
@@ -26,7 +27,7 @@ import { auditModule }         from '@/institution/audit/manifest'
 export const FEATURE_MODULES: readonly ModuleManifest[] = [
   marketplaceModule, bidsModule,
   bidApprovalModule, approvalChainsModule, dualControlModule,
-  dealsModule, docTemplatesModule, esignModule,
+  dealsModule, docTemplatesModule, esignModule, bookingModule,
   analyticsModule, notificationsModule,
   settingsModule, productsModule, benefitsModule, teamModule, auditModule,
 ]
