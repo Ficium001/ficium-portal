@@ -111,8 +111,8 @@ function AdminHero() {
       }
       actions={
         <>
-          <HeroButton onClick={() => navigate('/admin/dual-control')}>Review queue</HeroButton>
-          <HeroButton variant='ghost' onClick={() => navigate('/admin/audit')}>Audit log</HeroButton>
+          <HeroButton onClick={() => navigate('/dual-control')}>Review queue</HeroButton>
+          <HeroButton variant='ghost' onClick={() => navigate('/admin-audit')}>Audit log</HeroButton>
         </>
       }
       stats={stats}
@@ -136,7 +136,7 @@ function WaitingOnYou() {
             ? 'Dual-control queue is clear'
             : `${pending.length} pending action${pending.length > 1 ? 's' : ''} need a checker`
         }
-        to='/admin/dual-control'
+        to='/dual-control'
       />
       {isLoading ? (
         <div className='grid sm:grid-cols-2 xl:grid-cols-3 gap-4'>
@@ -174,7 +174,7 @@ function WaitingOnYou() {
                   <Tag tone={urgent ? 'red' : 'grey'}>expires {expiresIn(a.expires_at)}</Tag>
                 </div>
                 <Link
-                  to='/admin/dual-control'
+                  to='/dual-control'
                   className='inline-block bg-ink hover:bg-ficium text-white text-[13px] font-semibold px-4 py-2 rounded-[11px] transition-colors'
                 >
                   Review
@@ -211,7 +211,7 @@ function PulseAndFeed() {
 
   return (
     <Reveal as='section' className='mt-12'>
-      <SectionHead title="Today's pulse" subtitle='Admin activity across the platform' to='/admin/audit' toLabel='Full log' />
+      <SectionHead title="Today's pulse" subtitle='Admin activity across the platform' to='/admin-audit' toLabel='Full log' />
       <div className='grid lg:grid-cols-[1.6fr_1fr] gap-4'>
         <Panel>
           <PanelHead
@@ -314,20 +314,20 @@ function SessionsAndCallout() {
           (soonestPending ? `in ${expiresIn(soonestPending.expires_at)}` : 'soon') +
           '. A quick review keeps makers unblocked and the platform moving.',
         cta: 'Review queue',
-        to: '/admin/dual-control',
+        to: '/dual-control',
       }
     : locked > 0
     ? {
         title: `${locked} account${locked > 1 ? 's are' : ' is'} locked.`,
         body: 'Locked admins can\'t work. Unlocking takes a minute from the users page.',
         cta: 'Open users',
-        to: '/admin/users',
+        to: '/users',
       }
     : {
         title: 'All clear.',
         body: 'No pending approvals, no locked accounts, systems healthy. A good moment to review the audit trail or tidy up groups.',
         cta: 'Browse audit log',
-        to: '/admin/audit',
+        to: '/admin-audit',
       }
 
   return (

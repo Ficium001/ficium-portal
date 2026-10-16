@@ -63,7 +63,8 @@ describe("MODULE_CATALOGUE integrity", () => {
     // admin:dashboard both map to /dashboard, resolved at runtime by DashboardRouter
     // based on user_type. Uniqueness is only required within a single surface.
     for (const category of ["institution", "admin"] as const) {
-      const categoryModules = MODULE_CATALOGUE.filter((m) => m.category === category);
+      // Embedded modules (a tab inside another page) share their host's path.
+      const categoryModules = MODULE_CATALOGUE.filter((m) => m.category === category && !m.embeddedIn);
       expect(categoryModules.length).toBeGreaterThan(0);
       const paths = categoryModules.map((m) => m.path);
       expect(new Set(paths).size).toBe(paths.length);
@@ -99,6 +100,16 @@ describe("hub consolidation", () => {
     }
     for (const k of ["inst:settings", "inst:products", "inst:benefits", "inst:doctemplates", "inst:team", "inst:audit"]) {
       expect(pathOf(k)?.startsWith("/setup")).toBe(true);
+    }
+  });
+});
+
+describe("embedded modules", () => {
+  it("point at a real host module and share its path", () => {
+    for (const m of MODULE_CATALOGUE.filter((x) => x.embeddedIn)) {
+      const host = MODULE_CATALOGUE.find((x) => x.key === m.embeddedIn);
+      expect(host).toBeDefined();
+      expect(m.path).toBe(host!.path);
     }
   });
 });

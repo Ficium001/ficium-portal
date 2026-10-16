@@ -70,7 +70,7 @@ Key files: `ficiumAuth.ts` (token lifecycle), `portalApi.ts` (authenticated fetc
 
 1. Maker goes to Marketplace → sees open consumer requests
 2. Clicks "Bid" → fills rate, amount, term → `POST /approvals/submit { action: 'bid.submit' }`
-3. Checker goes to Approvals → reviews → `POST /approvals/{id}/approve`
+3. Checker opens Inbox → Bids → reviews → `POST /approvals/{id}/approve`
 4. Portal DB `marketplace.bid` row created atomically
 5. `trg_bid_notify` fires → consumer notified via pg_net → Vercel → Resend email
 
