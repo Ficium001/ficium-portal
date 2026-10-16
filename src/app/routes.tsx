@@ -12,7 +12,7 @@
 
 import { lazy, Suspense, Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
-import { createBrowserRouter, Navigate, useParams, useLocation } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 // ─── Auth / shared ────────────────────────────────────────────
 const UnifiedLogin          = lazy(() => import('../shared/pages/UnifiedLogin'))
@@ -38,7 +38,6 @@ const InstitutionMarketplace = lazy(() => import('../institution/marketplace/pag
 const InstitutionBids        = lazy(() => import('../institution/bids/pages/InstitutionBids'))
 const InstitutionPipelines   = lazy(() => import('../institution/pipeline/pages/InstitutionPipelines').then(m => ({ default: m.InstitutionPipelines })))
 const PipelineDetail         = lazy(() => import('../institution/pipeline/pages/PipelineDetail').then(m => ({ default: m.PipelineDetail })))
-const EsignEnvelopes         = lazy(() => import('../institution/esign/pages/EsignEnvelopes'))
 const InstitutionInbox       = lazy(() => import('../institution/inbox/pages/InstitutionInbox'))
 const InstitutionSetup       = lazy(() => import('../institution/setup/pages/InstitutionSetup'))
 const SignCeremony           = lazy(() => import('../public/esign/pages/SignCeremony'))
@@ -139,12 +138,6 @@ function RequireModule({ moduleKey, children }: { moduleKey: string; children: R
 // Router
 // ─────────────────────────────────────────────────────────────
 
-function LegacyDealRedirect() {
-  const { id } = useParams<{ id: string }>()
-  const { search } = useLocation()
-  return <Navigate to={`/deals/${id}${search}`} replace />
-}
-
 export const router = createBrowserRouter([
 
   // ── Public ────────────────────────────────────────────────
@@ -172,7 +165,6 @@ export const router = createBrowserRouter([
           { path: '/deals/:id',    element: <RequireModule moduleKey="inst:pipeline"><S><PipelineDetail /></S></RequireModule> },
           { path: '/inbox',        element: <S><InstitutionInbox /></S> },
           { path: '/setup',        element: <S><InstitutionSetup /></S> },
-          { path: '/esign',        element: <RequireModule moduleKey="inst:esign"><S><EsignEnvelopes /></S></RequireModule> },
 
 
           { path: '/analytics',    element: <RequireModule moduleKey="inst:analytics"><S><InstitutionAnalytics /></S></RequireModule> },
@@ -190,28 +182,4 @@ export const router = createBrowserRouter([
       },
     ],
   },
-
-  // ── Legacy redirects ──────────────────────────────────────
-  // Pipelines became Deals (Oct 2026). Keep old links and bookmarks working.
-  { path: '/pipelines',     element: <Navigate to='/deals' replace /> },
-  // Approval queues became Inbox; configuration screens became Setup (Oct 2026).
-  { path: '/approvals',         element: <Navigate to='/inbox?section=bids'      replace /> },
-  { path: '/approval-chains',   element: <Navigate to='/inbox?section=credit'    replace /> },
-  { path: '/inst-dual-control', element: <Navigate to='/inbox?section=internal'  replace /> },
-  { path: '/settings',          element: <Navigate to='/setup'                   replace /> },
-  { path: '/products',          element: <Navigate to='/setup?section=products'  replace /> },
-  { path: '/benefits',          element: <Navigate to='/setup?section=benefits'  replace /> },
-  { path: '/doc-templates',     element: <Navigate to='/setup?section=documents' replace /> },
-  { path: '/team/users',        element: <Navigate to='/setup?section=team'      replace /> },
-  { path: '/audit',             element: <Navigate to='/setup?section=audit'     replace /> },
-  { path: '/pipelines/:id', element: <LegacyDealRedirect /> },
-  { path: '/admin/dashboard',    element: <Navigate to='/dashboard'    replace /> },
-  { path: '/admin/users',        element: <Navigate to='/users'        replace /> },
-  { path: '/admin/groups',       element: <Navigate to='/groups'       replace /> },
-  { path: '/admin/roles',        element: <Navigate to='/groups'       replace /> },
-  { path: '/admin/dual-control', element: <Navigate to='/dual-control' replace /> },
-  { path: '/admin/sessions',     element: <Navigate to='/sessions'     replace /> },
-  { path: '/admin/audit',        element: <Navigate to='/admin-audit'  replace /> },
-  { path: '/admin/system',       element: <Navigate to='/system'       replace /> },
-  { path: '/admin/login',        element: <Navigate to='/login'        replace /> },
 ])

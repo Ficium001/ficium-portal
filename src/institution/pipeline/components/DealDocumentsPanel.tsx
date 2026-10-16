@@ -82,8 +82,13 @@ function GenerateModal({
 }
 
 export function DealDocumentsPanel({
-  pipelineId, dealLabel,
-}: { pipelineId: string; dealLabel: string }) {
+  pipelineId, dealLabel, borrowerName, borrowerEmail,
+}: {
+  pipelineId: string
+  dealLabel: string
+  borrowerName?: string | null
+  borrowerEmail?: string | null
+}) {
   // inst:pipeline gates this page, but documents and signatures are separate
   // licensed modules. The whole doc-templates router is guarded by
   // require_module('inst:doctemplates'), so for a pipeline-only user the
@@ -175,8 +180,10 @@ export function DealDocumentsPanel({
       {signFor && (
         <EnvelopeCreateModal
           onClose={() => setSignFor(null)}
-          presetEntityId={pipelineId}
+          dealId={pipelineId}
           presetTitle={dealLabel}
+          presetBorrowerName={borrowerName}
+          presetBorrowerEmail={borrowerEmail}
         />
       )}
     </div>

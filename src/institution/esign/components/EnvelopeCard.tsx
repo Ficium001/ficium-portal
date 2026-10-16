@@ -1,9 +1,7 @@
 /**
  * EnvelopeCard — one e-signature envelope: title, status, signer progress,
  * audit trail and sealed-PDF actions.
- *
- * Shared by the e-sign list (/esign) and the deal page's Signatures tab so
- * both render an envelope identically.
+ * Rendered in the deal page's Signatures tab.
  */
 import { History, FileDown, CheckCircle2, Circle } from 'lucide-react'
 import type { EsignEnvelope } from '@/institution/types/approvalEngine'

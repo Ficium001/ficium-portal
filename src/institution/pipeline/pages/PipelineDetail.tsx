@@ -140,11 +140,13 @@ export function PipelineDetail() {
         )}
 
         {active === "documents" && (
-          <DealDocumentsPanel pipelineId={pipeline.id} dealLabel={dealLabel} />
+          <DealDocumentsPanel pipelineId={pipeline.id} dealLabel={dealLabel}
+                              borrowerName={pipeline.borrower_name} borrowerEmail={pipeline.borrower_email} />
         )}
 
         {active === "signatures" && (
-          <DealSignaturesPanel pipelineId={pipeline.id} dealLabel={dealLabel} />
+          <DealSignaturesPanel pipelineId={pipeline.id} dealLabel={dealLabel}
+                               borrowerName={pipeline.borrower_name} borrowerEmail={pipeline.borrower_email} />
         )}
 
         {active === "messages" && (

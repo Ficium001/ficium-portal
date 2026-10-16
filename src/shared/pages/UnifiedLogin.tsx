@@ -227,7 +227,7 @@ export default function UnifiedLogin() {
           body: JSON.stringify({ new_password: newPassword }),
         })
         const userType = await detectUserType()
-        navigate(userType === 'admin' ? '/admin/dashboard' : (from ?? '/dashboard'), { replace: true })
+        navigate(userType === 'admin' ? '/dashboard' : (from ?? '/dashboard'), { replace: true })
       } catch (e) {
         setNewPwError((e as ApiError)?.message ?? 'Failed to update password.')
         setNewPwLoading(false)

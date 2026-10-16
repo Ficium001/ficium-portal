@@ -30,14 +30,19 @@ const ENTITY_LABELS: { value: EsignEntityType; label: string }[] = [
 
 export function EnvelopeCreateModal({
   onClose,
-  presetEntityId,
+  dealId,
   presetTitle,
+  presetBorrowerName,
+  presetBorrowerEmail,
   presetApprovalInstanceId,
 }: {
   onClose: () => void
-  /** Deal id to prefill, when opened from a pipeline deal rather than the e-sign list. */
-  presetEntityId?: string
+  /** The deal (loan_pipeline id) this envelope belongs to. Envelopes are only raised from a deal. */
+  dealId: string
   presetTitle?: string
+  /** Revealed borrower identity from the deal, so the officer doesn't retype it. */
+  presetBorrowerName?: string | null
+  presetBorrowerEmail?: string | null
   /** Approval decision that authorised this envelope, when raised from an approval. */
   presetApprovalInstanceId?: string
 }) {
@@ -46,13 +51,12 @@ export function EnvelopeCreateModal({
   const { data: users } = useInstitutionUsers()
 
   const [entityType, setEntityType]   = useState<EsignEntityType>('offer_letter')
-  const [entityId, setEntityId]       = useState(presetEntityId ?? '')
   const [title, setTitle]             = useState(presetTitle ?? '')
   const [documentPath, setDocumentPath] = useState('')
   const [generationId, setGenerationId] = useState<string | null>(null)
   const [expiresHours, setExpiresHours] = useState(72)
-  const [borrowerName, setBorrowerName]   = useState('')
-  const [borrowerEmail, setBorrowerEmail] = useState('')
+  const [borrowerName, setBorrowerName]   = useState(presetBorrowerName ?? '')
+  const [borrowerEmail, setBorrowerEmail] = useState(presetBorrowerEmail ?? '')
   const [counterRef, setCounterRef]       = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -61,13 +65,13 @@ export function EnvelopeCreateModal({
   // loan agreement generated for this very deal never appeared and the operator
   // had to paste its storage path by hand.
   // Both of these hit the doc-templates router, which is guarded by
-  // require_module('inst:doctemplates'). This modal is reachable from the
-  // e-sign page with only inst:esign, so skip the calls without that module
+  // require_module('inst:doctemplates'). A role can hold inst:esign without
+  // it (Signatures tab but no Documents tab), so skip the calls without that module
   // instead of firing requests that are guaranteed to 403. The picker then
   // falls back to the document library alone.
   const canReadTemplates = useModuleAccess('inst:doctemplates').allowed
   const { data: generations } = useEntityGenerations(
-    'loan_pipeline', canReadTemplates ? (entityId.trim() || null) : null,
+    'loan_pipeline', canReadTemplates ? dealId : null,
   )
   const { data: allTemplates } = useDocTemplates({ enabled: canReadTemplates })
   const signableGenerations = (generations ?? []).filter(
@@ -91,7 +95,7 @@ export function EnvelopeCreateModal({
   const countersigner = users?.find(u => u.id === counterRef)
 
   const canSubmit =
-    entityId.trim() !== '' && title.trim() !== '' && documentPath.trim() !== '' &&
+    title.trim() !== '' && documentPath.trim() !== '' &&
     borrowerName.trim() !== '' && /\S+@\S+\.\S+/.test(borrowerEmail) &&
     countersigner != null && !create.isPending
 
@@ -101,7 +105,7 @@ export function EnvelopeCreateModal({
     try {
       await create.mutateAsync({
         entity_type: entityType,
-        entity_id: entityId.trim(),
+        entity_id: dealId,
         approval_instance_id: presetApprovalInstanceId,
         title: title.trim(),
         document_path: documentPath.trim(),
@@ -124,20 +128,15 @@ export function EnvelopeCreateModal({
       <div className="space-y-4">
         {error && <InlineAlert variant="error">{error}</InlineAlert>}
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="Document type" required>
-            <select
-              className={inputCls}
-              value={entityType}
-              onChange={e => setEntityType(e.target.value as EsignEntityType)}
-            >
-              {ENTITY_LABELS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </FormField>
-          <FormField label="Related record ID" required hint="Bid, mandate or pipeline record this document belongs to.">
-            <input className={inputCls} value={entityId} onChange={e => setEntityId(e.target.value)} placeholder="e.g. bid UUID" />
-          </FormField>
-        </div>
+        <FormField label="Document type" required>
+          <select
+            className={inputCls}
+            value={entityType}
+            onChange={e => setEntityType(e.target.value as EsignEntityType)}
+          >
+            {ENTITY_LABELS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </FormField>
 
         <FormField label="Envelope title" required hint="Shown to the borrower on the signing page and in emails.">
           <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} placeholder="Home loan offer letter — MUR 4,500,000" />

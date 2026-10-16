@@ -455,7 +455,7 @@ export default function AdminUsers() {
         <div className='mb-5'>
           <AAlert variant='success' onDismiss={() => setSuccessMsg(null)}>
             {successMsg} — check{' '}
-            <a href='/admin/dual-control' className='underline'>Dual Control</a> to approve.
+            <a href='/dual-control' className='underline'>Dual Control</a> to approve.
           </AAlert>
         </div>
       )}

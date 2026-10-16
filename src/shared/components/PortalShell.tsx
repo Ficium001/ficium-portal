@@ -157,7 +157,7 @@ const SETUP_HUB: NavHub = {
 const NAV_SECTIONS: { label: string; entries: NavEntry[] }[] = [
   { label: 'Home',        entries: ['inst:dashboard', 'admin:dashboard'] },
   { label: 'Marketplace', entries: ['inst:marketplace', 'inst:bids'] },
-  { label: 'Deals',       entries: ['inst:pipeline', 'inst:esign', INBOX_HUB] },
+  { label: 'Deals',       entries: ['inst:pipeline', INBOX_HUB] },
   { label: 'Insights',    entries: ['inst:analytics'] },
   { label: 'Setup',       entries: [SETUP_HUB] },
   { label: 'Admin',       entries: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
@@ -234,7 +234,7 @@ function Drawer({
   // instead of silently vanishing from nav.
   const seenPaths = new Set(sections.flatMap(s => s.modules.map(m => m.path)))
   const other = visibleModules.filter(
-    m => !NAMED_KEYS.has(m.key) && !NAV_HIDDEN.has(m.key) && !seenPaths.has(m.path),
+    m => !NAMED_KEYS.has(m.key) && !NAV_HIDDEN.has(m.key) && !m.embeddedIn && !seenPaths.has(m.path),
   )
   if (other.length > 0) sections.push({ label: 'Other', modules: other })
 
@@ -561,7 +561,7 @@ export default function PortalShell() {
 
   useEffect(() => {
     const routes = Object.fromEntries(
-      visibleModules.filter(m => m.shortcut).map(m => [m.shortcut!.toLowerCase(), m.path])
+      visibleModules.filter(m => m.shortcut && !m.embeddedIn).map(m => [m.shortcut!.toLowerCase(), m.path])
     )
     const gRef = { pressed: false, timer: 0 as unknown as ReturnType<typeof setTimeout> }
     const h = (e: KeyboardEvent) => {

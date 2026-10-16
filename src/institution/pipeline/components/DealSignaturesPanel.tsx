@@ -1,8 +1,8 @@
 /**
  * DealSignaturesPanel — e-signature envelopes raised against one deal.
  *
- * Envelopes opened from a deal carry entity_id = pipeline id (see
- * EnvelopeCreateModal's presetEntityId), so the deal's envelopes are the
+ * Envelopes are only raised from a deal and carry entity_id = pipeline id
+ * (EnvelopeCreateModal's dealId), so the deal's envelopes are the
  * subset of the institution's list with that entity_id.
  *
  * Filtering is client-side: GET /esign/envelopes has no entity filter yet.
@@ -21,9 +21,13 @@ import { Btn, EmptyState, InlineAlert, SkeletonCard } from '@/institution/compon
 export function DealSignaturesPanel({
   pipelineId,
   dealLabel,
+  borrowerName,
+  borrowerEmail,
 }: {
   pipelineId: string
   dealLabel: string
+  borrowerName?: string | null
+  borrowerEmail?: string | null
 }) {
   const { data, isLoading, isError } = useDealEnvelopes(pipelineId, true)
   const sealed = useSealedUrl()
@@ -76,8 +80,10 @@ export function DealSignaturesPanel({
       {creating && (
         <EnvelopeCreateModal
           onClose={() => setCreating(false)}
-          presetEntityId={pipelineId}
+          dealId={pipelineId}
           presetTitle={dealLabel}
+          presetBorrowerName={borrowerName}
+          presetBorrowerEmail={borrowerEmail}
         />
       )}
       {trailFor && <EnvelopeTimeline envelope={trailFor} onClose={() => setTrailFor(null)} />}

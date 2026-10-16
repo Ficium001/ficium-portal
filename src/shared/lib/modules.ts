@@ -29,6 +29,12 @@ export interface PortalModule {
   iconKey:     string
   /** Vim-style keyboard shortcut (after G+). */
   shortcut?:   string
+  /**
+   * Set when the module is a tab inside another page rather than a page of
+   * its own: `path` is then that host page, and the module gets no nav item
+   * or shortcut. The key still gates the tab and appears in group permissions.
+   */
+  embeddedIn?: string
 }
 
 // ─── Institution modules ──────────────────────────────────────
@@ -82,11 +88,11 @@ const INSTITUTION_MODULES: PortalModule[] = [
   {
     key:         'inst:esign',
     label:       'E-Signatures',
-    description: 'Send, track and seal signature envelopes for offer letters and mandates',
+    description: 'Send, track and seal signature envelopes for offer letters and mandates (Signatures tab on a deal)',
     category:    'institution',
-    path:        '/esign',
+    path:        '/deals',
     iconKey:     'PenLine',
-    shortcut:    'W',
+    embeddedIn:  'inst:pipeline',
   },
   {
     key:         'inst:doctemplates',
