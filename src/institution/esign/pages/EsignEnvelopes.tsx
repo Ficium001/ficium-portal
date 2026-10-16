@@ -13,14 +13,15 @@
  * @owner Ficium Engineering
  */
 import { useState } from 'react'
-import { PenLine, Plus, History, FileDown, CheckCircle2, Circle } from 'lucide-react'
+import { PenLine, Plus } from 'lucide-react'
 import { useEsignEnvelopes, useSealedUrl } from '@/institution/esign/hooks/useEsign'
 import type { EsignEnvelope } from '@/institution/types/approvalEngine'
 import {
-  SectionHeader, EmptyState, InlineAlert, SkeletonCard, Btn, StatusBadge, FilterPills,
+  SectionHeader, EmptyState, InlineAlert, SkeletonCard, Btn, FilterPills,
 } from '@/institution/components/primitives'
 import { EnvelopeCreateModal } from '../components/EnvelopeCreateModal'
 import { EnvelopeTimeline } from '../components/EnvelopeTimeline'
+import { EnvelopeCard } from '../components/EnvelopeCard'
 
 type Filter = 'all' | 'in_progress' | 'completed' | 'closed'
 
@@ -36,22 +37,6 @@ function matches(env: EsignEnvelope, f: Filter): boolean {
   if (f === 'in_progress') return env.status === 'sent' || env.status === 'partially_signed' || env.status === 'draft'
   if (f === 'completed') return env.status === 'completed'
   return env.status === 'declined' || env.status === 'expired' || env.status === 'voided'
-}
-
-function SignerDots({ env }: { env: EsignEnvelope }) {
-  return (
-    <div className="flex items-center gap-3">
-      {env.signers.map((s, i) => (
-        <span key={i} className="inline-flex items-center gap-1.5 text-[11px] text-muted">
-          {s.status === 'signed'
-            ? <CheckCircle2 className="w-3.5 h-3.5 text-good" aria-hidden />
-            : <Circle className="w-3.5 h-3.5 text-line" aria-hidden />}
-          {s.display_name}
-          <span className="uppercase tracking-wide text-[9px] text-muted/70">{s.party}</span>
-        </span>
-      ))}
-    </div>
-  )
 }
 
 export default function EsignEnvelopes() {
@@ -108,39 +93,13 @@ export default function EsignEnvelopes() {
 
       <div className="space-y-3">
         {visible.map(env => (
-          <div
+          <EnvelopeCard
             key={env.id}
-            className="bg-white border border-line rounded-card shadow-card px-5 py-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[14px] font-bold text-ink truncate">{env.title}</p>
-                <p className="text-[11px] text-muted mt-0.5">
-                  {env.entity_type.replace(/_/g, ' ')}
-                  {' · '}
-                  {env.status === 'completed' && env.completed_at
-                    ? `completed ${new Date(env.completed_at).toLocaleDateString()}`
-                    : `expires ${new Date(env.expires_at).toLocaleString()}`}
-                </p>
-              </div>
-              <StatusBadge status={env.status} />
-            </div>
-
-            <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
-              <SignerDots env={env} />
-              <div className="flex items-center gap-2">
-                <Btn size="sm" variant="ghost" icon={History} onClick={() => setTrailFor(env)}>
-                  Audit trail
-                </Btn>
-                {env.status === 'completed' && (
-                  <Btn size="sm" variant="secondary" icon={FileDown}
-                       loading={sealed.isPending} onClick={() => openSealed(env)}>
-                    Sealed PDF
-                  </Btn>
-                )}
-              </div>
-            </div>
-          </div>
+            env={env}
+            onShowTrail={setTrailFor}
+            onOpenSealed={openSealed}
+            sealedLoading={sealed.isPending}
+          />
         ))}
       </div>
 
