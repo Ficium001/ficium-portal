@@ -144,10 +144,10 @@ const INSTITUTION_MODULES: PortalModule[] = [
   },
   {
     key:         'inst:pipeline',
-    label:       'Pipelines',
-    description: 'Manage post-acceptance loan processing pipelines',
+    label:       'Deals',
+    description: 'Accepted deals: processing stages, documents, signatures and borrower messages',
     category:    'institution',
-    path:        '/pipelines',
+    path:        '/deals',
     iconKey:     'GitBranch',
     shortcut:    'N',
   },

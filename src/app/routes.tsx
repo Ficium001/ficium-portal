@@ -12,7 +12,7 @@
 
 import { lazy, Suspense, Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useParams, useLocation } from 'react-router-dom'
 
 // ─── Auth / shared ────────────────────────────────────────────
 const UnifiedLogin          = lazy(() => import('../shared/pages/UnifiedLogin'))
@@ -146,6 +146,12 @@ function RequireModule({ moduleKey, children }: { moduleKey: string; children: R
 // Router
 // ─────────────────────────────────────────────────────────────
 
+function LegacyDealRedirect() {
+  const { id } = useParams<{ id: string }>()
+  const { search } = useLocation()
+  return <Navigate to={`/deals/${id}${search}`} replace />
+}
+
 export const router = createBrowserRouter([
 
   // ── Public ────────────────────────────────────────────────
@@ -169,8 +175,8 @@ export const router = createBrowserRouter([
           // Institution pages
           { path: '/marketplace',  element: <RequireModule moduleKey="inst:marketplace"><S><InstitutionMarketplace /></S></RequireModule> },
           { path: '/bids',         element: <RequireModule moduleKey="inst:bids"><S><InstitutionBids /></S></RequireModule> },
-          { path: '/pipelines',    element: <RequireModule moduleKey="inst:pipeline"><S><InstitutionPipelines /></S></RequireModule> },
-          { path: '/pipelines/:id',element: <RequireModule moduleKey="inst:pipeline"><S><PipelineDetail /></S></RequireModule> },
+          { path: '/deals',        element: <RequireModule moduleKey="inst:pipeline"><S><InstitutionPipelines /></S></RequireModule> },
+          { path: '/deals/:id',    element: <RequireModule moduleKey="inst:pipeline"><S><PipelineDetail /></S></RequireModule> },
           { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
           { path: '/approval-chains', element: <RequireModule moduleKey="inst:approvals"><S><ApprovalChainsInbox /></S></RequireModule> },
           { path: '/esign',        element: <RequireModule moduleKey="inst:esign"><S><EsignEnvelopes /></S></RequireModule> },
@@ -199,6 +205,9 @@ export const router = createBrowserRouter([
   },
 
   // ── Legacy redirects ──────────────────────────────────────
+  // Pipelines became Deals (Oct 2026). Keep old links and bookmarks working.
+  { path: '/pipelines',     element: <Navigate to='/deals' replace /> },
+  { path: '/pipelines/:id', element: <LegacyDealRedirect /> },
   { path: '/admin/dashboard',    element: <Navigate to='/dashboard'    replace /> },
   { path: '/admin/users',        element: <Navigate to='/users'        replace /> },
   { path: '/admin/groups',       element: <Navigate to='/groups'       replace /> },

@@ -26,7 +26,7 @@ export function PipelineCard({ pipeline }: PipelineCardProps) {
 
   return (
     <button
-      onClick={() => navigate(`/pipelines/${pipeline.id}`)}
+      onClick={() => navigate(`/deals/${pipeline.id}`)}
       className="w-full text-left bg-white border border-ink/[0.07] rounded-2xl p-5
                  hover:border-ficium/30 hover:shadow-md transition-all group"
       aria-label={`Open pipeline for borrower ref ${pipeline.consumer_ref}`}

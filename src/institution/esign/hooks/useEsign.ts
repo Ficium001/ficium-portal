@@ -43,9 +43,10 @@ export interface CreateEnvelopeBody {
   countersigner_ref: string
 }
 
-export function useEsignEnvelopes() {
+export function useEsignEnvelopes(enabled = true) {
   return useQuery<EsignEnvelope[]>({
     queryKey: ESQK.envelopes,
+    enabled,
     queryFn: () => portalApi.get<EsignEnvelope[]>('/esign/envelopes'),
     refetchInterval: poll30s,
     refetchOnWindowFocus: true,
