@@ -1,34 +1,24 @@
 /**
- * PipelineDetail.tsx — the Deal page.
+ * PipelineDetail.tsx — the Deal page (/deals/:id).
  *
- * One place for everything that happens after a bid is accepted. Each tab
- * reuses the component that already owns that job; nothing here talks to the
- * API directly.
+ * One place for everything after a bid is accepted. Tabs are contributed by
+ * modules (manifest.dealTabs) — overview from deals, documents from doc
+ * templates, signatures from e-sign, messages from marketplace — and each
+ * shows only if the user holds that module's key. The page itself knows no
+ * features, so a new module (e.g. disbursement) adds a tab by declaring it.
  *
- *   Overview   — terms, borrower identity, processing stages   (inst:pipeline)
- *   Documents  — generated offer letters / agreements          (inst:doctemplates)
- *   Signatures — e-sign envelopes raised against this deal      (inst:esign)
- *   Messages   — the borrower conversation for the request      (inst:marketplace)
- *
- * Tabs a user's group or plan doesn't include are hidden, using the same
- * useModuleAccess check RequireModule applies to routes. The active tab lives
- * in ?tab= so a deal can be linked straight to its signatures or messages.
+ * The active tab lives in ?tab= so a deal can be linked to a specific tab.
  */
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle2, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { SkeletonCard, StatusBadge } from "@/institution/components/primitives";
-import { DealSummaryPanel }        from "@/institution/pipeline/components/DealSummaryPanel";
-import { BorrowerIdentityPanel }   from "@/institution/pipeline/components/BorrowerIdentityPanel";
-import { StageCard }               from "@/institution/pipeline/components/StageCard";
-import { DealDocumentsPanel }      from "@/institution/pipeline/components/DealDocumentsPanel";
-import { DealSignaturesPanel }     from "@/institution/pipeline/components/DealSignaturesPanel";
 import { SectionTabs, type SectionTab } from "@/shared/components/SectionTabs";
-import { usePipeline }             from "@/institution/pipeline/hooks/usePipeline";
-import { useDealEnvelopes }        from "@/institution/pipeline/hooks/useDealEnvelopes";
-import { useModuleAccess }         from "@/shared/hooks/useModuleAccess";
-import RequestChat                 from "@/shared/components/RequestChat";
+import { usePipeline }      from "@/institution/pipeline/hooks/usePipeline";
+import { useModulesAccess } from "@/shared/hooks/useModuleAccess";
+import { DealLifecycle }    from "@/institution/pipeline/components/DealLifecycle";
+import { DEAL_TABS }        from "@/app/registry/select";
 
-type TabKey = "overview" | "documents" | "signatures" | "messages";
+const TAB_KEYS = DEAL_TABS.map((t) => t.moduleKey);
 
 const fmtDate = (s: string | null) =>
   s ? new Date(s).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -37,45 +27,28 @@ export function PipelineDetail() {
   const { id }   = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const { data: pipeline, isLoading } = usePipeline(id!);
+  const { data: deal, isLoading } = usePipeline(id!);
+  const access = useModulesAccess(TAB_KEYS);
 
-  const docs  = useModuleAccess("inst:doctemplates");
-  const esign = useModuleAccess("inst:esign");
-  const chat  = useModuleAccess("inst:marketplace");
-  const envelopes = useDealEnvelopes(id!, esign.allowed);
-
-  if (isLoading) return (
+  if (isLoading || access.isLoading) return (
     <main className="p-6 lg:p-8 max-w-[1100px] mx-auto"><div className="space-y-3">{Array.from({length:3}).map((_,i)=><SkeletonCard key={i}/>)}</div></main>
   );
-  if (!pipeline) return (
+  if (!deal) return (
     <main className="p-6 lg:p-8 max-w-[1100px] mx-auto py-16 text-center text-muted">This deal could not be found. It may have been withdrawn.</main>
   );
 
-  const completed = pipeline.stages.filter((s) => s.status === "completed" || s.status === "skipped").length;
-  const pendingSignatures = (envelopes.data ?? []).filter(
-    (e) => e.status === "sent" || e.status === "partially_signed",
-  ).length;
+  const visible = DEAL_TABS.filter((t) => access.allowed[t.moduleKey]);
+  const tabs: SectionTab<string>[] = visible.map(({ key, label, Badge }) => ({
+    key, label, badge: Badge ? <Badge deal={deal} /> : undefined,
+  }));
 
-  const tabs: SectionTab<TabKey>[] = [
-    { key: "overview",   label: "Overview",   badge: `${completed}/${pipeline.stages.length}` },
-    ...(docs.allowed  ? [{ key: "documents"  as const, label: "Documents" }] : []),
-    ...(esign.allowed ? [{ key: "signatures" as const, label: "Signatures",
-                           badge: pendingSignatures ? `${pendingSignatures} waiting` : undefined }] : []),
-    ...(chat.allowed  ? [{ key: "messages"   as const, label: "Messages" }] : []),
-  ];
-
-  const requested = params.get("tab") as TabKey | null;
-  const active: TabKey = tabs.some((t) => t.key === requested) ? requested! : "overview";
-  const setTab = (key: TabKey) => {
+  const requested = params.get("tab");
+  const active = visible.find((t) => t.key === requested) ?? visible[0];
+  const setTab = (key: string) => {
     const next = new URLSearchParams(params);
-    if (key === "overview") next.delete("tab"); else next.set("tab", key);
+    if (key === visible[0]?.key) next.delete("tab"); else next.set("tab", key);
     setParams(next, { replace: true });
   };
-
-  const activeStageId = pipeline.stages.find(
-    (s) => s.status === "active" || s.status === "awaiting_approval",
-  )?.id;
-  const dealLabel = `${pipeline.product_label} — ref ${pipeline.consumer_ref}`;
 
   return (
     <main className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-5">
@@ -86,75 +59,25 @@ export function PipelineDetail() {
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-display font-bold text-[20px] text-ink">{pipeline.product_label}</h1>
-            <StatusBadge status={pipeline.status} />
+            <h1 className="font-display font-bold text-[20px] text-ink">{deal.product_label}</h1>
+            <StatusBadge status={deal.status} />
           </div>
           <p className="text-[12px] text-muted">
-            {pipeline.borrower_name ?? "Borrower"}, ref {pipeline.consumer_ref}, started {fmtDate(pipeline.started_at)}
+            {deal.borrower_name ?? "Borrower"}, ref {deal.consumer_ref}, started {fmtDate(deal.started_at)}
           </p>
         </div>
       </div>
 
-      <SectionTabs tabs={tabs} active={active} onChange={setTab} idPrefix="deal" label="Deal sections" />
+      <DealLifecycle deal={deal} onOpenTab={setTab} availableTabs={visible.map((t) => t.key)} />
 
-      <div role="tabpanel" id={`deal-panel-${active}`} aria-labelledby={`deal-tab-${active}`}>
-        {active === "overview" && (
-          <div className="space-y-5">
-            <DealSummaryPanel
-              amount={pipeline.deal_amount}
-              rate={pipeline.deal_rate}
-              termMonths={pipeline.deal_term_months}
-            />
-            <BorrowerIdentityPanel
-              name={pipeline.borrower_name}
-              email={pipeline.borrower_email}
-              phone={pipeline.borrower_phone}
-              address={pipeline.borrower_address}
-            />
-            <div>
-              <h2 className="text-[13px] font-semibold text-ink mb-3">Processing stages</h2>
-              <div className="space-y-2">
-                {pipeline.stages.map((stage) => (
-                  <StageCard
-                    key={stage.id}
-                    stage={stage}
-                    pipelineId={pipeline.id}
-                    isActive={stage.id === activeStageId}
-                  />
-                ))}
-              </div>
-            </div>
-            {pipeline.status === "completed" && (
-              <div className="flex items-center gap-3 bg-green-50 border border-green-200
-                              rounded-2xl px-4 py-3 text-[13px] text-green-800">
-                <CheckCircle2 size={18} className="text-green-600 shrink-0" />
-                <div>
-                  <div className="font-semibold">Deal complete</div>
-                  <div className="text-[12px] text-green-700 mt-0.5">
-                    Completed {fmtDate(pipeline.completed_at)}. Commission event raised.
-                  </div>
-                </div>
-              </div>
-            )}
+      {active && (
+        <>
+          <SectionTabs tabs={tabs} active={active.key} onChange={setTab} idPrefix="deal" label="Deal sections" />
+          <div role="tabpanel" id={`deal-panel-${active.key}`} aria-labelledby={`deal-tab-${active.key}`}>
+            {active.render(deal)}
           </div>
-        )}
-
-        {active === "documents" && (
-          <DealDocumentsPanel pipelineId={pipeline.id} dealLabel={dealLabel}
-                              borrowerName={pipeline.borrower_name} borrowerEmail={pipeline.borrower_email} />
-        )}
-
-        {active === "signatures" && (
-          <DealSignaturesPanel pipelineId={pipeline.id} dealLabel={dealLabel}
-                               borrowerName={pipeline.borrower_name} borrowerEmail={pipeline.borrower_email} />
-        )}
-
-        {active === "messages" && (
-          <div className="bg-white border border-line rounded-card shadow-card h-[560px] flex flex-col overflow-hidden">
-            <RequestChat requestId={pipeline.request_id} />
-          </div>
-        )}
-      </div>
+        </>
+      )}
     </main>
   );
 }

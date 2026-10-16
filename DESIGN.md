@@ -42,19 +42,18 @@ Consequences for design:
   their group — this is the RBAC model surfacing in the UI.
 - Adding a capability means adding a `catalog.module` and granting it to a group,
   **not** editing the shell. The shell is a renderer of permissions.
-- **Module surfaces.** Institution nav follows a banker's day:
-  Home · Marketplace (marketplace, bids) · Deals (deals, Inbox) · Insights
-  (analytics) · Setup. Admin: dashboard, institutions, users, groups,
-  dual-control, sessions, audit, system.
-- **Hubs and tabs, not one page per module.** A module key is a permission,
-  not necessarily a page. Inbox (`/inbox`) holds the three approval queues
-  (bid_approval, approvals, dual_control); Setup (`/setup`) holds settings,
-  products, benefits, doc templates, team and audit; the deal page
-  (`/deals/:id`) holds documents, signatures (esign) and messages. Each tab
-  shows only if the user holds its key (`useModulesAccess`, same rule as
-  `RequireModule`). Module pages render through `PageFrame`/`SectionHeader`,
-  which drop their own title when embedded. A module that is only a tab sets
-  `embeddedIn` in the catalogue and gets no nav item.
+- **Lifecycle, not a list of modules.** Institution nav follows a core
+  banking origination flow: Origination (marketplace, bids) · Authorisation
+  (Inbox) · Fulfilment (deals) · Servicing · Reports · Configuration (Setup).
+  A flow bar under the top bar shows how much work waits at each step; each
+  deal shows its own lifecycle strip (accepted → processing → documents →
+  signature → complete). Admin nav is static (Ficium back-office).
+- **Modules plug in through a manifest** (`src/app/registry`). Routes, nav,
+  flow steps, Inbox queues, Setup sections, deal tabs and deal steps are all
+  contributions; hubs render whatever is registered and gate each piece by its
+  module key (`useModulesAccess`, same rule as `RequireModule`). Module pages
+  render through `PageFrame`/`SectionHeader`, which drop their own title when
+  embedded. See `docs/ADDING_A_MODULE.md`.
 - **No redirects for old paths.** Pre-launch, routes are renamed outright;
   every in-app link and backend notification link uses the current path.
 

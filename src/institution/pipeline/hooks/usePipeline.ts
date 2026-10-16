@@ -25,9 +25,10 @@ export const PK = {
 };
 
 // ── Run-time ──────────────────────────────────────────────────────────────────
-export function usePipelines(status: PipelineStatus | "active" = "active") {
+export function usePipelines(status: PipelineStatus | "active" = "active", options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: PK.list(status),
+    enabled:  options?.enabled ?? true,
     queryFn:  () => fetchPipelines(status),
     staleTime: 30_000,
   });

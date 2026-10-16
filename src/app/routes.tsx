@@ -13,6 +13,7 @@
 import { lazy, Suspense, Component } from 'react'
 import type { ReactNode, ErrorInfo } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { ROUTES } from './registry'
 
 // ─── Auth / shared ────────────────────────────────────────────
 const UnifiedLogin          = lazy(() => import('../shared/pages/UnifiedLogin'))
@@ -34,16 +35,8 @@ const AdminDashboard        = lazy(() => import('../admin/dashboard/pages/AdminD
 const InstitutionDashboard  = lazy(() => import('../institution/dashboard/pages/InstitutionDashboard'))
 
 // ─── Institution pages ────────────────────────────────────────
-const InstitutionMarketplace = lazy(() => import('../institution/marketplace/pages/InstitutionMarketplace'))
-const InstitutionBids        = lazy(() => import('../institution/bids/pages/InstitutionBids'))
-const InstitutionPipelines   = lazy(() => import('../institution/pipeline/pages/InstitutionPipelines').then(m => ({ default: m.InstitutionPipelines })))
-const PipelineDetail         = lazy(() => import('../institution/pipeline/pages/PipelineDetail').then(m => ({ default: m.PipelineDetail })))
-const InstitutionInbox       = lazy(() => import('../institution/inbox/pages/InstitutionInbox'))
-const InstitutionSetup       = lazy(() => import('../institution/setup/pages/InstitutionSetup'))
 const SignCeremony           = lazy(() => import('../public/esign/pages/SignCeremony'))
 
-const InstitutionAnalytics     = lazy(() => import('../institution/analytics/pages/InstitutionAnalytics'))
-const InstitutionNotifications = lazy(() => import('../institution/notifications/pages/InstitutionNotifications'))
 const AdminUsers       = lazy(() => import('../admin/users/pages/AdminUsers'))
 const AdminGroups      = lazy(() => import('../admin/groups/pages/AdminGroups'))
 const AdminInstitutions = lazy(() => import('../admin/institutions/pages/AdminInstitutions'))
@@ -158,17 +151,13 @@ export const router = createBrowserRouter([
           // Shared entry point — resolves to correct dashboard
           { path: '/dashboard',    element: <DashboardRouter />               },
 
-          // Institution pages
-          { path: '/marketplace',  element: <RequireModule moduleKey="inst:marketplace"><S><InstitutionMarketplace /></S></RequireModule> },
-          { path: '/bids',         element: <RequireModule moduleKey="inst:bids"><S><InstitutionBids /></S></RequireModule> },
-          { path: '/deals',        element: <RequireModule moduleKey="inst:pipeline"><S><InstitutionPipelines /></S></RequireModule> },
-          { path: '/deals/:id',    element: <RequireModule moduleKey="inst:pipeline"><S><PipelineDetail /></S></RequireModule> },
-          { path: '/inbox',        element: <S><InstitutionInbox /></S> },
-          { path: '/setup',        element: <S><InstitutionSetup /></S> },
-
-
-          { path: '/analytics',    element: <RequireModule moduleKey="inst:analytics"><S><InstitutionAnalytics /></S></RequireModule> },
-          { path: '/notifications',element: <RequireModule moduleKey="inst:notifications"><S><InstitutionNotifications /></S></RequireModule> },
+          // Institution pages — contributed by modules (app/registry)
+          ...ROUTES.map(({ path, moduleKey, element }) => ({
+            path,
+            element: moduleKey
+              ? <RequireModule moduleKey={moduleKey}><S>{element}</S></RequireModule>
+              : <S>{element}</S>,
+          })),
 
           // Admin pages
           { path: '/users',        element: <RequireModule moduleKey="admin:users"><S><AdminUsers /></S></RequireModule> },
