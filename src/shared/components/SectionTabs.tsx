@@ -5,13 +5,13 @@
  * ends, only the active tab is in the tab order. Scrolls horizontally on
  * narrow screens rather than wrapping.
  */
-import { useRef, type KeyboardEvent } from "react";
+import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
 export interface SectionTab<K extends string> {
   key:    K;
   label:  string;
-  /** Small status text after the label, e.g. "3/5" or "2 waiting". */
-  badge?: string;
+  /** Small status after the label, e.g. "3/5" or "2 waiting". */
+  badge?: ReactNode;
 }
 
 export function SectionTabs<K extends string>({

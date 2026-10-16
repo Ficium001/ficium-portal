@@ -41,8 +41,10 @@ import { useMyGroup } from '@/admin/hooks/useAdmin'
 import { MODULE_CATALOGUE, allowedModules, filterByEntitlement, type PortalModule } from '@/shared/lib/modules'
 import { useMyInstitution } from '@/institution/hooks/useInstitution'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
+import { FlowBar } from '@/shared/components/FlowBar'
 import { usePortalUnreadCount } from '@/institution/notifications/hooks/usePortalNotifications'
-import { useInboxCounts } from '@/institution/inbox/hooks/useInboxCounts'
+import { NAV_BY_STAGE, NAV_BADGES } from '@/app/registry'
+import { useCounts } from '@/app/registry/useCounts'
 
 // ─── Constants ───────────────────────────────────────────────
 const IDLE_WARN_MS   = 4 * 60 * 1000
@@ -136,52 +138,29 @@ function IdleWarningBanner({ onDismiss, onSignOut }: { onDismiss: () => void; on
 }
 
 // ─── Drawer nav ───────────────────────────────────────────────
-// Organised around a banker's day, not around modules:
-//   Marketplace → Deals → Inbox → Insights → Setup
-// A HUB item (Inbox, Setup) is one link standing for several module keys;
-// it shows if the user can open ANY of them, and the hub page itself shows
-// one tab per module the user can open.
-// 'Home' deduped by path so wildcard users don't see Dashboard twice.
-interface NavHub { hub: string; label: string; path: string; iconKey: string; keys: string[] }
-type NavEntry = string | NavHub
-
-const INBOX_HUB: NavHub = {
-  hub: 'hub:inbox', label: 'Inbox', path: '/inbox', iconKey: 'Inbox',
-  keys: ['inst:bid_approval', 'inst:approvals', 'inst:dual_control'],
-}
-const SETUP_HUB: NavHub = {
-  hub: 'hub:setup', label: 'Setup', path: '/setup', iconKey: 'Settings',
-  keys: ['inst:settings', 'inst:products', 'inst:benefits', 'inst:doctemplates', 'inst:team', 'inst:audit'],
-}
-
-const NAV_SECTIONS: { label: string; entries: NavEntry[] }[] = [
-  { label: 'Home',        entries: ['inst:dashboard', 'admin:dashboard'] },
-  { label: 'Marketplace', entries: ['inst:marketplace', 'inst:bids'] },
-  { label: 'Deals',       entries: ['inst:pipeline', INBOX_HUB] },
-  { label: 'Insights',    entries: ['inst:analytics'] },
-  { label: 'Setup',       entries: [SETUP_HUB] },
-  { label: 'Admin',       entries: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
-  { label: 'System',      entries: ['admin:sessions', 'admin:audit', 'admin:system'] },
+// Institution nav comes from the module registry, grouped by lifecycle stage
+// (Origination → Authorisation → Fulfilment → Servicing → Reports →
+// Configuration), like a core banking menu. Modules add items by declaring
+// them in their manifest; nothing here names a feature.
+// Admin nav is static: Ficium back-office, not part of the lending lifecycle.
+const ADMIN_SECTIONS: { label: string; keys: string[] }[] = [
+  { label: 'Home',   keys: ['admin:dashboard'] },
+  { label: 'Admin',  keys: ['admin:users', 'admin:groups', 'admin:institutions', 'admin:dual_control'] },
+  { label: 'System', keys: ['admin:sessions', 'admin:audit', 'admin:system'] },
 ]
 
-/** Reachable elsewhere, so deliberately not in the drawer. */
-const NAV_HIDDEN = new Set([
-  'inst:notifications', // header bell
-])
-
-const NAMED_KEYS = new Set(
-  NAV_SECTIONS.flatMap(s => s.entries.flatMap(e => (typeof e === 'string' ? [e] : e.keys))),
-)
+interface NavItem { key: string; label: string; path: string; iconKey: string }
 
 function Drawer({
-  open, onClose, visibleModules, inboxCount, groupLoading, groupError, onRetry,
+  open, onClose, visibleModules, isInstitution, badges, groupLoading, groupError, onRetry,
   userName, groupLabel, orgName,
 }: {
   open:           boolean
   onClose:        () => void
   visibleModules: PortalModule[]
-  /** Items waiting in the Inbox hub; drives its nav badge. */
-  inboxCount:     number
+  isInstitution:  boolean
+  /** Count per nav path, from the registry's nav badges. */
+  badges:         Record<string, number>
   groupLoading:   boolean
   groupError:     boolean
   onRetry:        () => void
@@ -206,37 +185,26 @@ function Drawer({
   const visibleKeys = new Set(visibleModules.map(m => m.key))
   const byKey       = Object.fromEntries(visibleModules.map(m => [m.key, m]))
 
-  const sections = NAV_SECTIONS
-    .map(s => {
-      const mods: PortalModule[] = []
-      const seenPaths = new Set<string>()
-      for (const entry of s.entries) {
-        let mod: PortalModule | undefined
-        if (typeof entry === 'string') {
-          if (!visibleKeys.has(entry)) continue
-          mod = byKey[entry]
-        } else if (entry.keys.some(k => visibleKeys.has(k))) {
-          mod = {
-            key: entry.hub, label: entry.label, path: entry.path, iconKey: entry.iconKey,
-            description: entry.label, category: 'institution',
-          }
-        }
-        if (!mod || seenPaths.has(mod.path)) continue
-        seenPaths.add(mod.path)
-        mods.push(mod)
-      }
-      return { label: s.label, modules: mods }
-    })
-    .filter(s => s.modules.length > 0)
-
-  // Catch-all: any visible module not covered above (e.g. a new module added
-  // to the catalogue before NAV_SECTIONS is updated) still renders here
-  // instead of silently vanishing from nav.
-  const seenPaths = new Set(sections.flatMap(s => s.modules.map(m => m.path)))
-  const other = visibleModules.filter(
-    m => !NAMED_KEYS.has(m.key) && !NAV_HIDDEN.has(m.key) && !m.embeddedIn && !seenPaths.has(m.path),
-  )
-  if (other.length > 0) sections.push({ label: 'Other', modules: other })
+  const sections: { label: string; items: NavItem[] }[] = []
+  if (isInstitution) {
+    if (visibleKeys.has('inst:dashboard')) {
+      sections.push({ label: 'Home', items: [{ key: 'home', label: 'Dashboard', path: '/dashboard', iconKey: 'LayoutDashboard' }] })
+    }
+    for (const stage of NAV_BY_STAGE) {
+      const items = stage.items
+        .filter(i => i.moduleKeys.some(k => visibleKeys.has(k)))
+        .map(i => ({ key: i.path, label: i.label, path: i.path, iconKey: i.iconKey }))
+      if (items.length > 0) sections.push({ label: stage.label, items })
+    }
+  } else {
+    for (const s of ADMIN_SECTIONS) {
+      const items = s.keys.filter(k => visibleKeys.has(k) && byKey[k]).map(k => {
+        const m = byKey[k]!
+        return { key: m.key, label: m.label, path: m.path, iconKey: m.iconKey }
+      })
+      if (items.length > 0) sections.push({ label: s.label, items })
+    }
+  }
 
   const empty = sections.length === 0
 
@@ -318,9 +286,9 @@ function Drawer({
                 <p className='text-[11px] font-semibold text-muted uppercase tracking-[0.09em] px-3 pb-2'>
                   {section.label}
                 </p>
-                {section.modules.map(mod => {
+                {section.items.map(mod => {
                   const Icon  = resolveIcon(mod.iconKey)
-                  const badge = mod.key === 'hub:inbox' ? inboxCount : 0
+                  const badge = badges[mod.path] ?? 0
                   const delay = 40 + itemIndex++ * 30
                   return (
                     <NavLink
@@ -526,7 +494,7 @@ export default function PortalShell() {
   const [userName,     setUserName]     = useState('')
   const { data: notifUnread = 0 } = usePortalUnreadCount()
   const pendingCount = notifUnread
-  const inboxCount   = useInboxCounts().total
+  const navBadges    = useCounts(NAV_BADGES)
 
   // User display name from the verified ficium-auth JWT payload (no network).
   useEffect(() => {
@@ -601,7 +569,8 @@ export default function PortalShell() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         visibleModules={visibleModules}
-        inboxCount={inboxCount}
+        isInstitution={myGroup?.user_type === 'institution'}
+        badges={navBadges}
         groupLoading={groupLoading}
         groupError={groupError}
         onRetry={() => refetchGroup()}
@@ -609,6 +578,8 @@ export default function PortalShell() {
         groupLabel={myGroup?.label ?? 'Member'}
         orgName={orgName}
       />
+
+      {myGroup?.user_type === 'institution' && <FlowBar />}
 
       <main className='flex-1 overflow-auto' id='main-content'>
         <Outlet />

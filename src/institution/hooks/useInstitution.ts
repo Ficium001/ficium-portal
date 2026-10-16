@@ -61,9 +61,10 @@ export function useMyRole() {
 }
 
 // ─── useMarketplace ─── portal-api /marketplace/requests ─────
-export function useMarketplace(productCode?: string) {
+export function useMarketplace(productCode?: string, options?: { enabled?: boolean }) {
   return useQuery<MarketplaceRequest[]>({
     queryKey: [...QK.marketplace, productCode],
+    enabled: options?.enabled ?? true,
     queryFn: () => {
       const path = productCode
         ? `/marketplace/requests?product_type=${encodeURIComponent(productCode)}`
@@ -77,9 +78,10 @@ export function useMarketplace(productCode?: string) {
 }
 
 // ─── useMyBids ─── portal-api /marketplace/my-bids ───────────
-export function useMyBids(status?: string) {
+export function useMyBids(status?: string, options?: { enabled?: boolean }) {
   return useQuery<InstitutionBid[]>({
     queryKey: [...QK.myBids, status],
+    enabled: options?.enabled ?? true,
     queryFn: () => {
       const path = status
         ? `/marketplace/my-bids?status=${encodeURIComponent(status)}`
