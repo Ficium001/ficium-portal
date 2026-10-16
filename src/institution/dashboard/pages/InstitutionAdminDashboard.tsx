@@ -97,8 +97,8 @@ function AdminHero() {
       }
       actions={
         <>
-          <HeroButton onClick={() => navigate('/inst-dual-control')}>Review queue</HeroButton>
-          <HeroButton variant='ghost' onClick={() => navigate('/team/users')}>Team</HeroButton>
+          <HeroButton onClick={() => navigate('/inbox?section=internal')}>Review queue</HeroButton>
+          <HeroButton variant='ghost' onClick={() => navigate('/setup?section=team')}>Team</HeroButton>
         </>
       }
       stats={stats}
@@ -120,7 +120,7 @@ function DualControlQueue() {
       <SectionHead
         title='Waiting for your sign-off'
         subtitle='Dual-control queue'
-        to='/inst-dual-control'
+        to='/inbox?section=internal'
         toLabel='View all'
       />
       {isLoading ? (
@@ -159,7 +159,7 @@ function DualControlQueue() {
                     </div>
                   </div>
                   <Link
-                    to='/inst-dual-control'
+                    to='/inbox?section=internal'
                     className='text-[12.5px] font-semibold text-ficium hover:underline shrink-0'
                   >
                     Review →
@@ -190,7 +190,7 @@ function TeamOverview() {
       <SectionHead
         title='Your team'
         subtitle={`${members.length} member${members.length !== 1 ? 's' : ''}${unassigned > 0 ? ` · ${unassigned} unassigned` : ''}`}
-        to='/team/users'
+        to='/setup?section=team'
         toLabel='Manage team'
       />
       {isLoading ? (
@@ -254,28 +254,28 @@ function StatsAndAudit() {
           <div className='grid grid-cols-2 gap-3'>
             <StatMini
               icon={<Users className='w-[18px] h-[18px] text-[#7C3AED]' />}
-              label='Team members' value={members.length} to='/team/users'
+              label='Team members' value={members.length} to='/setup?section=team'
             />
             <StatMini
               icon={<GitMerge className='w-[18px] h-[18px] text-[#7C3AED]' />}
-              label='Pending approvals' value={pendingCount} to='/inst-dual-control'
+              label='Pending approvals' value={pendingCount} to='/inbox?section=internal'
             />
             <StatMini
               icon={<ShieldCheck className='w-[18px] h-[18px] text-[#7C3AED]' />}
               label='Groups' value={
                 [...new Set(members.filter((m) => m.custom_group_id).map((m) => m.custom_group_id))].length
-              } to='/settings'
+              } to='/setup'
             />
             <StatMini
               icon={<ScrollText className='w-[18px] h-[18px] text-[#7C3AED]' />}
-              label='Audit events' value={events.length} to='/audit'
+              label='Audit events' value={events.length} to='/setup?section=audit'
             />
           </div>
         </div>
 
         {/* Audit feed */}
         <div>
-          <SectionHead title='Recent activity' subtitle='Audit trail' to='/audit' toLabel='Full audit' />
+          <SectionHead title='Recent activity' subtitle='Audit trail' to='/setup?section=audit' toLabel='Full audit' />
           <Panel>
             {isLoading ? (
               <SkeletonBlock className='h-48' />
@@ -317,18 +317,18 @@ function AdminCallout() {
     ? {
         title: `${pendingCount} action${pendingCount > 1 ? 's are' : ' is'} waiting for approval.`,
         body: 'Your team can\'t proceed until a checker signs off. Clearing the queue keeps operations moving.',
-        cta: 'Review queue', to: '/inst-dual-control',
+        cta: 'Review queue', to: '/inbox?section=internal',
       }
     : unassigned > 0
     ? {
         title: `${unassigned} team member${unassigned > 1 ? 's have' : ' has'} no group assigned.`,
         body: 'Users without a group can\'t access any modules. Assign them to the right group to unlock their access.',
-        cta: 'Manage team', to: '/team/users',
+        cta: 'Manage team', to: '/setup?section=team',
       }
     : {
         title: 'Everything is in order.',
         body: 'No pending approvals, no unassigned users. A good time to review your group permissions or check the audit trail.',
-        cta: 'View audit trail', to: '/audit',
+        cta: 'View audit trail', to: '/setup?section=audit',
       }
 
   return (
@@ -340,10 +340,10 @@ function AdminCallout() {
           <PanelHead title='Quick actions' subtitle='Common admin tasks' />
           <div className='mt-4 grid grid-cols-2 gap-2.5'>
             {[
-              { icon: UserPlus,   label: 'Create user',  to: '/team/users'         },
-              { icon: ShieldCheck,label: 'Create group', to: '/settings'           },
-              { icon: GitMerge,   label: 'Dual control', to: '/inst-dual-control'  },
-              { icon: Settings,   label: 'Settings',     to: '/settings'           },
+              { icon: UserPlus,   label: 'Create user',  to: '/setup?section=team'         },
+              { icon: ShieldCheck,label: 'Create group', to: '/setup'           },
+              { icon: GitMerge,   label: 'Dual control', to: '/inbox?section=internal'  },
+              { icon: Settings,   label: 'Settings',     to: '/setup'           },
             ].map(({ icon: Icon, label, to }) => (
               <button
                 key={label}

@@ -24,6 +24,7 @@
  * @lastReviewed 2025-08
  */
 
+import { useEmbedded } from "@/shared/lib/embedded";
 import {
   useEffect,
   useRef,
@@ -171,6 +172,21 @@ export function SectionHeader({
   badge?: ReactNode;
   actions?: ReactNode;
 }) {
+  // Inside a hub (Inbox, Setup) the hub owns the page title; keep the
+  // context line, badge and actions so nothing functional is lost.
+  const embedded = useEmbedded();
+  if (embedded) {
+    if (!subtitle && !badge && !actions) return null;
+    return (
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+        <div className="flex items-center gap-3 min-w-0">
+          {subtitle && <p className="text-[13px] text-muted">{subtitle}</p>}
+          {badge}
+        </div>
+        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+      </div>
+    );
+  }
   return (
     <div className="flex items-start justify-between mb-7">
       <div>

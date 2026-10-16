@@ -21,6 +21,7 @@ import {
 } from "@/institution/components/primitives";
 import GroupsTab from "@/institution/settings/components/GroupsTab";
 import { poll60s } from '@/shared/lib/polling'
+import { PageFrame } from "@/shared/components/PageFrame"
 
 // ─── Data hooks ───────────────────────────────────────────────
 
@@ -587,7 +588,7 @@ export default function InstitutionUsers() {
   const inactiveCount = (members as MemberExt[]).filter(m => m.active === false).length;
 
   return (
-    <main className="p-6 lg:p-8 max-w-[900px] mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-[900px] mx-auto">
       <SectionHeader
         title="User Management"
         subtitle="Manage who has access to your institution's portal"
@@ -781,6 +782,6 @@ export default function InstitutionUsers() {
           onRefresh={() => { invalidate(); setDrawerMember(null); }}
         />
       )}
-    </main>
+    </PageFrame>
   );
 }

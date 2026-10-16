@@ -38,17 +38,10 @@ const InstitutionMarketplace = lazy(() => import('../institution/marketplace/pag
 const InstitutionBids        = lazy(() => import('../institution/bids/pages/InstitutionBids'))
 const InstitutionPipelines   = lazy(() => import('../institution/pipeline/pages/InstitutionPipelines').then(m => ({ default: m.InstitutionPipelines })))
 const PipelineDetail         = lazy(() => import('../institution/pipeline/pages/PipelineDetail').then(m => ({ default: m.PipelineDetail })))
-const InstitutionApprovals   = lazy(() => import('../institution/approvals/pages/InstitutionApprovals'))
-const ApprovalChainsInbox    = lazy(() => import('../institution/approval-chains/pages/ApprovalChainsInbox'))
 const EsignEnvelopes         = lazy(() => import('../institution/esign/pages/EsignEnvelopes'))
-const DocTemplates           = lazy(() => import('../institution/doc-templates/pages/DocTemplates'))
+const InstitutionInbox       = lazy(() => import('../institution/inbox/pages/InstitutionInbox'))
+const InstitutionSetup       = lazy(() => import('../institution/setup/pages/InstitutionSetup'))
 const SignCeremony           = lazy(() => import('../public/esign/pages/SignCeremony'))
-const InstitutionProducts    = lazy(() => import('../institution/products/pages/InstitutionProducts'))
-const InstitutionBenefits    = lazy(() => import('../institution/benefits/pages/InstitutionBenefits'))
-const InstitutionAudit       = lazy(() => import('../institution/audit/pages/InstitutionAudit'))
-const InstitutionSettings    = lazy(() => import('../institution/settings/pages/InstitutionSettings'))
-const InstitutionUsers       = lazy(() => import('../institution/team/pages/InstitutionUsers'))
-const InstitutionDualControl = lazy(() => import('../institution/dual-control/pages/InstitutionDualControl'))
 
 const InstitutionAnalytics     = lazy(() => import('../institution/analytics/pages/InstitutionAnalytics'))
 const InstitutionNotifications = lazy(() => import('../institution/notifications/pages/InstitutionNotifications'))
@@ -177,16 +170,10 @@ export const router = createBrowserRouter([
           { path: '/bids',         element: <RequireModule moduleKey="inst:bids"><S><InstitutionBids /></S></RequireModule> },
           { path: '/deals',        element: <RequireModule moduleKey="inst:pipeline"><S><InstitutionPipelines /></S></RequireModule> },
           { path: '/deals/:id',    element: <RequireModule moduleKey="inst:pipeline"><S><PipelineDetail /></S></RequireModule> },
-          { path: '/approvals',    element: <RequireModule moduleKey="inst:bid_approval"><S><InstitutionApprovals /></S></RequireModule> },
-          { path: '/approval-chains', element: <RequireModule moduleKey="inst:approvals"><S><ApprovalChainsInbox /></S></RequireModule> },
+          { path: '/inbox',        element: <S><InstitutionInbox /></S> },
+          { path: '/setup',        element: <S><InstitutionSetup /></S> },
           { path: '/esign',        element: <RequireModule moduleKey="inst:esign"><S><EsignEnvelopes /></S></RequireModule> },
-          { path: '/doc-templates',element: <RequireModule moduleKey="inst:doctemplates"><S><DocTemplates /></S></RequireModule> },
-          { path: '/products',     element: <RequireModule moduleKey="inst:products"><S><InstitutionProducts /></S></RequireModule> },
-          { path: '/benefits',     element: <RequireModule moduleKey="inst:benefits"><S><InstitutionBenefits /></S></RequireModule> },
-          { path: '/audit',        element: <RequireModule moduleKey="inst:audit"><S><InstitutionAudit /></S></RequireModule> },
-          { path: '/settings',     element: <RequireModule moduleKey="inst:settings"><S><InstitutionSettings /></S></RequireModule> },
-          { path: '/team/users',        element: <RequireModule moduleKey="inst:team"><S><InstitutionUsers /></S></RequireModule> },
-          { path: '/inst-dual-control', element: <RequireModule moduleKey="inst:dual_control"><S><InstitutionDualControl /></S></RequireModule> },
+
 
           { path: '/analytics',    element: <RequireModule moduleKey="inst:analytics"><S><InstitutionAnalytics /></S></RequireModule> },
           { path: '/notifications',element: <RequireModule moduleKey="inst:notifications"><S><InstitutionNotifications /></S></RequireModule> },
@@ -207,6 +194,16 @@ export const router = createBrowserRouter([
   // ── Legacy redirects ──────────────────────────────────────
   // Pipelines became Deals (Oct 2026). Keep old links and bookmarks working.
   { path: '/pipelines',     element: <Navigate to='/deals' replace /> },
+  // Approval queues became Inbox; configuration screens became Setup (Oct 2026).
+  { path: '/approvals',         element: <Navigate to='/inbox?section=bids'      replace /> },
+  { path: '/approval-chains',   element: <Navigate to='/inbox?section=credit'    replace /> },
+  { path: '/inst-dual-control', element: <Navigate to='/inbox?section=internal'  replace /> },
+  { path: '/settings',          element: <Navigate to='/setup'                   replace /> },
+  { path: '/products',          element: <Navigate to='/setup?section=products'  replace /> },
+  { path: '/benefits',          element: <Navigate to='/setup?section=benefits'  replace /> },
+  { path: '/doc-templates',     element: <Navigate to='/setup?section=documents' replace /> },
+  { path: '/team/users',        element: <Navigate to='/setup?section=team'      replace /> },
+  { path: '/audit',             element: <Navigate to='/setup?section=audit'     replace /> },
   { path: '/pipelines/:id', element: <LegacyDealRedirect /> },
   { path: '/admin/dashboard',    element: <Navigate to='/dashboard'    replace /> },
   { path: '/admin/users',        element: <Navigate to='/users'        replace /> },

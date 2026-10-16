@@ -140,9 +140,10 @@ export function useRejectRequest() {
  * duplicated in two components that could drift apart. The server owns the
  * partition now; omit `scope` to get everything the caller may see.
  */
-export function usePendingActions(scope?: 'bids' | 'internal') {
+export function usePendingActions(scope?: 'bids' | 'internal', options?: { enabled?: boolean }) {
   return useQuery<PendingAction[]>({
     queryKey: [...QK.pendingActions, scope ?? 'all'],
+    enabled: options?.enabled ?? true,
     queryFn: () => portalApi.get<PendingAction[]>(
       scope ? `/approvals/pending?scope=${scope}` : '/approvals/pending',
     ),

@@ -319,7 +319,7 @@ function Standing() {
       {pending.length > 0 && (
         <p className='text-[12.5px] text-muted mt-3'>
           {pending.length} bid{pending.length > 1 ? 's' : ''} waiting in your{' '}
-          <Link to='/approvals' className='text-ficium font-semibold hover:underline'>approval queue</Link>.
+          <Link to='/inbox?section=bids' className='text-ficium font-semibold hover:underline'>approval queue</Link>.
         </p>
       )}
     </Reveal>
@@ -341,7 +341,7 @@ function BidsAndCallout() {
         title: `${pending.length} bid${pending.length > 1 ? 's are' : ' is'} stuck in approvals.`,
         body: 'Bids only reach clients after a checker signs off. Clearing the queue gets your offers in front of clients today.',
         cta: 'Open approvals',
-        to: '/approvals',
+        to: '/inbox?section=bids',
       }
     : openCount > 0
     ? {
@@ -354,7 +354,7 @@ function BidsAndCallout() {
         title: 'Keep your products sharp.',
         body: 'No open requests right now — a good moment to review your product catalogue and rates so the next match is instant.',
         cta: 'Review products',
-        to: '/products',
+        to: '/setup?section=products',
       }
 
   return (

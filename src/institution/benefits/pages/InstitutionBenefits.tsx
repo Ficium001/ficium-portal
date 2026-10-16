@@ -32,6 +32,7 @@ import {
   SectionHeader, EmptyState, Modal, FormField,
   inputCls, Btn, InlineAlert, SkeletonRow,
 } from '@/institution/components/primitives'
+import { PageFrame } from '@/shared/components/PageFrame'
 
 // ─── Icon map for benefit categories ──────────────────────────
 const CAT_ICONS: Record<string, React.ElementType> = {
@@ -330,7 +331,7 @@ export default function InstitutionBenefits() {
   const closeForm  = () => { setShowForm(false); setEditing(null); setFormError(null) }
 
   return (
-    <main className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <PageFrame className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
       <SectionHeader
         title="Benefits"
         subtitle="Define perks shown to clients on your bid cards. Guaranteed benefits require checker approval."
@@ -391,6 +392,6 @@ export default function InstitutionBenefits() {
           onClose={closeForm}
         />
       </Modal>
-    </main>
+    </PageFrame>
   )
 }

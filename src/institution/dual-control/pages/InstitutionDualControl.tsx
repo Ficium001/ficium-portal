@@ -26,6 +26,7 @@ import {
   SectionHeader, InlineAlert, EmptyState,
   Btn, inputCls, Modal,
 } from "@/institution/components/primitives";
+import { PageFrame } from "@/shared/components/PageFrame"
 
 // ─── Categories that belong on THIS page (not bid approvals) ─────────────────
 
@@ -364,7 +365,7 @@ export default function InstitutionDualControl() {
   );
 
   return (
-    <main className="p-6 lg:p-8 max-w-[1000px] mx-auto">
+    <PageFrame className="p-6 lg:p-8 max-w-[1000px] mx-auto">
       <SectionHeader
         title="Dual Control"
         subtitle={`Internal maker-checker queue · ${pending.length} pending`}
@@ -435,6 +436,6 @@ export default function InstitutionDualControl() {
           username={provisionResult.username}
         />
       )}
-    </main>
+    </PageFrame>
   );
 }
