@@ -1,60 +1,22 @@
 // =============================================================
 // Ficium — Institution Portal Notifications API
-// Reads from portal_notifications table in Portal DB.
-// Falls back gracefully if table doesn't exist yet.
+// Through ficium-portal-api. Portal users sign in with ficium-auth, so a
+// direct Supabase read had no session and returned 401 (every 30 s).
 // =============================================================
-import { db } from '@/shared/lib/supabase'
+import { portalApi } from '@/shared/lib/portalApi'
 import type { PortalNotification } from '../types/notifications'
 
-const notifDb = db('public')
+export const getPortalNotifications = (limit = 50) =>
+  portalApi.get<PortalNotification[]>(`/notifications?limit=${limit}`)
 
-export async function getPortalNotifications(limit = 50): Promise<PortalNotification[]> {
-  try {
-    const { data, error } = await notifDb
-      .from('portal_notifications')
-      .select('id, kind, title, body, link, read_at, created_at, metadata')
-      .order('created_at', { ascending: false })
-      .limit(limit)
+export const getPortalUnreadCount = async (): Promise<number> =>
+  (await portalApi.get<{ unread: number }>('/notifications/unread-count')).unread
 
-    if (error || !data) return []
-    return data as PortalNotification[]
-  } catch {
-    return []
-  }
-}
+export const markPortalNotificationRead = (id: string) =>
+  portalApi.post<{ ok: boolean }>(`/notifications/${id}/mark-read`, {})
 
-export async function getPortalUnreadCount(): Promise<number> {
-  try {
-    const { count, error } = await notifDb
-      .from('portal_notifications')
-      .select('id', { count: 'exact', head: true })
-      .is('read_at', null)
-
-    if (error) return 0
-    return count ?? 0
-  } catch {
-    return 0
-  }
-}
-
-export async function markPortalNotificationRead(id: string): Promise<void> {
-  try {
-    await notifDb
-      .from('portal_notifications')
-      .update({ read_at: new Date().toISOString() })
-      .eq('id', id)
-      .is('read_at', null)
-  } catch { /* silent */ }
-}
-
-export async function markAllPortalNotificationsRead(): Promise<void> {
-  try {
-    await notifDb
-      .from('portal_notifications')
-      .update({ read_at: new Date().toISOString() })
-      .is('read_at', null)
-  } catch { /* silent */ }
-}
+export const markAllPortalNotificationsRead = () =>
+  portalApi.post<{ ok: boolean }>('/notifications/mark-all-read', {})
 
 export function portalTimeAgo(iso: string): string {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)

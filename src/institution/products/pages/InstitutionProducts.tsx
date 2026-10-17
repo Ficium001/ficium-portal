@@ -12,6 +12,8 @@
  */
 
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { portalApi } from "@/shared/lib/portalApi";
 import {
   Package, Check, ChevronDown, ChevronUp, Lock,
   Gift, Plus, Shield, Star, Zap, Tag, Percent,
@@ -23,7 +25,6 @@ import {
   useDeactivateBenefit, useBenefitCategories,
 } from "@/institution/hooks/useInstitution";
 import type { Product, Benefit, BenefitUnit } from "@/institution/types/institution";
-import { institutionSupabase } from "@/institution/lib/institutionSupabase";
 import {
   SectionHeader, FilterPills, EmptyState, InlineAlert,
   FormField, inputCls, Btn, Modal,
@@ -41,6 +42,28 @@ function fmtAmt(a: number | null | undefined) {
 
 type LimitMap = Record<string, { minRate: string; maxRate: string; minAmount: string; maxAmount: string }>;
 const emptyLimit = () => ({ minRate: "", maxRate: "", minAmount: "", maxAmount: "" });
+
+/** One row of institution.product_config, as GET /institution/product-limits returns it. */
+interface ProductLimitRow {
+  product_id: string;
+  min_rate:   number | string | null;
+  max_rate:   number | string | null;
+  min_amount: number | string | null;
+  max_amount: number | string | null;
+}
+
+const LIMITS_QK = ["institution", "product-limits"] as const;
+
+// Rates are stored as fractions (0.085) and edited as percentages (8.5).
+const pct = (v: number | string | null) =>
+  v === null || v === "" ? "" : String(+(Number(v) * 100).toFixed(4));
+const num = (v: number | string | null) => (v === null || v === "" ? "" : String(Number(v)));
+const toLimit = (r: ProductLimitRow) => ({
+  minRate: pct(r.min_rate), maxRate: pct(r.max_rate),
+  minAmount: num(r.min_amount), maxAmount: num(r.max_amount),
+});
+const fromPct = (v: string) => (v.trim() ? parseFloat(v) / 100 : null);
+const fromNum = (v: string) => (v.trim() ? parseFloat(v) : null);
 
 const CAT_ICONS: Record<string, React.ElementType> = {
   fee_waiver:       Tag,
@@ -374,7 +397,18 @@ function ProductRow({
     min_term_months?: number | null; max_term_months?: number | null;
   } | undefined;
 
-  const handleSave = async () => { setSaving(true); await onSave(); setSaving(false); };
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onSave();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Couldn't save the limits. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className={[
@@ -469,6 +503,7 @@ function ProductRow({
               <Btn variant="primary" size="sm" icon={saved ? Check : undefined} onClick={handleSave} loading={saving}>
                 {saved ? "Saved" : "Save limits"}
               </Btn>
+              {saveError && <p role="alert" className="mt-2 text-[12px] text-red-700">{saveError}</p>}
 
               {/* Benefits section */}
               <ProductBenefits product={product} allBenefits={allBenefits} />
@@ -508,22 +543,30 @@ export default function InstitutionProducts() {
     ...families.map(f => ({ key: f, label: f })),
   ];
 
-  const getLimits = (id: string) => limits[id] ?? emptyLimit();
+  const qc = useQueryClient();
+  const { data: savedLimits = [] } = useQuery<ProductLimitRow[]>({
+    queryKey: LIMITS_QK,
+    queryFn:  () => portalApi.get<ProductLimitRow[]>("/institution/product-limits"),
+  });
+  const stored = (id: string) => {
+    const r = savedLimits.find(x => x.product_id === id);
+    return r ? toLimit(r) : emptyLimit();
+  };
+  // Local edits win; otherwise show what's saved.
+  const getLimits = (id: string) => limits[id] ?? stored(id);
   const setLimit  = (id: string, field: string, val: string) =>
     setLimits(prev => ({ ...prev, [id]: { ...getLimits(id), [field]: val } }));
 
   const saveLimits = async (product: { id: string }) => {
     const l = getLimits(product.id);
-    await institutionSupabase
-      .from("institution_product_config")
-      .upsert({
-        product_id:  product.id,
-        enabled:     true,
-        min_rate:    l.minRate   ? parseFloat(l.minRate)   / 100 : null,
-        max_rate:    l.maxRate   ? parseFloat(l.maxRate)   / 100 : null,
-        min_amount:  l.minAmount ? parseFloat(l.minAmount)       : null,
-        max_amount:  l.maxAmount ? parseFloat(l.maxAmount)       : null,
-      }, { onConflict: "institution_id,product_id" });
+    await portalApi.put(`/institution/product-limits/${product.id}`, {
+      min_rate:   fromPct(l.minRate),
+      max_rate:   fromPct(l.maxRate),
+      min_amount: fromNum(l.minAmount),
+      max_amount: fromNum(l.maxAmount),
+    });
+    await qc.invalidateQueries({ queryKey: LIMITS_QK });
+    setLimits(prev => { const next = { ...prev }; delete next[product.id]; return next; });
     setSaved(prev => ({ ...prev, [product.id]: true }));
     setTimeout(() => setSaved(prev => ({ ...prev, [product.id]: false })), 2500);
   };

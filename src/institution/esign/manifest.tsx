@@ -1,15 +1,14 @@
+import { useBadge } from '@/app/registry/useBadges'
 /** E-signature — envelopes sent to borrower and countersigner, sealed on completion. */
 import type { ModuleManifest } from '@/app/registry/types'
 import type { EsignEnvelope } from '@/institution/types/approvalEngine'
 import { DealSignaturesPanel } from '@/institution/pipeline/components/DealSignaturesPanel'
 import { useDealEnvelopes } from '@/institution/pipeline/hooks/useDealEnvelopes'
-import { useEsignEnvelopes } from './hooks/useEsign'
 
 const waiting = (e: EsignEnvelope) => e.status === 'sent' || e.status === 'partially_signed'
 
 function useAwaitingSignature(enabled: boolean): number {
-  const { data } = useEsignEnvelopes(enabled)
-  return (data ?? []).filter(waiting).length
+  return useBadge('awaiting_signature', enabled)
 }
 
 function useSignatureStep(deal: { id: string }, enabled: boolean) {

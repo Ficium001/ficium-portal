@@ -1,7 +1,7 @@
+import { useBadge } from '@/app/registry/useBadges'
 /** Deals — fulfilment: accepted bids moving through processing to completion. */
 import { lazy } from 'react'
 import type { ModuleManifest } from '@/app/registry/types'
-import { usePipelines } from './hooks/usePipeline'
 import { DealOverview } from './components/DealOverview'
 import { DealDocumentsTab } from '@/institution/checklist/components/DealDocumentsTab'
 import { useDealDocuments } from '@/institution/checklist/hooks/useChecklist'
@@ -27,8 +27,7 @@ function useDocumentsStep(deal: PipelineDetail, enabled: boolean) {
 }
 
 function useActiveDeals(enabled: boolean): number {
-  const { data } = usePipelines('active', { enabled })
-  return data?.length ?? 0
+  return useBadge('active_deals', enabled)
 }
 
 export const dealsModule: ModuleManifest = {
