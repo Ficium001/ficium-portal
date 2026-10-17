@@ -41,6 +41,9 @@ export interface StageInstance {
   requires_documents:     boolean;
   /** Decided by credit approval (DoA rules / approval chain), not a checker click. */
   approval_route:         boolean;
+  /** Mandatory checklist documents gating this stage, and how many are verified or waived. */
+  documents_required:     number;
+  documents_done:         number;
   approval_instance_id:   string | null;
   approval_status:        "in_progress" | "approved" | "rejected" | "expired" | "escalated" | "withdrawn" | null;
   rejection_reason:       string | null;

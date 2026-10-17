@@ -57,7 +57,8 @@ describe('DealLifecycle', () => {
     allowed.add('inst:pipeline')
     render(deal())
     expect(steps().some((s) => s.includes('Signature'))).toBe(false)
-    expect(steps().some((s) => s.includes('Documents'))).toBe(false)
+    // The document checklist is part of every deal (inst:pipeline), not a licensed extra.
+    expect(steps().some((s) => s.includes('Documents'))).toBe(true)
   })
 
   it('reports processing progress and marks the current step', () => {

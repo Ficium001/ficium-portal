@@ -66,6 +66,8 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
   const canAct = stage.status === "active" || stage.status === "awaiting_approval";
   // A credit-routed stage waiting on the approval engine is decided in Inbox › Credit.
   const creditPending = stage.approval_route && stage.status === "awaiting_approval";
+  // The server refuses to advance while mandatory documents are outstanding.
+  const docsOutstanding = Math.max(0, (stage.documents_required ?? 0) - (stage.documents_done ?? 0));
 
   return (
     <div className={`border rounded-2xl overflow-hidden transition-all ${col.ring} ${col.bg}`}>
@@ -90,9 +92,10 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
                 <Lock size={9} /> dual-control
               </span>
             )}
-            {stage.requires_documents && (
-              <span className="text-[10px] text-muted flex items-center gap-0.5">
-                <FileText size={9} /> docs required
+            {stage.documents_required > 0 && (
+              <span className={`text-[10px] flex items-center gap-0.5 ${
+                stage.documents_done < stage.documents_required ? "text-amber-700" : "text-muted"}`}>
+                <FileText size={9} /> documents {stage.documents_done}/{stage.documents_required}
               </span>
             )}
           </div>
@@ -141,6 +144,12 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
                            resize-none outline-hidden focus:border-ficium/40
                            focus:ring-2 focus:ring-ficium/15 transition-all bg-white"
               />
+              {stage.status === "active" && docsOutstanding > 0 && (
+                <p className="text-[12px] text-amber-800">
+                  {docsOutstanding} required document{docsOutstanding > 1 ? "s" : ""} still to verify or waive.{" "}
+                  <Link to="?tab=documents" className="font-semibold underline underline-offset-2">Open Documents</Link>
+                </p>
+              )}
               {actionError && (
                 <p role="alert" className="text-[12px] text-red-700">{actionError}</p>
               )}
@@ -149,6 +158,7 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
                   <Button
                     size="sm"
                     loading={advancing}
+                    disabled={docsOutstanding > 0}
                     onClick={() => advance(
                       { stageId: stage.id, notes: notes || undefined },
                       { onSuccess: () => setNotes(""), onError: showError },
