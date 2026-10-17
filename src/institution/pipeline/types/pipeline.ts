@@ -41,6 +41,8 @@ export interface StageInstance {
   requires_documents:     boolean;
   /** Decided by credit approval (DoA rules / approval chain), not a checker click. */
   approval_route:         boolean;
+  /** Who decides a credit stage: Ficium's approval engine, or the institution's own system. */
+  decision_source:        DecisionSource;
   /** Mandatory checklist documents gating this stage, and how many are verified or waived. */
   documents_required:     number;
   documents_done:         number;
@@ -103,6 +105,35 @@ export interface PipelineDetail {
   closed_reason:    string | null;
   closed_at:        string | null;
   stages:           StageInstance[];
+  /** Every credit decision on this deal, newest first, whichever system made it. */
+  credit_decisions: CreditDecision[];
+}
+
+export type DecisionSource = "internal" | "external";
+
+export type CreditOutcome =
+  | "approved" | "approved_with_conditions" | "referred_back" | "declined";
+
+export interface CreditDecision {
+  id:                   string;
+  outcome:              CreditOutcome;
+  conditions:           string[];
+  reason:               string | null;
+  external_reference:   string | null;
+  /** engine = Ficium approval engine; portal = recorded by an officer; api = the bank's system */
+  source:               "engine" | "portal" | "api";
+  decided_at:           string;
+  created_at:           string;
+  approval_instance_id: string | null;
+  recorded_by_name:     string | null;
+}
+
+export interface CreditDecisionPayload {
+  outcome:            CreditOutcome;
+  external_reference: string;
+  conditions?:        string[];
+  reason?:            string;
+  decided_at?:        string;
 }
 
 export interface AdvanceStageResult {
@@ -126,6 +157,7 @@ export interface PipelineStageDef {
   requires_maker_checker: boolean;          // stage needs checker sign-off
   requires_documents:     boolean;          // stage is gated on documents
   approval_route:         boolean;
+  decision_source:        DecisionSource;
   borrower_label:         string | null;    // what borrower sees in loan tracker
   borrower_visible:       boolean;          // show this stage to borrower?
   is_active:              boolean;
@@ -165,6 +197,7 @@ export interface CreateStageDefPayload {
   requires_maker_checker?: boolean;
   requires_documents?:     boolean;
   approval_route?:         boolean;
+  decision_source?:        DecisionSource;
   borrower_label?:         string;
   borrower_visible?:       boolean;
 }
@@ -177,6 +210,7 @@ export interface UpdateStageDefPayload {
   requires_maker_checker?: boolean;
   requires_documents?:     boolean;
   approval_route?:         boolean;
+  decision_source?:        DecisionSource;
   borrower_label?:         string;
   borrower_visible?:       boolean;
 }

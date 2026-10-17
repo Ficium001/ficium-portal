@@ -4,14 +4,14 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  advanceStage, approveStage, closeDeal, fetchPipeline, fetchPipelines,
+  advanceStage, approveStage, closeDeal, recordCreditDecision, fetchPipeline, fetchPipelines,
   fetchTemplates, fetchTemplate,
   createTemplate, updateTemplate,
   addStageDef, updateStageDef, deleteStageDef,
 } from "@/institution/pipeline/api/pipeline";
 import type {
   PipelineStatus, CreateTemplatePayload,
-  CreateStageDefPayload, UpdateStageDefPayload,
+  CreateStageDefPayload, UpdateStageDefPayload, CreditDecisionPayload,
 } from "@/institution/pipeline/types/pipeline";
 
 // ── Query keys ────────────────────────────────────────────────────────────────
@@ -60,6 +60,17 @@ export function useApproveStage(pipelineId: string) {
   return useMutation({
     mutationFn: ({ stageId, notes }: { stageId: string; notes?: string }) =>
       approveStage(pipelineId, stageId, notes),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PK.detail(pipelineId) });
+      qc.invalidateQueries({ queryKey: PK.all });
+    },
+  });
+}
+
+export function useRecordCreditDecision(pipelineId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreditDecisionPayload) => recordCreditDecision(pipelineId, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: PK.detail(pipelineId) });
       qc.invalidateQueries({ queryKey: PK.all });

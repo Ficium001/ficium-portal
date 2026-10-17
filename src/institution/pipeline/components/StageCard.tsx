@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button }              from "@/shared/ui";
 import { useAdvanceStage, useApproveStage } from "@/institution/pipeline/hooks/usePipeline";
 import type { StageInstance, StageStatus } from "@/institution/pipeline/types/pipeline";
+import { CreditDecisionForm } from "./CreditDecisionForm";
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 const fmtDate = (s: string | null) =>
@@ -33,7 +34,9 @@ function stageSubtitle(stage: StageInstance): string {
       ? "In credit approval"
       : "Submitted — awaiting checker approval";
   if (stage.status === "blocked")
-    return "Credit approval rejected";
+    return stage.decision_source === "external" ? "Credit declined" : "Credit approval rejected";
+  if (stage.status === "active" && stage.approval_route && stage.decision_source === "external")
+    return stage.rejection_reason ? "Referred back by credit" : "Awaiting the credit decision";
   if (stage.status === "active")
     return stage.sla_breached
       ? "⚠ SLA breached"
@@ -66,6 +69,8 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
   const canAct = stage.status === "active" || stage.status === "awaiting_approval";
   // A credit-routed stage waiting on the approval engine is decided in Inbox › Credit.
   const creditPending = stage.approval_route && stage.status === "awaiting_approval";
+  // Decided in the institution's own credit system: recorded here, never submitted.
+  const externalCredit = stage.approval_route && stage.decision_source === "external";
   // The server refuses to advance while mandatory documents are outstanding.
   const docsOutstanding = Math.max(0, (stage.documents_required ?? 0) - (stage.documents_done ?? 0));
 
@@ -85,7 +90,7 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
             <span className="font-semibold text-[13px] text-ink">{stage.label}</span>
             {stage.approval_route ? (
               <span className="text-[10px] text-muted flex items-center gap-0.5">
-                <Landmark size={9} /> credit approval
+                <Landmark size={9} /> {stage.decision_source === "external" ? "credit decision" : "credit approval"}
               </span>
             ) : stage.requires_maker_checker && (
               <span className="text-[10px] text-muted flex items-center gap-0.5">
@@ -131,7 +136,11 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
 
           {stage.approval_route && <CreditApprovalStatus stage={stage} />}
 
-          {canAct && !creditPending && (
+          {externalCredit && stage.status === "active" && (
+            <CreditDecisionForm pipelineId={pipelineId} />
+          )}
+
+          {canAct && !creditPending && !externalCredit && (
             <div className="space-y-2 pt-1">
               <textarea
                 value={notes}
@@ -194,6 +203,33 @@ export function StageCard({ stage, pipelineId, isActive }: StageCardProps) {
 
 /* ── Credit approval status ─────────────────────────────────────────────── */
 function CreditApprovalStatus({ stage }: { stage: StageInstance }) {
+  if (stage.decision_source === "external") {
+    if (stage.status === "blocked" && stage.rejection_reason) {
+      return (
+        <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-[12px] text-red-900">
+          <XCircle size={14} className="mt-0.5 shrink-0" />
+          <div><span className="font-semibold">Declined:</span> {stage.rejection_reason}</div>
+        </div>
+      );
+    }
+    if (stage.status === "active" && stage.rejection_reason) {
+      return (
+        <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-900">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <div><span className="font-semibold">Referred back:</span> {stage.rejection_reason}</div>
+        </div>
+      );
+    }
+    if (stage.status === "active") {
+      return (
+        <p className="text-[12px] text-muted">
+          Credit for this product is decided in your own credit system. Record its decision
+          here, or let your system post it through the API.
+        </p>
+      );
+    }
+    return null;
+  }
   if (stage.status === "awaiting_approval") {
     return (
       <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-900">

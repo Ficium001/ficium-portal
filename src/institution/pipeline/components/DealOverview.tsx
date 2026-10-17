@@ -6,6 +6,7 @@ import type { PipelineDetail } from "@/institution/pipeline/types/pipeline";
 import { DealSummaryPanel }      from "./DealSummaryPanel";
 import { BorrowerIdentityPanel } from "./BorrowerIdentityPanel";
 import { StageCard }             from "./StageCard";
+import { CreditDecisionHistory } from "./CreditDecisionHistory";
 
 const fmtDate = (s: string | null) =>
   s ? new Date(s).toLocaleDateString("en-MU", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -32,6 +33,7 @@ export function DealOverview({ deal }: { deal: PipelineDetail }) {
           ))}
         </div>
       </div>
+      <CreditDecisionHistory decisions={deal.credit_decisions ?? []} />
       {deal.status === "completed" && (
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-3 text-[13px] text-green-800">
           <CheckCircle2 size={18} className="text-green-600 shrink-0" />
