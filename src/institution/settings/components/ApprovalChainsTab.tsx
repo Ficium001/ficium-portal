@@ -364,7 +364,7 @@ function TemplateBuilderModal({
 }: { committees: Committee[]; onClose: () => void }) {
   const create = useCreateApprovalTemplate()
   const [name, setName] = useState('')
-  const [entityType, setEntityType] = useState<EntityType>('bid')
+  const [entityType, setEntityType] = useState<EntityType>('facility')
   const [stages, setStages] = useState<StageDef[]>([])
 
   function addStage() {
@@ -408,6 +408,7 @@ function TemplateBuilderModal({
           <FormField label="Applies to">
             <select className={inputCls} value={entityType}
               onChange={(e) => setEntityType(e.target.value as EntityType)}>
+              <option value="facility">Facility credit approval</option>
               <option value="bid">Marketplace bid</option>
               <option value="offer_letter">Offer letter release</option>
               <option value="countersign">Countersignature</option>
@@ -502,7 +503,7 @@ function conditionPills(c: DoaConditions): string[] {
 }
 
 function RoutingSection({ isAdmin }: { isAdmin: boolean }) {
-  const [entityType, setEntityType] = useState<EntityType>('bid')
+  const [entityType, setEntityType] = useState<EntityType>('facility')
   const { data: rules = [] } = useDoaRules(entityType)
   const { data: templates = [] } = useApprovalTemplates()
   const createRule = useCreateDoaRule(entityType)
@@ -526,6 +527,7 @@ function RoutingSection({ isAdmin }: { isAdmin: boolean }) {
 
         <select className={inputCls + ' max-w-xs'} value={entityType}
           onChange={(e) => setEntityType(e.target.value as EntityType)}>
+          <option value="facility">Facility credit approval</option>
           <option value="bid">Marketplace bids</option>
           <option value="offer_letter">Offer letters</option>
           <option value="investment_mandate">Investment mandates</option>

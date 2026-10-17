@@ -162,6 +162,7 @@ type StageModalInitial = {
   sla_hours: number;
   requires_maker_checker: boolean;
   requires_documents: boolean;
+  approval_route?: boolean;
   borrower_label: string | null;
   borrower_visible: boolean;
 };
@@ -182,6 +183,7 @@ function StageModal({
   const [slaHours,    setSlaHours]    = useState(String(initial?.sla_hours ?? 48));
   const [rmc,         setRmc]         = useState(initial?.requires_maker_checker ?? false);
   const [rdoc,        setRdoc]        = useState(initial?.requires_documents ?? false);
+  const [aroute,      setAroute]      = useState(initial?.approval_route ?? false);
   const [bLabel,      setBLabel]      = useState(initial?.borrower_label ?? "");
   const [bVisible,    setBVisible]    = useState(initial?.borrower_visible ?? true);
   const [error,       setError]       = useState("");
@@ -199,6 +201,7 @@ function StageModal({
       sla_hours:              parseInt(slaHours, 10) || 48,
       requires_maker_checker: rmc,
       requires_documents:     rdoc,
+      approval_route:         aroute,
       borrower_label:         bLabel.trim() || undefined,
       borrower_visible:       bVisible,
     };
@@ -299,12 +302,22 @@ function StageModal({
           </label>
 
           <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={aroute}
+              onChange={e => setAroute(e.target.checked)}
+              className="w-4 h-4 rounded-sm accent-ficium" />
+            <div>
+              <div className="text-[13px] font-medium text-ink">Credit approval</div>
+              <div className="text-[11px] text-muted">Route the facility through your credit approval rules (limits, committees). A rejection declines the deal.</div>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={rdoc}
               onChange={e => setRdoc(e.target.checked)}
               className="w-4 h-4 rounded-sm accent-ficium" />
             <div>
               <div className="text-[13px] font-medium text-ink">Requires documents</div>
-              <div className="text-[11px] text-muted">Stage is gated — documents must be uploaded before advancing</div>
+              <div className="text-[11px] text-muted">Shown to officers as a reminder. Not enforced yet: the document checklist will gate it.</div>
             </div>
           </label>
         </div>
@@ -458,7 +471,12 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
                           <span className="flex items-center gap-1 text-[10px] text-muted">
                             <Clock size={10} /> {stage.sla_hours}h SLA
                           </span>
-                          {stage.requires_maker_checker && (
+                          {stage.approval_route && (
+                            <span className="flex items-center gap-1 text-[10px] text-amber-700">
+                              <CheckCircle2 size={10} /> Credit approval
+                            </span>
+                          )}
+                          {stage.requires_maker_checker && !stage.approval_route && (
                             <span className="flex items-center gap-1 text-[10px] text-purple-700">
                               <CheckCircle2 size={10} /> Maker-checker
                             </span>

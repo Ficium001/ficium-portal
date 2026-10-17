@@ -4,7 +4,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  advanceStage, approveStage, fetchPipeline, fetchPipelines,
+  advanceStage, approveStage, closeDeal, fetchPipeline, fetchPipelines,
   fetchTemplates, fetchTemplate,
   createTemplate, updateTemplate,
   addStageDef, updateStageDef, deleteStageDef,
@@ -60,6 +60,18 @@ export function useApproveStage(pipelineId: string) {
   return useMutation({
     mutationFn: ({ stageId, notes }: { stageId: string; notes?: string }) =>
       approveStage(pipelineId, stageId, notes),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PK.detail(pipelineId) });
+      qc.invalidateQueries({ queryKey: PK.all });
+    },
+  });
+}
+
+export function useCloseDeal(pipelineId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ outcome, reason }: { outcome: "declined" | "withdrawn"; reason: string }) =>
+      closeDeal(pipelineId, outcome, reason),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: PK.detail(pipelineId) });
       qc.invalidateQueries({ queryKey: PK.all });
