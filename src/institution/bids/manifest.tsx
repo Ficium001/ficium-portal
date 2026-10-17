@@ -1,13 +1,12 @@
+import { useBadge } from '@/app/registry/useBadges'
 /** Bids — origination: offers this institution has made, awaiting the borrower. */
 import { lazy } from 'react'
 import type { ModuleManifest } from '@/app/registry/types'
-import { useMyBids } from '@/institution/hooks/useInstitution'
 
 const InstitutionBids = lazy(() => import('./pages/InstitutionBids'))
 
 function useLiveBids(enabled: boolean): number {
-  const { data } = useMyBids(undefined, { enabled })
-  return (data ?? []).filter((b) => b.status === 'submitted').length
+  return useBadge('live_bids', enabled)
 }
 
 export const bidsModule: ModuleManifest = {

@@ -1,14 +1,13 @@
+import { useBadge } from '@/app/registry/useBadges'
 /** Credit authorisation — approval-chain stages (committees, delegated authority). */
 import { lazy } from 'react'
 import type { ModuleManifest } from '@/app/registry/types'
-import { useApprovalInbox } from '@/institution/hooks/useApprovalEngine'
 
 const ApprovalChainsInbox = lazy(() => import('./pages/ApprovalChainsInbox'))
 const CreditApprovalSetup = lazy(() => import('./pages/CreditApprovalSetup'))
 
 function useAwaitingMyVote(enabled: boolean): number {
-  const { data } = useApprovalInbox({ enabled })
-  return (data ?? []).filter((i) => !i.my_vote).length
+  return useBadge('awaiting_my_vote', enabled)
 }
 
 export const approvalChainsModule: ModuleManifest = {

@@ -1,4 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryClient } from "@tanstack/react-query";
+import { BADGES_QK } from "@/app/registry/useBadges";
 import { PortalApiError } from "@/shared/lib/portalApi";
 
 /** Retry once on network/5xx errors, never on 4xx client errors —
@@ -11,7 +12,12 @@ function retryUnlessClientError(failureCount: number, error: unknown): boolean {
   return failureCount < 1;
 }
 
-export const queryClient = new QueryClient({
+export const queryClient: QueryClient = new QueryClient({
+  // Any successful action (book a deal, approve a bid, sign) can change a nav
+  // badge; refresh the one badge request instead of waiting for its poll.
+  mutationCache: new MutationCache({
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: BADGES_QK }); },
+  }),
   defaultOptions: {
     queries: {
       retry: retryUnlessClientError,
