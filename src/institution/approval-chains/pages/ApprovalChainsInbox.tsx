@@ -42,7 +42,7 @@ export default function ApprovalChainsInbox() {
     <PageFrame className="p-6 lg:p-8 max-w-3xl mx-auto">
       <SectionHeader
         title="Approval chains"
-        subtitle="Committee votes, secured-lending chains, and other multi-stage approvals awaiting your decision."
+        subtitle="Facilities and bids routed to you by your credit approval rules."
       />
 
       {isLoading && (

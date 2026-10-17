@@ -6,8 +6,5 @@
   ],
   "project": [
     "src/**/*.{ts,tsx}"
-  ],
-  "ignore": [
-    "src/institution/benefits/pages/InstitutionBenefits.tsx"
   ]
 }

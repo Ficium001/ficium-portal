@@ -44,7 +44,7 @@ Consequences for design:
   **not** editing the shell. The shell is a renderer of permissions.
 - **Lifecycle, not a list of modules.** Institution nav follows a core
   banking origination flow: Origination (marketplace, bids) · Authorisation
-  (Inbox) · Fulfilment (deals) · Servicing · Reports · Configuration (Setup).
+  (Inbox) · Fulfilment (deals) · Servicing · Reports · Configuration (Setup: Institution, Products with priced benefits, Workflows, Credit approval, Document templates, Team, Audit log).
   A flow bar under the top bar shows how much work waits at each step; each
   deal shows its own lifecycle strip (accepted → processing → documents →
   signature → complete). Admin nav is static (Ficium back-office).

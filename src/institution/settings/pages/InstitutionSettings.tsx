@@ -23,12 +23,12 @@
 
 import { useState, useRef } from "react";
 import {
-  Building2, Key, Clock, Check, FolderCheck,
+  Building2, Key, Clock, FolderCheck,
   Upload, CheckCircle2, XCircle, AlertCircle, ExternalLink, ShieldCheck, ShieldAlert,
-  GitBranch, Webhook, Users,
+  Webhook,
 } from "lucide-react";
 import {
-  useMyInstitution, useMyRole, useProducts,
+  useMyInstitution, useMyRole,
   useDocuments, useDocTypes, useCompliance, useRegisterDocument,
 } from "@/institution/hooks/useInstitution";
 import { useMyGroup } from "@/admin/hooks/useAdmin";
@@ -38,8 +38,6 @@ import {
   SectionHeader, StatusBadge, InlineAlert,
   Btn,
 } from "@/institution/components/primitives";
-import { PipelineTemplatesTab } from "@/institution/settings/components/PipelineTemplatesTab";
-import { ApprovalChainsTab }    from "@/institution/settings/components/ApprovalChainsTab";
 import { ApiKeysTab }           from "@/institution/settings/components/ApiKeysTab";
 import { WebhooksTab }          from "@/institution/settings/components/WebhooksTab";
 import { PageFrame } from "@/shared/components/PageFrame"
@@ -48,16 +46,13 @@ import { PageFrame } from "@/shared/components/PageFrame"
 // Tab types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "api-keys" | "webhooks" | "sla" | "documents" | "pipeline" | "approval-chains";
+type Tab = "profile" | "api-keys" | "webhooks" | "documents";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "profile",   label: "Profile",    icon: Building2    },
   { key: "api-keys",  label: "API keys",   icon: Key          },
   { key: "webhooks",  label: "Webhooks",   icon: Webhook      },
-  { key: "sla",       label: "SLA",        icon: Clock        },
-  { key: "documents", label: "Documents",  icon: FolderCheck  },
-  { key: "pipeline",  label: "Pipelines",  icon: GitBranch    },
-  { key: "approval-chains", label: "Approval Chains", icon: Users },
+  { key: "documents", label: "Compliance documents", icon: FolderCheck },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,109 +122,6 @@ function ProfileTab({ institution }: { institution: Institution }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SlaTab
-// ─────────────────────────────────────────────────────────────────────────────
-
-function SlaTab({ isAdmin }: { isAdmin: boolean }) {
-  const { data: products = [], isLoading } = useProducts();
-  const [values, setValues] = useState<Record<string, { bid: number; auto: number }>>({});
-  const [saved,  setSaved]  = useState<Record<string, boolean>>({});
-
-  const getVal = (code: string) => values[code] ?? { bid: 240, auto: 300 };
-
-  const setVal = (code: string, field: "bid" | "auto", v: number) =>
-    setValues((prev) => ({ ...prev, [code]: { ...getVal(code), [field]: v } }));
-
-  const handleSave = async (code: string) => {
-    const v = getVal(code);
-    await portalApi.post("/sla-config", {
-      product_code:          code,
-      bid_window_minutes:    v.bid,
-      auto_withdraw_minutes: v.auto,
-    });
-    setSaved((prev) => ({ ...prev, [code]: true }));
-    setTimeout(() => setSaved((prev) => ({ ...prev, [code]: false })), 2500);
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-ink/[0.07] overflow-hidden">
-      <div className="px-5 py-4 border-b border-ink/[0.07]">
-        <h2 className="font-display font-bold text-[15px] text-ink">SLA configuration</h2>
-        <p className="text-[11px] text-muted mt-0.5">
-          Bid window and auto-withdrawal timeouts per product. Changes take effect immediately.
-        </p>
-      </div>
-      {isLoading ? (
-        <div className="divide-y divide-ink/5">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="px-5 py-4 flex items-center gap-4 animate-pulse">
-              <div className="flex-1 h-4 bg-ink/6 rounded-sm w-32" />
-              <div className="h-8 w-24 bg-ink/5 rounded-lg" />
-              <div className="h-8 w-24 bg-ink/5 rounded-lg" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="divide-y divide-ink/5">
-          {products.map((p) => {
-            const v = getVal(p.code);
-            return (
-              <div
-                key={p.id}
-                className="flex items-center gap-4 px-5 py-4 flex-wrap"
-              >
-                <div className="flex-1 min-w-[140px]">
-                  <div className="text-[13px] font-semibold text-ink">{p.label}</div>
-                  <code className="text-[11px] text-muted font-mono">{p.code}</code>
-                </div>
-                <div className="flex items-end gap-3">
-                  <div>
-                    <label className="block text-[10px] font-semibold text-muted uppercase tracking-wide mb-1.5">
-                      Bid window (min)
-                    </label>
-                    <input
-                      type="number"
-                      value={v.bid}
-                      onChange={(e) => setVal(p.code, "bid", Number(e.target.value))}
-                      disabled={!isAdmin}
-                      min={15}
-                      max={1440}
-                      className="w-24 border border-ink/12 rounded-lg px-3 py-2 text-[13px] outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 disabled:bg-ink/2 disabled:text-muted"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-semibold text-muted uppercase tracking-wide mb-1.5">
-                      Auto-withdraw (min)
-                    </label>
-                    <input
-                      type="number"
-                      value={v.auto}
-                      onChange={(e) => setVal(p.code, "auto", Number(e.target.value))}
-                      disabled={!isAdmin}
-                      min={15}
-                      max={2880}
-                      className="w-24 border border-ink/12 rounded-lg px-3 py-2 text-[13px] outline-hidden focus:border-ficium focus:ring-2 focus:ring-ficium/20 disabled:bg-ink/2 disabled:text-muted"
-                    />
-                  </div>
-                  {isAdmin && (
-                    <Btn
-                      variant={saved[p.code] ? "secondary" : "primary"}
-                      size="sm"
-                      icon={saved[p.code] ? Check : undefined}
-                      onClick={() => handleSave(p.code)}
-                    >
-                      {saved[p.code] ? "Saved" : "Save"}
-                    </Btn>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Page — thin orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
@@ -426,13 +318,7 @@ export default function InstitutionSettings() {
     role?.role === "admin" || !!role?.is_primary_admin ||
     !!(myGroup?.label?.toLowerCase().includes("admin"));
 
-  // Pipeline templates are only relevant to institutions licensed for the
-  // "pipeline" module (pricing entitlement) — hide the tab entirely rather
-  // than let them configure templates for a module they don't have.
-  const entitledModules = institution?.modules ?? [];
-  const visibleTabs = TABS.filter((t) =>
-    t.key !== "pipeline" || entitledModules.includes("pipeline")
-  );
+  const visibleTabs = TABS;
 
   return (
     <PageFrame className="p-6 lg:p-8 max-w-[900px] mx-auto">
@@ -468,10 +354,7 @@ export default function InstitutionSettings() {
       {tab === "profile"   && institution && <ProfileTab institution={institution} />}
       {tab === "api-keys"  && <ApiKeysTab  isAdmin={isAdmin} />}
       {tab === "webhooks"  && <WebhooksTab isAdmin={isAdmin} />}
-      {tab === "sla"       && <SlaTab      isAdmin={isAdmin} />}
       {tab === "documents" && <DocumentsTab />}
-      {tab === "pipeline"  && <PipelineTemplatesTab />}
-      {tab === "approval-chains" && <ApprovalChainsTab isAdmin={isAdmin} />}
     </PageFrame>
   );
 }

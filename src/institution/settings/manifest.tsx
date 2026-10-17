@@ -1,4 +1,4 @@
-/** Institution — configuration. Institution profile, SLAs, compliance documents, API keys, webhooks, approval chains and pipeline templates. */
+/** Institution — configuration: profile, compliance documents, API keys, webhooks. */
 import { lazy } from 'react'
 import type { ModuleManifest } from '@/app/registry/types'
 

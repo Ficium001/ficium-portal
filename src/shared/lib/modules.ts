@@ -133,11 +133,11 @@ const INSTITUTION_MODULES: PortalModule[] = [
   {
     key:         'inst:benefits',
     label:       'Benefits',
-    description: 'Define institution benefits shown to clients on bids',
+    description: 'Priced benefits shown on bids, managed per product (Setup › Products)',
     category:    'institution',
-    path:        '/setup?section=benefits',
+    path:        '/setup?section=products',
     iconKey:     'Gift',
-    shortcut:    'F',
+    embeddedIn:  'inst:products',
   },
   {
     key:         'inst:analytics',

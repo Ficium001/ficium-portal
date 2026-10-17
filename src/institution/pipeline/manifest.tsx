@@ -9,6 +9,7 @@ import { isDone } from '@/institution/checklist/types'
 import type { PipelineDetail } from './types/pipeline'
 
 const InstitutionPipelines = lazy(() => import('./pages/InstitutionPipelines').then((m) => ({ default: m.InstitutionPipelines })))
+const WorkflowsSetup       = lazy(() => import('@/institution/settings/pages/WorkflowsSetup'))
 const PipelineDetail       = lazy(() => import('./pages/PipelineDetail').then((m) => ({ default: m.PipelineDetail })))
 
 const fmtShort = (s: string | null) =>
@@ -41,6 +42,10 @@ export const dealsModule: ModuleManifest = {
   flowSteps: [{
     key: 'deals', label: 'Deals in progress', path: '/deals',
     moduleKeys: ['inst:pipeline'], order: 40, useCount: useActiveDeals,
+  }],
+  setupSections: [{
+    key: 'workflows', label: 'Workflows', moduleKey: 'inst:pipeline', order: 30,
+    element: <WorkflowsSetup />,
   }],
   dealSteps: [
     { key: 'accepted', label: 'Bid accepted', moduleKey: 'inst:pipeline', order: 10, tab: 'overview',

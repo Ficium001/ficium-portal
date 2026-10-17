@@ -4,6 +4,7 @@ import type { ModuleManifest } from '@/app/registry/types'
 import { useApprovalInbox } from '@/institution/hooks/useApprovalEngine'
 
 const ApprovalChainsInbox = lazy(() => import('./pages/ApprovalChainsInbox'))
+const CreditApprovalSetup = lazy(() => import('./pages/CreditApprovalSetup'))
 
 function useAwaitingMyVote(enabled: boolean): number {
   const { data } = useApprovalInbox({ enabled })
@@ -16,5 +17,9 @@ export const approvalChainsModule: ModuleManifest = {
   inboxQueues: [{
     key: 'credit', label: 'Credit', moduleKey: 'inst:approvals', order: 20,
     element: <ApprovalChainsInbox />, useCount: useAwaitingMyVote,
+  }],
+  setupSections: [{
+    key: 'credit-approval', label: 'Credit approval', moduleKey: 'inst:approvals', order: 35,
+    element: <CreditApprovalSetup />,
   }],
 }

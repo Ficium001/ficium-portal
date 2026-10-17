@@ -20,7 +20,6 @@ import { analyticsModule }     from '@/institution/analytics/manifest'
 import { notificationsModule } from '@/institution/notifications/manifest'
 import { settingsModule }      from '@/institution/settings/manifest'
 import { productsModule }      from '@/institution/products/manifest'
-import { benefitsModule }      from '@/institution/benefits/manifest'
 import { teamModule }          from '@/institution/team/manifest'
 import { auditModule }         from '@/institution/audit/manifest'
 
@@ -29,5 +28,5 @@ export const FEATURE_MODULES: readonly ModuleManifest[] = [
   bidApprovalModule, approvalChainsModule, dualControlModule,
   dealsModule, docTemplatesModule, esignModule, bookingModule,
   analyticsModule, notificationsModule,
-  settingsModule, productsModule, benefitsModule, teamModule, auditModule,
+  settingsModule, productsModule, teamModule, auditModule,
 ]

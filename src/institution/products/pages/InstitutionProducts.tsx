@@ -22,7 +22,7 @@ import {
   useBenefits, useCreateBenefit, useUpdateBenefit,
   useDeactivateBenefit, useBenefitCategories,
 } from "@/institution/hooks/useInstitution";
-import type { Product, Benefit } from "@/institution/types/institution";
+import type { Product, Benefit, BenefitUnit } from "@/institution/types/institution";
 import { institutionSupabase } from "@/institution/lib/institutionSupabase";
 import {
   SectionHeader, FilterPills, EmptyState, InlineAlert,
@@ -100,6 +100,31 @@ function BenefitChip({
 }
 
 // ─── BenefitForm ──────────────────────────────────────────────
+// A benefit is priced: the officer enters a number and its unit, and the
+// server writes the wording shown to borrowers (same rules as portal-api
+// benefits._UNITS). Qualitative categories carry no value.
+
+const BENEFIT_UNITS: Record<string, { units: BenefitUnit[]; required: boolean }> = {
+  rate_discount: { units: ["pct_pa"], required: true },
+  fee_waiver:    { units: ["pct", "mur"], required: true },
+  reward:        { units: ["mur"], required: true },
+  insurance:     { units: ["mur"], required: false },
+};
+const UNIT_LABEL: Record<BenefitUnit, string> = {
+  pct_pa: "% p.a. off the rate", pct: "% of the fee", mur: "MUR",
+};
+const UNIT_MAX: Record<BenefitUnit, number> = { pct_pa: 5, pct: 100, mur: 10_000_000 };
+
+/** Same wording the server writes (benefits._display). */
+function benefitPreview(cat: string, amount: number, unit: BenefitUnit): string {
+  if (unit === "pct_pa") return `${amount}% p.a. off the rate`;
+  if (unit === "pct") return `${amount}% of the fee waived`;
+  const mur = `MUR ${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  return cat === "fee_waiver" ? `${mur} fee waived`
+       : cat === "reward"     ? `${mur} cashback`
+       : cat === "insurance"  ? `Cover up to ${mur}`
+       : mur;
+}
 
 function BenefitForm({
   productId,
@@ -121,38 +146,66 @@ function BenefitForm({
     cat_id:        "",
     title:         "",
     description:   "",
-    value_display: "",
+    value_amount:  "",
+    value_unit:    "" as BenefitUnit | "",
     is_guaranteed: false,
     conditions:    "",
     valid_until:   "",
   });
   const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
+  const catCode = cats.find(c => c.id === form.cat_id)?.code ?? "";
+  const rule    = BENEFIT_UNITS[catCode];
+  const unit    = (form.value_unit || rule?.units[0] || "") as BenefitUnit | "";
+  const amount  = Number(form.value_amount);
+  const hasAmount = form.value_amount.trim() !== "";
+  const amountOk  = !hasAmount || (unit !== "" && amount > 0 && amount <= UNIT_MAX[unit]);
+  const valueOk   = !rule || (rule.required ? hasAmount && amountOk : amountOk);
+  const titleOk   = form.title.trim().length >= 2 && form.title.trim().length <= 80;
+
   return (
     <div className="space-y-4">
       {error && <InlineAlert variant="error">{error}</InlineAlert>}
       <div className="text-[12px] text-muted bg-ficium/5 rounded-xl px-3 py-2">
-        This benefit will appear on all bids for <strong className="text-ink">{productLabel}</strong>.
+        Shown on every bid for <strong className="text-ink">{productLabel}</strong> while active.
       </div>
 
-      <FormField label="Category *">
-        <select className={inputCls} value={form.cat_id} onChange={e => set("cat_id", e.target.value)}>
+      <FormField label="Category" required>
+        <select className={inputCls} value={form.cat_id}
+                onChange={e => setForm(f => ({ ...f, cat_id: e.target.value, value_amount: "", value_unit: "" }))}>
           <option value="">Select category</option>
           {cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
       </FormField>
 
-      <FormField label="Title *">
+      <FormField label="Title" required>
         <input className={inputCls} value={form.title} onChange={e => set("title", e.target.value)}
-          placeholder="e.g. Free Life Insurance" maxLength={100} />
+          placeholder="e.g. Launch rate discount" maxLength={80} />
       </FormField>
 
-      <FormField label="Value shown to client">
-        <input className={inputCls} value={form.value_display} onChange={e => set("value_display", e.target.value)}
-          placeholder="e.g. Up to MUR 2,000,000" />
-      </FormField>
+      {rule && (
+        <FormField label="Value" required={rule.required}
+                   hint={hasAmount && amountOk && unit ? `Borrowers see: ${benefitPreview(catCode, amount, unit)}` : undefined}>
+          <div className="flex gap-2">
+            <input type="number" inputMode="decimal" min={0} step="any" className={`${inputCls} flex-1`}
+                   value={form.value_amount} onChange={e => set("value_amount", e.target.value)}
+                   placeholder={unit === "pct_pa" ? "0.25" : unit === "pct" ? "50" : "5000"}
+                   aria-invalid={!amountOk} />
+            {rule.units.length > 1 ? (
+              <select className={`${inputCls} w-40`} value={unit} onChange={e => set("value_unit", e.target.value)}>
+                {rule.units.map(u => <option key={u} value={u}>{UNIT_LABEL[u]}</option>)}
+              </select>
+            ) : (
+              <span className="self-center text-[12px] text-muted whitespace-nowrap">{unit && UNIT_LABEL[unit]}</span>
+            )}
+          </div>
+          {!amountOk && unit && (
+            <p className="mt-1 text-[11px] text-red-700">Enter more than 0 and at most {UNIT_MAX[unit].toLocaleString()}.</p>
+          )}
+        </FormField>
+      )}
 
-      <FormField label="Conditions">
+      <FormField label="Conditions" hint="When the benefit applies, in the borrower's words.">
         <input className={inputCls} value={form.conditions} onChange={e => set("conditions", e.target.value)}
           placeholder="e.g. For loans above MUR 500,000" />
       </FormField>
@@ -161,34 +214,31 @@ function BenefitForm({
         <input type="date" className={inputCls} value={form.valid_until} onChange={e => set("valid_until", e.target.value)} />
       </FormField>
 
-      <div
-        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-          form.is_guaranteed ? "border-emerald-200 bg-emerald-50" : "border-ink/[0.07] hover:bg-ink/2"
-        }`}
-        onClick={() => set("is_guaranteed", !form.is_guaranteed)}
-      >
-        <input type="checkbox" className="mt-0.5" checked={form.is_guaranteed} onChange={() => set("is_guaranteed", !form.is_guaranteed)} />
-        <div>
-          <p className="text-[13px] font-semibold text-ink">Guaranteed benefit</p>
-          <p className="text-[11px] text-muted">Contractual — shown with a guarantee badge. Requires checker approval.</p>
-        </div>
-      </div>
-
-      {form.is_guaranteed && (
-        <InlineAlert variant="info">Will be submitted to your checker for approval before appearing on bids.</InlineAlert>
-      )}
+      <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+          form.is_guaranteed ? "border-emerald-200 bg-emerald-50" : "border-ink/[0.07] hover:bg-ink/2"}`}>
+        <input type="checkbox" className="mt-0.5" checked={form.is_guaranteed}
+               onChange={() => set("is_guaranteed", !form.is_guaranteed)} />
+        <span>
+          <span className="block text-[13px] font-semibold text-ink">Guaranteed benefit</span>
+          <span className="block text-[11px] text-muted">Contractual, shown with a guarantee badge. A checker approves it before it appears on bids.</span>
+        </span>
+      </label>
 
       <div className="flex gap-2 pt-1">
         <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
         <Btn variant="primary" loading={loading}
-          disabled={!form.cat_id || !form.title?.trim()}
+          disabled={!form.cat_id || !titleOk || !valueOk}
           onClick={() => {
-            if (!form.cat_id) return;
             onSubmit({
-              ...form,
-              product_id:  productId,
-              valid_until: form.valid_until || undefined,
-              conditions:  form.conditions  || undefined,
+              cat_id:        form.cat_id,
+              title:         form.title.trim(),
+              description:   form.description || undefined,
+              is_guaranteed: form.is_guaranteed,
+              product_id:    productId,
+              value_amount:  rule && hasAmount ? amount : undefined,
+              value_unit:    rule && hasAmount && unit ? unit : undefined,
+              valid_until:   form.valid_until || undefined,
+              conditions:    form.conditions  || undefined,
             });
           }}
         >
