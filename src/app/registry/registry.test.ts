@@ -25,8 +25,11 @@ describe('module registry', () => {
   })
 
   it('every institution permission has a surface (nothing orphaned)', () => {
-    // inst:dashboard is the shell's Home, not a module contribution.
-    const orphans = [...INSTITUTION_KEYS].filter((k) => k !== 'inst:dashboard' && !USED_MODULE_KEYS.has(k))
+    // inst:dashboard is the shell's Home; embedded keys gate part of another
+    // module's screen (e.g. benefits inside Products), not a surface of their own.
+    const embedded = new Set(MODULE_CATALOGUE.filter((m) => m.embeddedIn).map((m) => m.key))
+    const orphans = [...INSTITUTION_KEYS].filter(
+      (k) => k !== 'inst:dashboard' && !embedded.has(k) && !USED_MODULE_KEYS.has(k))
     expect(orphans).toEqual([])
   })
 
@@ -54,7 +57,7 @@ describe('module registry', () => {
   })
 
   it('catalogue hub paths (used by shortcuts) match a real tab for the same key', () => {
-    for (const m of MODULE_CATALOGUE.filter((x) => x.path.includes('?section='))) {
+    for (const m of MODULE_CATALOGUE.filter((x) => x.path.includes('?section=') && !x.embeddedIn)) {
       const [base, query] = m.path.split('?')
       const section = new URLSearchParams(query).get('section')
       const host = base === '/inbox' ? INBOX_QUEUES : base === '/setup' ? SETUP_SECTIONS : []

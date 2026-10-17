@@ -46,7 +46,7 @@ export function DealChecklist({ pipelineId, readOnly }: { pipelineId: string; re
   if (docs.length === 0) {
     return (
       <EmptyState icon={FileText} title="No documents required"
-        description="This deal's workflow has no document checklist. Add one in Setup › Institution › Pipelines." />
+        description="This deal's workflow has no document checklist. Add one in Setup › Workflows." />
     )
   }
 

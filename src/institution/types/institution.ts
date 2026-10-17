@@ -368,6 +368,9 @@ export interface BenefitCategory {
   sort_order: number
 }
 
+/** pct_pa = rate points per year; pct = percent of a fee; mur = amount. */
+export type BenefitUnit = 'pct_pa' | 'pct' | 'mur'
+
 export interface Benefit {
   id:             string
   institution_id: string
@@ -380,7 +383,10 @@ export interface Benefit {
   product_label:  string | null
   title:          string
   description:    string | null
+  /** Written by the server from value_amount / value_unit. */
   value_display:  string | null
+  value_amount:   number | string | null
+  value_unit:     BenefitUnit | null
   is_guaranteed:  boolean
   conditions:     string | null
   valid_from:     string | null
