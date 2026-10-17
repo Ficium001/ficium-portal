@@ -7,6 +7,7 @@ import type {
   PipelineSummary, PipelineDetail, AdvanceStageResult,
   PipelineTemplate, PipelineTemplateDetail,
   CreateTemplatePayload, CreateStageDefPayload, UpdateStageDefPayload,
+  CreditDecision, CreditDecisionPayload,
 } from "@/institution/pipeline/types/pipeline";
 
 // ── Run-time ──────────────────────────────────────────────────────────────────
@@ -60,3 +61,8 @@ export const closeDeal = (
     `/pipelines/${pipelineId}/close`,
     { outcome, reason },
   );
+
+/** Record a credit decision made in the institution's own credit system. */
+export const recordCreditDecision = (pipelineId: string, payload: CreditDecisionPayload) =>
+  portalApi.post<CreditDecision & { deal_status: string }>(
+    `/pipelines/${pipelineId}/credit-decision`, payload);

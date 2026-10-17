@@ -28,7 +28,7 @@ import {
   inputCls, Btn, SkeletonCard,
 } from "@/institution/components/primitives";
 import type {
-  PipelineTemplate, StageKey,
+  PipelineTemplate, StageKey, DecisionSource,
   CreateTemplatePayload, CreateStageDefPayload,
 } from "@/institution/pipeline/types/pipeline";
 
@@ -164,6 +164,7 @@ type StageModalInitial = {
   requires_maker_checker: boolean;
   requires_documents: boolean;
   approval_route?: boolean;
+  decision_source?: DecisionSource;
   borrower_label: string | null;
   borrower_visible: boolean;
 };
@@ -186,6 +187,7 @@ function StageModal({
   // Superseded by the document checklist; kept as-is so editing a stage doesn't change it.
   const rdoc = initial?.requires_documents ?? false;
   const [aroute,      setAroute]      = useState(initial?.approval_route ?? false);
+  const [dsource,     setDsource]     = useState<DecisionSource>(initial?.decision_source ?? "internal");
   const [bLabel,      setBLabel]      = useState(initial?.borrower_label ?? "");
   const [bVisible,    setBVisible]    = useState(initial?.borrower_visible ?? true);
   const [error,       setError]       = useState("");
@@ -204,6 +206,7 @@ function StageModal({
       requires_maker_checker: rmc,
       requires_documents:     rdoc,
       approval_route:         aroute,
+      decision_source:        dsource,
       borrower_label:         bLabel.trim() || undefined,
       borrower_visible:       bVisible,
     };
@@ -308,10 +311,32 @@ function StageModal({
               onChange={e => setAroute(e.target.checked)}
               className="w-4 h-4 rounded-sm accent-ficium" />
             <div>
-              <div className="text-[13px] font-medium text-ink">Credit approval</div>
-              <div className="text-[11px] text-muted">Route the facility through your credit approval rules (limits, committees). A rejection declines the deal.</div>
+              <div className="text-[13px] font-medium text-ink">Credit decision</div>
+              <div className="text-[11px] text-muted">This stage decides credit. A decline closes the deal.</div>
             </div>
           </label>
+
+          {aroute && (
+            <fieldset className="ml-7 space-y-2">
+              <legend className="text-[12px] font-medium text-ink mb-1">Who decides</legend>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="radio" name="decision-source" checked={dsource === "internal"}
+                  onChange={() => setDsource("internal")} className="mt-0.5 accent-ficium" />
+                <div>
+                  <div className="text-[13px] text-ink">Ficium credit approval</div>
+                  <div className="text-[11px] text-muted">Routed by your approval limits to approvers or a committee.</div>
+                </div>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="radio" name="decision-source" checked={dsource === "external"}
+                  onChange={() => setDsource("external")} className="mt-0.5 accent-ficium" />
+                <div>
+                  <div className="text-[13px] text-ink">Your own credit system</div>
+                  <div className="text-[11px] text-muted">The decision is posted by your system through the API, or recorded on the deal by a credit officer.</div>
+                </div>
+              </label>
+            </fieldset>
+          )}
 
         </div>
 
@@ -466,7 +491,8 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
                           </span>
                           {stage.approval_route && (
                             <span className="flex items-center gap-1 text-[10px] text-amber-700">
-                              <CheckCircle2 size={10} /> Credit approval
+                              <CheckCircle2 size={10} />
+                              {stage.decision_source === "external" ? "Credit: your system" : "Credit approval"}
                             </span>
                           )}
                           {stage.requires_maker_checker && !stage.approval_route && (
