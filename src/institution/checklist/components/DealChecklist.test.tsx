@@ -16,7 +16,8 @@ vi.mock('@/shared/lib/portalApi', () => ({
 const doc = (over: Partial<DealDocument>): DealDocument => ({
   id: 'd1', status: 'required', file_name: null, mime_type: null, file_size: null,
   uploaded_at: null, uploaded_by: null, uploaded_by_name: null, reviewed_at: null, reviewed_by: null,
-  reviewed_by_name: null, review_note: null, requirement_id: 'r1', name: 'Proof of income',
+  reviewed_by_name: null, review_note: null, uploaded_via: 'bank', source: null, document_date: null,
+  requirement_id: 'r1', name: 'Proof of income', document_type: 'payslip', max_age_days: 90,
   description: null, provided_by: 'borrower', mandatory: true, position: 1, stage_def_id: 's1',
   stage_label: 'Credit Documentation', stage_position: 1, stage_status: 'active', ...over,
 })
@@ -73,5 +74,15 @@ describe('DealChecklist', () => {
   it('is read-only on a closed deal', async () => {
     await render([doc({ status: 'received', file_name: 'p.pdf' })], true)
     expect(buttons().filter((b) => ['Upload', 'Verify', 'Waive', 'Reject'].includes(b ?? ''))).toEqual([])
+  })
+})
+
+describe('borrower uploads', () => {
+  it('say who uploaded, from where, and the date the document covers', async () => {
+    const { uploaderLabel } = await import('../uploader')
+    expect(uploaderLabel(doc({ uploaded_by_name: 'Asha' }))).toBe('Asha')
+    expect(uploaderLabel(doc({ uploaded_via: 'borrower', source: 'new' }))).toBe('borrower')
+    expect(uploaderLabel(doc({ uploaded_via: 'borrower', source: 'vault', document_date: '2026-09-30' })))
+      .toMatch(/^borrower, from their vault, dated 30 Sep(t)? 2026$/)
   })
 })

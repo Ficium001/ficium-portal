@@ -14,6 +14,7 @@ import { CheckCircle2, Circle, Download, FileText, Upload, XCircle, MinusCircle,
 import { Btn, EmptyState, InlineAlert, SkeletonCard } from '@/institution/components/primitives'
 import { useDealDocuments, useReviewDealDocument, useUploadDealDocument } from '../hooks/useChecklist'
 import { dealDocumentFileUrl } from '../api/checklist'
+import { uploaderLabel } from '../uploader'
 import { PROVIDED_BY_LABEL, isDone, type DealDocument, type DocStatus } from '../types'
 
 const STATUS: Record<DocStatus, { label: string; cls: string; Icon: typeof Circle }> = {
@@ -122,7 +123,7 @@ function DocRow({ doc, pipelineId, readOnly }: { doc: DealDocument; pipelineId: 
           {doc.file_name && (
             <button onClick={open} className="mt-1 inline-flex items-center gap-1 text-[12px] text-ficium hover:underline">
               <Download size={12} aria-hidden /> {doc.file_name}
-              <span className="text-muted">({doc.uploaded_by_name ?? 'uploaded'}, {fmt(doc.uploaded_at)})</span>
+              <span className="text-muted">({uploaderLabel(doc)}, {fmt(doc.uploaded_at)})</span>
             </button>
           )}
           {doc.review_note && (
