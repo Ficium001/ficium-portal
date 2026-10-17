@@ -3,12 +3,27 @@ import { lazy } from 'react'
 import type { ModuleManifest } from '@/app/registry/types'
 import { usePipelines } from './hooks/usePipeline'
 import { DealOverview } from './components/DealOverview'
+import { DealDocumentsTab } from '@/institution/checklist/components/DealDocumentsTab'
+import { useDealDocuments } from '@/institution/checklist/hooks/useChecklist'
+import { isDone } from '@/institution/checklist/types'
+import type { PipelineDetail } from './types/pipeline'
 
 const InstitutionPipelines = lazy(() => import('./pages/InstitutionPipelines').then((m) => ({ default: m.InstitutionPipelines })))
 const PipelineDetail       = lazy(() => import('./pages/PipelineDetail').then((m) => ({ default: m.PipelineDetail })))
 
 const fmtShort = (s: string | null) =>
   s ? new Date(s).toLocaleDateString('en-MU', { day: 'numeric', month: 'short' }) : undefined
+
+function useDocumentsStep(deal: PipelineDetail, enabled: boolean) {
+  const { data } = useDealDocuments(deal.id, enabled)
+  const required = (data ?? []).filter((d) => d.mandatory)
+  if (required.length === 0) return { state: 'done' as const, detail: 'None required' }
+  const done = required.filter((d) => isDone(d.status)).length
+  return {
+    state: done === required.length ? ('done' as const) : done > 0 ? ('current' as const) : ('todo' as const),
+    detail: `${done}/${required.length} verified`,
+  }
+}
 
 function useActiveDeals(enabled: boolean): number {
   const { data } = usePipelines('active', { enabled })
@@ -36,6 +51,8 @@ export const dealsModule: ModuleManifest = {
         const all  = deal.stages.length
         return { state: all > 0 && done === all ? 'done' : 'current', detail: `${done}/${all} stages` }
       } },
+    { key: 'documents', label: 'Documents', moduleKey: 'inst:pipeline', order: 30, tab: 'documents',
+      useStep: useDocumentsStep },
   ],
   dealTabs: [{
     key: 'overview', label: 'Overview', moduleKey: 'inst:pipeline', order: 10,
@@ -44,5 +61,15 @@ export const dealsModule: ModuleManifest = {
       const done = deal.stages.filter((s) => s.status === 'completed' || s.status === 'skipped').length
       return <>{done}/{deal.stages.length}</>
     },
+  }, {
+    key: 'documents', label: 'Documents', moduleKey: 'inst:pipeline', order: 20,
+    render: (deal) => <DealDocumentsTab deal={deal} />,
+    Badge: DocumentsBadge,
   }],
+}
+
+function DocumentsBadge({ deal }: { deal: PipelineDetail }) {
+  const { data } = useDealDocuments(deal.id)
+  const open = (data ?? []).filter((d) => d.mandatory && !isDone(d.status)).length
+  return open > 0 ? <>{open} to do</> : null
 }

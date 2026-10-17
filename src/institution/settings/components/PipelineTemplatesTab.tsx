@@ -12,6 +12,7 @@
  *   - stage: requires_maker_checker, requires_documents, borrower_visible all
  *     directly affect pipeline execution and borrower tracker
  */
+import { RequirementsEditor } from "@/institution/checklist/components/RequirementsEditor";
 import { useState } from "react";
 import {
   GitBranch, Plus, Trash2, Pencil, ChevronDown, ChevronUp,
@@ -182,7 +183,8 @@ function StageModal({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [slaHours,    setSlaHours]    = useState(String(initial?.sla_hours ?? 48));
   const [rmc,         setRmc]         = useState(initial?.requires_maker_checker ?? false);
-  const [rdoc,        setRdoc]        = useState(initial?.requires_documents ?? false);
+  // Superseded by the document checklist; kept as-is so editing a stage doesn't change it.
+  const rdoc = initial?.requires_documents ?? false;
   const [aroute,      setAroute]      = useState(initial?.approval_route ?? false);
   const [bLabel,      setBLabel]      = useState(initial?.borrower_label ?? "");
   const [bVisible,    setBVisible]    = useState(initial?.borrower_visible ?? true);
@@ -311,15 +313,6 @@ function StageModal({
             </div>
           </label>
 
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" checked={rdoc}
-              onChange={e => setRdoc(e.target.checked)}
-              className="w-4 h-4 rounded-sm accent-ficium" />
-            <div>
-              <div className="text-[13px] font-medium text-ink">Requires documents</div>
-              <div className="text-[11px] text-muted">Shown to officers as a reminder. Not enforced yet: the document checklist will gate it.</div>
-            </div>
-          </label>
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
@@ -481,11 +474,7 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
                               <CheckCircle2 size={10} /> Maker-checker
                             </span>
                           )}
-                          {stage.requires_documents && (
-                            <span className="flex items-center gap-1 text-[10px] text-blue-700">
-                              <CheckCircle2 size={10} /> Docs required
-                            </span>
-                          )}
+
                           {stage.borrower_visible ? (
                             <span className="flex items-center gap-1 text-[10px] text-green-700">
                               <Eye size={10} />
@@ -545,6 +534,11 @@ function TemplateCard({ template }: { template: PipelineTemplate }) {
                   <Plus size={14} /> Add stage
                 </button>
               </div>
+
+              <RequirementsEditor
+                templateId={template.id}
+                stages={(detail?.stages ?? []).map((s) => ({ id: s.id, label: s.label, position: s.position }))}
+              />
             </>
           )}
         </div>

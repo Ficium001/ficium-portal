@@ -8,7 +8,6 @@
     "src/**/*.{ts,tsx}"
   ],
   "ignore": [
-    "src/institution/benefits/pages/InstitutionBenefits.tsx",
-    "src/institution/documents/pages/InstitutionDocuments.tsx"
+    "src/institution/benefits/pages/InstitutionBenefits.tsx"
   ]
 }
