@@ -334,25 +334,11 @@ export default function InstitutionDualControl() {
             } catch (err) {
               console.error("Provision failed:", err);
             }
-          } else if (action?.action_category === "user.update") {
-            try {
-              await portalApi.post(`/approvals/${actionId}/execute-update`, {});
-            } catch (err) {
-              console.error("Execute update failed:", err);
-            }
-          } else if (action?.action_category === "user.deactivate") {
-            try {
-              await portalApi.post(`/members/${(action.payload as Record<string, unknown>)?.member_id as string | undefined}/deactivate`, {});
-            } catch (err) {
-              console.error("Deactivate failed:", err);
-            }
-          } else if (action?.action_category === "user.reactivate") {
-            try {
-              await portalApi.post(`/members/${(action.payload as Record<string, unknown>)?.member_id as string | undefined}/reactivate`, {});
-            } catch (err) {
-              console.error("Reactivate failed:", err);
-            }
           }
+          // user.update / user.deactivate / user.reactivate: the database
+          // applies the change in the same transaction as the approval
+          // (db/040). Do NOT call the member endpoints here: they now queue a
+          // new four-eyes action, so calling them would loop.
         },
       });
     },
