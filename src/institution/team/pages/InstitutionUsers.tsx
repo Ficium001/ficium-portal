@@ -211,33 +211,6 @@ function CreateUserModal({ groups, open, onClose, onSuccess }: {
 
 // ─── User detail drawer ───────────────────────────────────────
 
-function TempPasswordModal({ password, email, username, onClose }: { password: string; email: string; username?: string; onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Modal open onClose={onClose} title="Temporary password">
-      <div className="space-y-4">
-        <InlineAlert variant="warning">Share this with <strong>{email}</strong> — it won't be shown again.</InlineAlert>
-        {username && (
-          <div className="bg-ink/3 border border-ink/10 rounded-xl px-4 py-3">
-            <p className="text-[11px] text-muted mb-0.5">Username (for login)</p>
-            <code className="text-[13px] font-mono font-bold text-ink">{username}</code>
-          </div>
-        )}
-        <div className="flex items-center gap-2 bg-ink/3 border border-ink/10 rounded-xl px-4 py-3">
-          <code className="flex-1 text-[15px] font-mono font-bold text-ink tracking-wider">{password}</code>
-          <button
-            onClick={() => { navigator.clipboard.writeText(password); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-            className="text-ficium hover:text-ficium-deep text-[11px] font-semibold"
-          >
-            {copied ? "Copied!" : "Copy"}
-          </button>
-        </div>
-        <Btn variant="primary" onClick={onClose}>Done</Btn>
-      </div>
-    </Modal>
-  );
-}
-
 type MemberExt = InstitutionUser & {
   active?: boolean;
   auth_active?: boolean;
@@ -264,7 +237,6 @@ function UserDrawer({
   const [newGroupId, setNewGroupId] = useState(member.custom_group_id ?? "");
   const [error,     setError]     = useState<string | null>(null);
   const [flash,     setFlash]     = useState<string | null>(null);
-  const [tempPw,    setTempPw]    = useState<string | null>(null);
   const [confirming, setConfirming] = useState<"deactivate" | "reactivate" | null>(null);
 
   const assignGroupMut = useMutation({
@@ -300,8 +272,11 @@ function UserDrawer({
   });
 
   const resetPwMut = useMutation({
-    mutationFn: () => portalApi.post<{ temp_password: string }>(`/members/${member.id}/reset-password`, {}),
-    onSuccess: (data) => setTempPw(data.temp_password),
+    // Four-eyes (platform-locked): the person who approves it sees the
+    // temporary password once. Nobody sees it at request time.
+    mutationFn: () => portalApi.post(`/members/${member.id}/reset-password`, {}),
+    onSuccess: () => setFlash(
+      "Password reset sent for approval. The person who approves it will see the temporary password once."),
     onError: (e: ApiError) => setError(e?.detail ?? e?.message ?? "Failed"),
   });
 
@@ -479,7 +454,7 @@ function UserDrawer({
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-line hover:border-ficium hover:text-ficium text-ink transition-all text-left group"
               >
                 <KeyRound className="w-4 h-4 text-muted group-hover:text-ficium transition-colors" />
-                <span className="text-[13px] font-semibold">{resetPwMut.isPending ? "Generating…" : "Reset password"}</span>
+                <span className="text-[13px] font-semibold">{resetPwMut.isPending ? "Sending…" : "Reset password"}</span>
               </button>
 
               {/* Deactivate / Reactivate */}
@@ -522,10 +497,6 @@ function UserDrawer({
           )}
         </div>
       </aside>
-
-      {tempPw && (
-        <TempPasswordModal password={tempPw} email={member.email ?? ""} onClose={() => setTempPw(null)} />
-      )}
     </>
   );
 }
