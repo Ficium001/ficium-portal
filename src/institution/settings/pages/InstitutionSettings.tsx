@@ -21,6 +21,7 @@
  * @lastReviewed 2025-08
  */
 
+import { openSignedDocument } from '@/shared/lib/openDocument'
 import { useState, useRef } from "react";
 import {
   Building2, Key, Clock, FolderCheck,
@@ -175,7 +176,6 @@ function DocRow({
   const ref = useRef<HTMLInputElement>(null);
   const status = (doc?.status ?? "not_uploaded") as keyof typeof DOC_STATUS_CFG;
   const { label, Icon, cls } = DOC_STATUS_CFG[status];
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string ?? "";
 
   return (
     <div className="flex items-start gap-4 px-5 py-4 border-b border-ink/5 last:border-0">
@@ -201,8 +201,8 @@ function DocRow({
           <div className="flex items-center gap-1.5 mt-1">
             <span className="text-[11px] text-muted truncate max-w-[200px]">{doc.file_name}</span>
             <a
-              href={`${supabaseUrl}/storage/v1/object/public/institution-docs/${doc.storage_path}`}
-              target="_blank" rel="noopener noreferrer"
+              href="#"
+              onClick={(e) => { e.preventDefault(); void openSignedDocument(`/documents/${doc.id}/download`); }}
               className="text-ficium hover:text-ficium/70"
             >
               <ExternalLink size={11} />
