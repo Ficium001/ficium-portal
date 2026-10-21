@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
-import { signUpInstitution } from "@/shared/lib/auth";
+import { registerInstitution } from "@/shared/lib/registration";
+import { signIn as ficiumSignIn } from "@/shared/lib/ficiumAuth";
 import { RegisterShell } from "@/shared/components/RegisterShell";
 import { Button, Field } from "@/shared/ui";
 
@@ -29,7 +30,12 @@ const step3Schema = z.object({
   lastName:  z.string().trim().min(1, "Last name required").max(60),
   email:     z.string().email("Enter a valid email"),
   phone:     z.string().trim().max(20).optional().or(z.literal("")),
-  password:  z.string().min(8, "At least 8 characters"),
+  // Same rule as the server (portal-api /auth/register): 12+ characters and
+  // three of lower case, upper case, digits, symbols.
+  password:  z.string().min(12, "At least 12 characters").refine(
+    (pw) => [/[a-z]/, /[A-Z]/, /\d/, /[^\w\s]/].filter((r) => r.test(pw)).length >= 3,
+    "Use at least three of: lower case, upper case, digits, symbols",
+  ),
   confirmPassword: z.string(),
 }).refine(d => d.password === d.confirmPassword, {
   message: "Passwords do not match", path: ["confirmPassword"],
@@ -93,24 +99,30 @@ export default function RegisterInstitution() {
 
   const onStep3 = async (data: Step3) => {
     setSubmitError(null);
-    const result = await signUpInstitution({
-      email:           data.email,
-      password:        data.password,
-      firstName:       data.firstName,
-      lastName:        data.lastName,
-      institutionName: step1Data.institutionName!,
-      institutionType: step1Data.institutionType! as "commercial_bank" | "fintech" | "micro_credit" | "leasing" | "insurance" | "cooperative" | "other",
-      licenseNumber:   step1Data.regNumber,
-      regulatoryBody:  step1Data.regulatoryBody,
-      phone:           data.phone,
-      country:         step1Data.country!,
+    const result = await registerInstitution({
+      institution_name: step1Data.institutionName!,
+      institution_type: step1Data.institutionType! as "commercial_bank" | "fintech" | "micro_credit" | "leasing" | "insurance" | "cooperative" | "other",
+      country:          step1Data.country!,
+      reg_number:       step1Data.regNumber || undefined,
+      regulator:        step1Data.regulatoryBody || undefined,
+      first_name:       data.firstName,
+      last_name:        data.lastName,
+      email:            data.email,
+      phone:            data.phone || undefined,
+      password:         data.password,
     });
-
     if (!result.ok) {
-      setSubmitError(result.error.message);
+      setSubmitError(result.error);
       return;
     }
-    navigate("/pending");
+    // Signed in through ficium-auth (username = email), then straight to
+    // onboarding to upload the documents compliance needs.
+    const login = await ficiumSignIn(result.email, data.password);
+    if (login.error) {
+      navigate("/login");
+      return;
+    }
+    navigate("/onboarding");
   };
 
   const STEPS = ["Institution details", "Deployment model", "Admin account"];

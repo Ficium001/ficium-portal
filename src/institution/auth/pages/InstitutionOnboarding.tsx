@@ -14,8 +14,8 @@
  *     4. Submit — routes to /pending with application status tracker
  *
  *   All uploads go to Supabase Storage (institution-docs bucket).
- *   Metadata is written to institution_onboarding_docs.
- *   RPC: update_onboarding_stage('commercial_review') on submit.
+ *   No direct database or storage access from the browser (Z4, 2026-10).
+ *   POST /onboarding/submit (portal-api) saves preferences and advances the stage.
  *
  *   The page is accessible to:
  *     - Users in onboarding_stage: registered | commercial_review
@@ -23,7 +23,7 @@
  *
  * @dataSource
  *   useMyInstitution → institutions table
- *   institutionSupabase.storage → institution-docs bucket
+ *   Documents: /documents/upload-url -> upload -> POST /documents (portal-api).
  *
  * @owner Ficium Engineering
  * @lastReviewed 2025-08
@@ -36,7 +36,8 @@ import {
   ArrowRight, ArrowLeft, Globe,
 } from "lucide-react";
 import { useMyInstitution } from "@/institution/hooks/useInstitution";
-import institutionSupabase  from "@/institution/lib/institutionSupabase";
+import { useQuery } from "@tanstack/react-query";
+import { portalApi } from "@/shared/lib/portalApi";
 import {
   InlineAlert, Btn, FormField, inputCls,
 } from "@/institution/components/primitives";
@@ -48,11 +49,16 @@ import FiciumLogo from "@/shared/ui/FiciumLogo";
 
 type Step = 1 | 2 | 3 | 4;
 
-interface ComplianceDocs {
-  amlPolicy?:     File;
-  fscLicence?:    File;
-  boardResolution?: File;
-  proofOfAddress?: File;
+/** Files picked in this session, keyed by doc_type_id. */
+type ComplianceDocs = Record<string, File | undefined>;
+
+/** One required document, from GET /onboarding/requirements (db/049 rule). */
+interface Requirement {
+  doc_type_id: string;
+  code:        string;
+  label:       string;
+  description: string | null;
+  uploaded:    boolean;
 }
 
 interface TechPrefs {
@@ -255,17 +261,21 @@ function FileUploadField({
 }
 
 function Step2Documents({
+  requirements,
   docs,
   setDocs,
   onBack,
   onNext,
 }: {
+  requirements: Requirement[];
   docs:    ComplianceDocs;
   setDocs: (d: ComplianceDocs) => void;
   onBack:  () => void;
   onNext:  () => void;
 }) {
-  const canProceed = !!docs.amlPolicy && !!docs.fscLicence;
+  // The list comes from the same rule the compliance review uses, so what you
+  // upload here is exactly what Ficium checks before you can bid.
+  const canProceed = requirements.every((r) => r.uploaded || !!docs[r.doc_type_id]);
 
   return (
     <div>
@@ -273,41 +283,22 @@ function Step2Documents({
         Compliance documents
       </h2>
       <p className="text-[13px] text-muted mb-6">
-        Upload your institution's compliance documentation. These are reviewed by
-        the Ficium compliance team before approval.
+        Upload each document below. The Ficium compliance team reviews them before
+        your institution can bid.
       </p>
 
       <div className="space-y-4 mb-6">
-        <FileUploadField
-          label="AML/CFT policy"
-          hint="Your institution's Anti-Money Laundering and Combating Financing of Terrorism policy"
-          accept=".pdf"
-          required
-          file={docs.amlPolicy}
-          onChange={(f) => setDocs({ ...docs, amlPolicy: f })}
-        />
-        <FileUploadField
-          label="FSC / BOM operating licence"
-          hint="Current licence issued by the Financial Services Commission or Bank of Mauritius"
-          accept=".pdf,.jpg,.png"
-          required
-          file={docs.fscLicence}
-          onChange={(f) => setDocs({ ...docs, fscLicence: f })}
-        />
-        <FileUploadField
-          label="Board resolution"
-          hint="Board resolution authorising participation in the Ficium marketplace"
-          accept=".pdf"
-          file={docs.boardResolution}
-          onChange={(f) => setDocs({ ...docs, boardResolution: f })}
-        />
-        <FileUploadField
-          label="Proof of registered address"
-          hint="Utility bill or official letter confirming registered business address"
-          accept=".pdf,.jpg,.png"
-          file={docs.proofOfAddress}
-          onChange={(f) => setDocs({ ...docs, proofOfAddress: f })}
-        />
+        {requirements.map((r) => (
+          <FileUploadField
+            key={r.doc_type_id}
+            label={r.uploaded ? `${r.label} (already uploaded)` : r.label}
+            hint={r.description ?? ""}
+            accept=".pdf,.jpg,.png"
+            required={!r.uploaded}
+            file={docs[r.doc_type_id]}
+            onChange={(f) => setDocs({ ...docs, [r.doc_type_id]: f })}
+          />
+        ))}
       </div>
 
       <InlineAlert variant="info">
@@ -519,8 +510,7 @@ function Step4Review({
   submitting:  boolean;
   error?:      string;
 }) {
-  const docCount = [docs.amlPolicy, docs.fscLicence, docs.boardResolution, docs.proofOfAddress]
-    .filter(Boolean).length;
+  const docCount = Object.values(docs).filter(Boolean).length;
 
   const rows: [string, string][] = [
     ["Institution",      institution.name       ],
@@ -604,50 +594,48 @@ export default function InstitutionOnboarding() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | undefined>();
 
-  const uploadDocs = useCallback(async (institutionId: string) => {
-    const toUpload = [
-      { file: docs.amlPolicy,       name: "aml_policy"        },
-      { file: docs.fscLicence,      name: "fsc_licence"       },
-      { file: docs.boardResolution, name: "board_resolution"  },
-      { file: docs.proofOfAddress,  name: "proof_of_address"  },
-    ].filter((d): d is { file: File; name: string } => !!d.file);
+  const { data: requirements = [], isLoading: reqLoading } = useQuery<Requirement[]>({
+    queryKey: ["onboarding", "requirements"],
+    queryFn:  () => portalApi.get<Requirement[]>("/onboarding/requirements"),
+  });
 
-    for (const { file, name } of toUpload) {
-      const ext  = file.name.split(".").pop();
-      const path = `${institutionId}/${name}.${ext}`;
-      const { error } = await institutionSupabase.storage
-        .from("institution-docs")
-        .upload(path, file, { upsert: true });
-      if (error) throw new Error(`Failed to upload ${name}: ${error.message}`);
+  // Each file: signed upload URL -> upload -> record it (institution.doc), so
+  // compliance review sees it. Every step's error is surfaced, none ignored.
+  const uploadDocs = useCallback(async () => {
+    for (const r of requirements) {
+      const file = docs[r.doc_type_id];
+      if (!file) continue;
+      const { upload_url, storage_path } = await portalApi.post<{
+        upload_url: string; storage_path: string;
+      }>("/documents/upload-url", {
+        doc_type_id: r.doc_type_id, file_name: file.name, mime_type: file.type,
+      });
+      const put = await fetch(upload_url, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      });
+      if (!put.ok) throw new Error(`Upload failed for ${r.label}. Please try again.`);
+      await portalApi.post("/documents", {
+        doc_type_id: r.doc_type_id, storage_path, file_name: file.name, mime_type: file.type,
+      });
     }
-  }, [docs]);
+  }, [docs, requirements]);
 
   const handleSubmit = useCallback(async () => {
     if (!institution) return;
     setSubmitting(true);
     setSubmitError(undefined);
     try {
-      // Upload documents
-      await uploadDocs(institution.id);
-
-      // Save tech preferences
-      await institutionSupabase
-        .from("institution_onboarding_prefs")
-        .upsert({
-          institution_id:   institution.id,
-          deployment_model: prefs.deploymentModel,
-          integration_mode: prefs.integrationMode,
-          it_contact_name:  prefs.itContactName,
-          it_contact_email: prefs.itContactEmail,
-          webhook_url:      prefs.webhookUrl || null,
-          expected_volume:  prefs.expectedVolume || null,
-        }, { onConflict: "institution_id" });
-
-      // Advance onboarding stage
-      await institutionSupabase.rpc("update_onboarding_stage", {
-        p_stage: "commercial_review",
+      await uploadDocs();
+      await portalApi.post("/onboarding/submit", {
+        deployment_model: prefs.deploymentModel,
+        integration_mode: prefs.integrationMode,
+        it_contact_name:  prefs.itContactName,
+        it_contact_email: prefs.itContactEmail,
+        webhook_url:      prefs.webhookUrl || null,
+        expected_volume:  prefs.expectedVolume || null,
       });
-
       navigate("/pending");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Submission failed. Please try again.");
@@ -656,7 +644,7 @@ export default function InstitutionOnboarding() {
     }
   }, [institution, uploadDocs, prefs, navigate]);
 
-  if (isLoading) {
+  if (isLoading || reqLoading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-ficium border-t-transparent rounded-full animate-spin" />
@@ -692,6 +680,7 @@ export default function InstitutionOnboarding() {
           )}
           {step === 2 && (
             <Step2Documents
+              requirements={requirements}
               docs={docs}
               setDocs={setDocs}
               onBack={() => setStep(1)}
