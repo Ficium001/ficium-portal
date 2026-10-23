@@ -287,6 +287,14 @@ function ProductBenefits({
 
   const [showForm, setShowForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // The bank's Setup › Controls switch decides whether a second person
+  // approves benefit changes; the server says which happened.
+  const say = (r: { pending?: boolean } | undefined, done: string) =>
+    setNotice(r?.pending
+      ? `Sent for approval. ${done.replace(/\.$/, "")} once a second person approves.`
+      : done);
 
   // Benefits specific to this product OR global (applies to all)
   const productBenefits = allBenefits.filter(b => b.product_id === product.id);
@@ -295,18 +303,25 @@ function ProductBenefits({
   const handleSubmit = async (data: Partial<Benefit>) => {
     setFormError(null);
     try {
-      await createBenefit.mutateAsync(data);
+      const r = await createBenefit.mutateAsync(data);
       setShowForm(false);
+      say(r, "The benefit appears on new bids.");
     } catch (e: unknown) {
       setFormError(e instanceof Error ? e.message : "Something went wrong.");
     }
   };
 
   const handleToggle = async (benefit: Benefit) => {
-    if (benefit.is_active) {
-      await deactivateBenefit.mutateAsync(benefit.id);
-    } else {
-      await updateBenefit.mutateAsync({ id: benefit.id, is_active: true });
+    setNotice(null);
+    try {
+      if (benefit.is_active) {
+        say(await deactivateBenefit.mutateAsync(benefit.id), `"${benefit.title}" is switched off.`);
+      } else {
+        say(await updateBenefit.mutateAsync({ id: benefit.id, is_active: true }),
+            `"${benefit.title}" is switched on.`);
+      }
+    } catch (e: unknown) {
+      setNotice(e instanceof Error ? e.message : "The change was not saved. Try again.");
     }
   };
 
@@ -323,6 +338,12 @@ function ProductBenefits({
           <Plus size={13} /> Add benefit
         </Btn>
       </div>
+
+      {notice && (
+        <div className="mb-3">
+          <InlineAlert variant="info" onDismiss={() => setNotice(null)}>{notice}</InlineAlert>
+        </div>
+      )}
 
       {/* Product-specific benefits */}
       {productBenefits.length > 0 ? (

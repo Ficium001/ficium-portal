@@ -44,6 +44,8 @@ const ACTION_META: Record<string, { icon: string; label: string; risk: "low" | "
   "user.assign_group":          { icon: "🔄", label: "Group assignment",       risk: "medium" },
   "user.deactivate":            { icon: "🔒", label: "User deactivated",       risk: "high"   },
   "user.reactivate":            { icon: "🔓", label: "User reactivated",       risk: "medium" },
+  "user.reset_password":        { icon: "🔑", label: "Password reset",         risk: "high"   },
+  "four_eyes.disable":          { icon: "⚠",  label: "Four-eyes switched off", risk: "high"   },
   "user.role_change":           { icon: "🔄", label: "Role changed",           risk: "high"   },
   "user.remove":                { icon: "✕",  label: "User removed",           risk: "high"   },
   "user.invite":                { icon: "👤", label: "User invited",           risk: "medium" },
@@ -334,25 +336,25 @@ export default function InstitutionDualControl() {
             } catch (err) {
               console.error("Provision failed:", err);
             }
-          } else if (action?.action_category === "user.update") {
+          }
+          if (action?.action_category === "user.reset_password") {
+            // Released once, only to the approver (db/043). If this call is
+            // interrupted, the server keeps it unreleased; nothing leaks.
             try {
-              await portalApi.post(`/approvals/${actionId}/execute-update`, {});
+              const r = await portalApi.post<{
+                email: string; full_name: string | null; temp_password: string;
+              }>(`/approvals/${actionId}/release-password`, {});
+              setProvisionResult({
+                email: r.email, fullName: r.full_name ?? r.email, tempPassword: r.temp_password,
+              });
             } catch (err) {
-              console.error("Execute update failed:", err);
-            }
-          } else if (action?.action_category === "user.deactivate") {
-            try {
-              await portalApi.post(`/members/${(action.payload as Record<string, unknown>)?.member_id as string | undefined}/deactivate`, {});
-            } catch (err) {
-              console.error("Deactivate failed:", err);
-            }
-          } else if (action?.action_category === "user.reactivate") {
-            try {
-              await portalApi.post(`/members/${(action.payload as Record<string, unknown>)?.member_id as string | undefined}/reactivate`, {});
-            } catch (err) {
-              console.error("Reactivate failed:", err);
+              console.error("Password release failed:", err);
             }
           }
+          // user.update / user.deactivate / user.reactivate: the database
+          // applies the change in the same transaction as the approval
+          // (db/040). Do NOT call the member endpoints here: they now queue a
+          // new four-eyes action, so calling them would loop.
         },
       });
     },

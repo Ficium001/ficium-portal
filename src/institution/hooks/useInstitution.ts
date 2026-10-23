@@ -233,12 +233,19 @@ export function useBenefits() {
   })
 }
 
+/** Every benefit change goes through four-eyes per the bank's Controls switch. */
+export interface BenefitChangeResult {
+  pending:   boolean
+  status:    'executed' | 'pending_approval'
+  action_id: string
+}
+
 // ─── useCreateBenefit ─────────────────────────────────────────
 export function useCreateBenefit() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: Partial<Benefit>) =>
-      portalApi.post<{ pending?: boolean; id?: string }>('/benefits', payload),
+      portalApi.post<BenefitChangeResult>('/benefits', payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.benefits })
       qc.invalidateQueries({ queryKey: QK.pendingActions })
@@ -251,7 +258,7 @@ export function useUpdateBenefit() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, ...payload }: Partial<Benefit> & { id: string }) =>
-      portalApi.put<{ pending?: boolean; id?: string }>(`/benefits/${id}`, payload),
+      portalApi.put<BenefitChangeResult>(`/benefits/${id}`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.benefits })
       qc.invalidateQueries({ queryKey: QK.pendingActions })
@@ -264,8 +271,11 @@ export function useDeactivateBenefit() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) =>
-      portalApi.delete<{ ok: boolean }>(`/benefits/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.benefits }),
+      portalApi.delete<BenefitChangeResult>(`/benefits/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.benefits })
+      qc.invalidateQueries({ queryKey: QK.pendingActions })
+    },
   })
 }
 
