@@ -10,6 +10,7 @@
  * @owner Ficium Engineering
  */
 
+import { openSignedDocument } from '@/shared/lib/openDocument'
 import { useState, useMemo } from 'react'
 import {
   Building2, Mail, Phone, Globe2,
@@ -286,8 +287,6 @@ function DocumentsTab() {
     }
   }
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string ?? ''
-
   return (
     <div>
       <div className="mb-4">
@@ -337,9 +336,8 @@ function DocumentsTab() {
                 <div className="flex items-center gap-1.5">
                   <span className="text-[12px] text-muted truncate max-w-[140px]">{doc.file_name}</span>
                   <a
-                    href={`${supabaseUrl}/storage/v1/object/public/institution-docs/${doc.storage_path}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); void openSignedDocument(`/admin/documents/${doc.id}/download`); }}
                     className="text-ficium hover:text-ficium/70 shrink-0"
                   >
                     <ExternalLink size={12} />
@@ -400,9 +398,8 @@ function DocumentsTab() {
               <div className="flex justify-between text-[12px]">
                 <span className="text-muted">File</span>
                 <a
-                  href={`${supabaseUrl}/storage/v1/object/public/institution-docs/${reviewing.storage_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); void openSignedDocument(`/admin/documents/${reviewing.id}/download`); }}
                   className="font-medium text-ficium flex items-center gap-1 hover:text-ficium/70"
                 >
                   {reviewing.file_name} <ExternalLink size={11} />

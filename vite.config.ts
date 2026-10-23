@@ -18,7 +18,6 @@ export default defineConfig({
           if (id.includes("node_modules")) {
             if (id.includes("react-dom") || id.includes("react-router")) return "vendor-react";
             if (id.includes("@tanstack"))                                  return "vendor-query";
-            if (id.includes("@supabase"))                                  return "vendor-supabase";
             if (id.includes("lucide") || id.includes("react-hook-form") || id.includes("zod")) return "vendor-ui";
           }
         },

@@ -22,8 +22,8 @@ import {
   Webhook, ScrollText, Settings, GitMerge, Radio, MonitorDot, X,
   CheckSquare, Square,
 } from 'lucide-react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import adminDb from '@/admin/lib/adminSupabase'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAdminGroups } from '@/admin/hooks/useAdmin'
 import {
   MODULE_CATALOGUE, INSTITUTION_MODULE_LIST, ADMIN_MODULE_LIST,
   type PortalModule,
@@ -54,16 +54,10 @@ function ModuleIcon({ iconKey, className }: { iconKey: string; className?: strin
 // Data hook
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Through portal-api (GET /admin/user-groups), never a direct database call.
 function useGroups() {
-  return useQuery<UserGroup[]>({
-    queryKey: ['admin', 'groups'],
-    queryFn:  async () => {
-      const { data, error } = await adminDb.rpc('get_user_groups')
-      if (error) throw error
-      return (data as UserGroup[]) ?? []
-    },
-    staleTime: 30_000,
-  })
+  const q = useAdminGroups()
+  return { ...q, data: (q.data as UserGroup[] | undefined) ?? undefined }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

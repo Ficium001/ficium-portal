@@ -371,38 +371,13 @@ export default function InstitutionApprovals() {
 
   const handleApprove = useCallback(
     (actionId: string) => {
-      const action = actions.find((a) => a.id === actionId);
-      approveAction.mutate({ actionId }, {
-        onSuccess: async () => {
-          // user.create: call Edge Function to provision the auth user
-          // (service-role required — cannot be done from Postgres)
-          if (action?.action_category === "user.create") {
-            try {
-              await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/provision-institution-user`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    action_id:       action.id,
-                    institution_id:  action.institution_id,
-                    email:           (action.payload as Record<string, string>).email,
-                    first_name:      (action.payload as Record<string, string>).first_name,
-                    last_name:       (action.payload as Record<string, string>).last_name,
-                    custom_group_id: (action.payload as Record<string, string>).custom_group_id,
-                    member_role:     (action.payload as Record<string, string>).member_role,
-                  }),
-                }
-              );
-            } catch {
-              // Edge Function errors are non-fatal here — execution_status
-              // on the pending_action will reflect failure
-            }
-          }
-        },
-      });
+      // user.create is provisioned once, by the approving checker, through
+      // portal-api (POST /approvals/{id}/provision-user, db/043). The old
+      // Supabase edge function call was removed: it was public and trusted
+      // its request body (retired 2026-10-21).
+      approveAction.mutate({ actionId });
     },
-    [approveAction, actions]
+    [approveAction]
   );
   const handleReject = useCallback(
     (actionId: string, note: string) => rejectAction.mutate({ actionId, note }),
