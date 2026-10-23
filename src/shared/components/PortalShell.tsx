@@ -24,6 +24,7 @@
  * @owner Ficium Engineering
  */
 
+import { API_URL } from '@/shared/lib/portalApi'
 import {
   useEffect, useRef, useState, useCallback,
 } from 'react'
@@ -81,29 +82,48 @@ function useSessionGuard(onSignOut: () => void) {
 }
 
 type ConnStatus = 'connected' | 'reconnecting' | 'offline'
+
+/**
+ * Whether the portal can actually reach Ficium. Polls portal-api /health
+ * (unauthenticated, cheap) every 30 s, and immediately on the browser's
+ * online/offline events.
+ *   connected:    the API answered
+ *   reconnecting: one miss (transient), or no session yet
+ *   offline:      two misses in a row
+ * The previous version only read navigator.onLine, which some managed
+ * networks/proxies report as false while traffic flows, so a working portal
+ * showed "Offline" (2026-10-23).
+ */
 function useConnStatus(): ConnStatus {
   const [status, setStatus] = useState<ConnStatus>('connected')
   useEffect(() => {
     let stale = false
+    let misses = 0
     const check = async () => {
-      if (!navigator.onLine) { if (!stale) setStatus('offline'); return }
-      // Liveness: a valid ficium-auth token in session == connected.
-      // Network reachability is covered by navigator.onLine above.
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 8_000)
       try {
+        const res = await fetch(`${API_URL}/health`, { cache: 'no-store', signal: ctrl.signal })
+        if (!res.ok) throw new Error(String(res.status))
+        misses = 0
         if (!stale) setStatus(hasSession() ? 'connected' : 'reconnecting')
-      } catch { if (!stale) setStatus('offline') }
+      } catch {
+        misses += 1
+        if (!stale) setStatus(misses >= 2 ? 'offline' : 'reconnecting')
+      } finally {
+        clearTimeout(timer)
+      }
     }
-    check()
+    void check()
     const id = setInterval(check, 30_000)
-    const onOnline  = () => { if (!stale) setStatus('reconnecting'); check() }
-    const onOffline = () => { if (!stale) setStatus('offline') }
-    window.addEventListener('online',  onOnline)
-    window.addEventListener('offline', onOffline)
+    const recheck = () => { void check() }
+    window.addEventListener('online',  recheck)
+    window.addEventListener('offline', recheck)
     return () => {
       stale = true
       clearInterval(id)
-      window.removeEventListener('online',  onOnline)
-      window.removeEventListener('offline', onOffline)
+      window.removeEventListener('online',  recheck)
+      window.removeEventListener('offline', recheck)
     }
   }, [])
   return status
