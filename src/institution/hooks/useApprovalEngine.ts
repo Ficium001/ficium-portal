@@ -10,12 +10,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { portalApi } from '@/shared/lib/portalApi'
 import type {
   Committee, CommitteeMember, ApprovalTemplate, DoaRule, DoaConditions,
-  ApprovalInboxItem, ApprovalInstanceDetail, SimulateResult, EntityType,
+  ApprovalInboxItem, SimulateResult, EntityType,
   VoteAction, Delegation,
 } from '@/institution/types/approvalEngine'
 import { poll30s } from '@/shared/lib/polling'
 
-export const AEQK = {
+const AEQK = {
   committees: ['approval-engine', 'committees'] as const,
   templates:  ['approval-engine', 'templates'] as const,
   doaRules:   (et: string) => ['approval-engine', 'doa-rules', et] as const,
@@ -159,14 +159,6 @@ export function useApprovalInbox(options?: { enabled?: boolean }) {
   })
 }
 
-export function useApprovalInstance(instanceId: string) {
-  return useQuery<ApprovalInstanceDetail>({
-    queryKey: AEQK.instance(instanceId),
-    queryFn: () => portalApi.get<ApprovalInstanceDetail>(`/approval-engine/instances/${instanceId}`),
-    enabled: !!instanceId,
-  })
-}
-
 export function useCastApprovalVote(instanceId: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -179,28 +171,6 @@ export function useCastApprovalVote(instanceId: string) {
       qc.invalidateQueries({ queryKey: AEQK.instance(instanceId) })
       qc.invalidateQueries({ queryKey: AEQK.analytics })
     },
-  })
-}
-
-export function useWithdrawApproval(instanceId: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (reason: string) =>
-      portalApi.post<{ ok: boolean }>(`/approval-engine/instances/${instanceId}/withdraw`, { reason }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: AEQK.inbox })
-      qc.invalidateQueries({ queryKey: AEQK.instance(instanceId) })
-    },
-  })
-}
-
-export function useApprovalAnalytics() {
-  return useQuery({
-    queryKey: AEQK.analytics,
-    queryFn: () => portalApi.get<{
-      stage_cycle_times: { template: string; stage: string; median_hours: number; sla_breaches: number; total: number }[]
-      lost_in_committee: { deals_lost: number; amount_lost: number }
-    }>('/approval-engine/analytics'),
   })
 }
 

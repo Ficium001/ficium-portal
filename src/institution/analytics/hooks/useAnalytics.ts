@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchInstitutionAnalytics } from '../api/analyticsApi'
 import type { InstitutionAnalytics } from '../types/analytics'
 
-export const ANALYTICS_QK = {
+const ANALYTICS_QK = {
   analytics: (days: number) => ['analytics', days] as const,
 }
 

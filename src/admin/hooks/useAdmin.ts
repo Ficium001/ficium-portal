@@ -17,7 +17,7 @@ import type {
   AdminAuditEntry, SystemMetric, Institution,
   CreateAdminUserPayload, SuspendAdminUserPayload,
   ResetPasswordPayload, UnlockUserPayload, ForceLogoutPayload,
-  UpdateAdminRolePayload, CreateRolePayload,
+  UpdateAdminRolePayload,
   ApproveInstitutionPayload, SuspendInstitutionPayload,
   AdminDoc,
 } from '@/admin/types/admin'
@@ -27,7 +27,7 @@ import { poll30s, poll60s } from '@/shared/lib/polling'
 // Query key registry
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const QK = {
+const QK = {
   me:          ['admin', 'me']           as const,
   users:       ['admin', 'users']        as const,
   roles:       ['admin', 'roles']        as const,
@@ -299,25 +299,6 @@ export function useDeactivateAdminUser() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Role mutations
 // ─────────────────────────────────────────────────────────────────────────────
-
-export function useCreateAdminRole() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (payload: CreateRolePayload) =>
-      submitDualControl({
-        action_category: 'role.create',
-        action_label:    `Create role: ${payload.label}`,
-        risk:            'high',
-        resource_type:   'admin_role',
-        resource_label:  payload.label,
-        payload,
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QK.dualControl })
-      qc.invalidateQueries({ queryKey: QK.roles })
-    },
-  })
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dual-control approve / reject

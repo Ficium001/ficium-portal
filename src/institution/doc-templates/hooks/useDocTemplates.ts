@@ -10,7 +10,7 @@ import type {
 
 const BASE = '/institution/doc-templates'
 
-export const DTQK = {
+const DTQK = {
   templates:   ['doc-templates', 'list'] as const,
   versions:    (tid: string) => ['doc-templates', 'versions', tid] as const,
   mergeFields: ['doc-templates', 'merge-fields'] as const,

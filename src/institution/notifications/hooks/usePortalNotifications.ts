@@ -12,7 +12,7 @@ import {
 } from '../api/notificationsApi'
 import type { PortalNotification } from '../types/notifications'
 
-export const NOTIF_QK = {
+const NOTIF_QK = {
   list:   ['portal-notifications', 'list']       as const,
   unread: ['portal-notifications', 'unread']     as const,
 }

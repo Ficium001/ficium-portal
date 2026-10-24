@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { portalApi } from '@/shared/lib/portalApi'
 import type { FourEyesControl } from '../types'
 
-export const CTRLQK = { all: ['controls', 'four-eyes'] as const }
+const CTRLQK = { all: ['controls', 'four-eyes'] as const }
 
 export function useFourEyesControls() {
   return useQuery<FourEyesControl[]>({

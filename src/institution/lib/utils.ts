@@ -8,5 +8,5 @@ export {
   formatDistanceToNow,
   formatRate,
   formatAmount,
-  shortId,
+  
 } from "@/shared/lib/format";

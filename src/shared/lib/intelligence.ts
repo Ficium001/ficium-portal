@@ -54,22 +54,3 @@ export function useIntelligence() {
   return { intel, loading, getRates, getPattern, getWinningBid, topProducts };
 }
 
-// ── Inject intelligence into a system prompt ─────────────────
-export function injectIntelligence(
-  basePrompt: string,
-  intel: FiciumIntelligence | null,
-): string {
-  if (!intel?.summary) return basePrompt;
-  return `${basePrompt}\n\n${intel.summary}`;
-}
-
-// ── Get intelligence summary for server-side injection ────────
-// Used by API routes that can't use hooks
-export async function getIntelligenceSummary(): Promise<string> {
-  try {
-    const data = await fetchIntelligence();
-    return data.summary;
-  } catch {
-    return "";
-  }
-}
