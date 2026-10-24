@@ -30,6 +30,27 @@ const ALLOWLIST = [
       "downgrade to 7.11.0 -- older, breaking, and no safer for this usage.",
     reviewBy: "2026-10-31",
   },
+  {
+    ghsa: "GHSA-4qv8-2p9j-2685",
+    package: "undici",
+    reason:
+      "undici is a DEV-ONLY dependency here (jsdom, used by vitest); it is not in the shipped bundle, so these DoS / SRI-bypass paths are not reachable in production. The fix (undici 7.30.1, published 2026-10-15) is newer than our 14-day minimum age for new releases; bump the lockfile to >=7.30.1 on or after 2026-10-29 and delete these entries.",
+    reviewBy: "2026-10-30",
+  },
+  {
+    ghsa: "GHSA-f72v-6w45-q472",
+    package: "undici",
+    reason:
+      "undici is a DEV-ONLY dependency here (jsdom, used by vitest); it is not in the shipped bundle, so these DoS / SRI-bypass paths are not reachable in production. The fix (undici 7.30.1, published 2026-10-15) is newer than our 14-day minimum age for new releases; bump the lockfile to >=7.30.1 on or after 2026-10-29 and delete these entries.",
+    reviewBy: "2026-10-30",
+  },
+  {
+    ghsa: "GHSA-xjj6-f33q-929c",
+    package: "undici",
+    reason:
+      "undici is a DEV-ONLY dependency here (jsdom, used by vitest); it is not in the shipped bundle, so these DoS / SRI-bypass paths are not reachable in production. The fix (undici 7.30.1, published 2026-10-15) is newer than our 14-day minimum age for new releases; bump the lockfile to >=7.30.1 on or after 2026-10-29 and delete these entries.",
+    reviewBy: "2026-10-30",
+  },
 ];
 
 const raw = (() => {
