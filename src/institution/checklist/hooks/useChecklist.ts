@@ -7,7 +7,7 @@ import {
 } from '../api/checklist'
 import type { DocRequirement } from '../types'
 
-export const CK = {
+const CK = {
   deal: (pid: string) => ['checklist', 'deal', pid] as const,
   template: (tid: string) => ['checklist', 'template', tid] as const,
 }

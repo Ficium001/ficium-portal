@@ -44,7 +44,7 @@ export interface ChatThread {
   can_send_free_text: boolean
 }
 
-export const requestChatKey = (requestId: string) =>
+const requestChatKey = (requestId: string) =>
   ['request-chat', requestId] as const
 
 const templatesKey = ['request-chat-templates'] as const

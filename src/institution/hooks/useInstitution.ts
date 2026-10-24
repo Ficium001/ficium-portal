@@ -25,7 +25,7 @@ import type {
 } from '@/institution/types/institution'
 import { poll30s, poll60s } from '@/shared/lib/polling'
 
-export const QK = {
+const QK = {
   institution:      ['institution'] as const,
   institutionUsers: ['institution', 'users'] as const,
   marketplace:      ['marketplace'] as const,
@@ -328,8 +328,7 @@ export function useRegisterDocument() {
 // API Key hooks — /api-keys
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const QK_KEYS     = ['api-keys']  as const
-export const QK_WEBHOOKS = ['webhooks']  as const
+const QK_KEYS     = ['api-keys']  as const
 
 export function useApiKeys() {
   return useQuery<ApiKey[]>({

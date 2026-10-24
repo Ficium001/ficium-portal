@@ -17,7 +17,7 @@ import { poll30s } from '@/shared/lib/polling'
 import type { EsignEnvelope, EsignEventTrail } from '@/institution/types/approvalEngine'
 import type { EsignEntityType } from '@/shared/lib/entities'
 
-export const ESQK = {
+const ESQK = {
   envelopes: ['esign', 'envelopes'] as const,
   events:    (id: string) => ['esign', 'events', id] as const,
 } as const

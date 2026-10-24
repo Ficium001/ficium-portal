@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { portalApi, PortalApiError } from '@/shared/lib/portalApi'
 import type { Booking, BookingInput } from '../types'
 
-export const BKQK = {
+const BKQK = {
   one: (dealId: string) => ['booking', dealId] as const,
 }
 

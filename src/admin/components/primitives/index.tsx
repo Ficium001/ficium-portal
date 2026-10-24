@@ -32,19 +32,6 @@ import type { ActionRisk } from '@/admin/types/admin'
 // Tokens — keeps Tailwind classes in one place
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const A = {
-  bg:      'bg-ink',
-  surface: 'bg-white',
-  surface2:'bg-ficium/4',
-  border:  'border-ink/8',
-  border2: 'border-ink/12',
-  accent:  'text-ficium',
-  accentBg:'bg-ficium',
-  muted:   'text-muted/70',
-  text:    'text-ink',
-  heading: 'text-ink',
-} as const
-
 // ─────────────────────────────────────────────────────────────────────────────
 // RiskBadge
 // ─────────────────────────────────────────────────────────────────────────────
@@ -642,21 +629,9 @@ export function ALiveBadge({ label = 'LIVE' }: { label?: string }) {
 // PermissionTag
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function PermissionTag({ perm }: { perm: string }) {
-  return (
-    <span className='inline-block bg-cream/50 text-muted text-[10px] font-mono px-2 py-0.5 rounded-sm border border-ink/15'>
-      {perm}
-    </span>
-  )
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Divider
 // ─────────────────────────────────────────────────────────────────────────────
-
-export function ADivider() {
-  return <div className='border-t border-ink/8 my-5' aria-hidden />
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Spinner

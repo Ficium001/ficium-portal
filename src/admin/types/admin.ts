@@ -238,42 +238,6 @@ export type AdminSection =
 // Permission catalogue (static — mirrors DB seed data)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const PERMISSION_CATALOGUE: AdminPermission[] = [
-  { key: 'users:view',              label: 'View admin users',              description: 'List and inspect admin user accounts',           category: 'users',        risk: 'low'      },
-  { key: 'users:create',            label: 'Create admin users',            description: 'Invite new admin users (dual-control)',          category: 'users',        risk: 'high'     },
-  { key: 'users:suspend',           label: 'Suspend admin users',           description: 'Suspend user accounts (dual-control)',           category: 'users',        risk: 'high'     },
-  { key: 'users:unlock',            label: 'Unlock admin users',            description: 'Unlock locked accounts (dual-control)',          category: 'users',        risk: 'medium'   },
-  { key: 'users:reset_password',    label: 'Reset admin passwords',         description: 'Trigger forced password reset (dual-control)',   category: 'users',        risk: 'high'     },
-  { key: 'users:force_logout',      label: 'Force session logout',          description: 'Terminate active sessions (dual-control)',       category: 'users',        risk: 'medium'   },
-  { key: 'users:role_change',       label: 'Change user roles',             description: 'Reassign roles (dual-control)',                  category: 'users',        risk: 'critical' },
-  { key: 'users:deactivate',        label: 'Deactivate admin users',        description: 'Permanently deactivate accounts',               category: 'users',        risk: 'critical' },
-  { key: 'roles:view',              label: 'View roles',                    description: 'List role definitions and permissions',          category: 'roles',        risk: 'low'      },
-  { key: 'roles:create',            label: 'Create custom roles',           description: 'Define new roles with permission sets',          category: 'roles',        risk: 'high'     },
-  { key: 'roles:edit',              label: 'Edit custom roles',             description: 'Modify non-system role permissions',             category: 'roles',        risk: 'high'     },
-  { key: 'roles:delete',            label: 'Delete custom roles',           description: 'Remove unused custom roles',                    category: 'roles',        risk: 'high'     },
-  { key: 'institutions:view',       label: 'View institutions',             description: 'List and inspect institution records',           category: 'institutions', risk: 'low'      },
-  { key: 'institutions:approve',    label: 'Approve institutions',          description: 'Approve pending institution applications',       category: 'institutions', risk: 'high'     },
-  { key: 'institutions:suspend',    label: 'Suspend institutions',          description: 'Suspend live institution access',                category: 'institutions', risk: 'critical' },
-  { key: 'institutions:modules',    label: 'Manage modules',               description: 'Enable/disable institution feature modules',     category: 'institutions', risk: 'high'     },
-  { key: 'audit:view',              label: 'View admin audit log',          description: 'Read-only access to admin audit trail',          category: 'audit',        risk: 'low'      },
-  { key: 'audit:export',            label: 'Export audit log',              description: 'Download audit log as CSV',                     category: 'audit',        risk: 'medium'   },
-  { key: 'sessions:view',           label: 'View active sessions',          description: 'List all active admin sessions',                 category: 'sessions',     risk: 'low'      },
-  { key: 'sessions:terminate',      label: 'Terminate sessions',            description: 'Force-logout any admin session',                 category: 'sessions',     risk: 'high'     },
-  { key: 'system:view',             label: 'View system health',            description: 'Read infrastructure and health metrics',         category: 'system',       risk: 'low'      },
-  { key: 'system:config',           label: 'Edit system config',            description: 'Change platform-level settings',                 category: 'system',       risk: 'critical' },
-  { key: 'dual_control:approve',    label: 'Approve dual-control actions',  description: 'Act as checker on pending actions',              category: 'dual_control', risk: 'high'     },
-  { key: 'dual_control:view',       label: 'View dual-control queue',       description: 'Read all pending and historical actions',        category: 'dual_control', risk: 'low'      },
-]
-
-export const ROLE_PERMISSIONS: Record<AdminRoleSlug, string[]> = {
-  super_admin:     PERMISSION_CATALOGUE.map(p => p.key),
-  institution_mgr: ['institutions:view','institutions:approve','institutions:suspend','institutions:modules','audit:view','dual_control:approve','dual_control:view'],
-  compliance:      ['institutions:view','audit:view','audit:export','dual_control:view','sessions:view'],
-  support:         ['users:view','users:unlock','users:reset_password','users:force_logout','institutions:view','audit:view','dual_control:view'],
-  auditor:         ['audit:view','audit:export','dual_control:view','sessions:view'],
-  custom:          [],
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Institutions
 // ─────────────────────────────────────────────────────────────────────────────

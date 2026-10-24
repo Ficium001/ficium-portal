@@ -17,7 +17,7 @@ import { useEffect } from 'react'
 import { useQueryClient, type QueryKey } from '@tanstack/react-query'
 
 /** Poll every `visibleMs` while the tab is visible, `hiddenMs` while hidden. */
-export function pollWhenVisible(visibleMs: number, hiddenMs = 5 * 60_000): () => number {
+function pollWhenVisible(visibleMs: number, hiddenMs = 5 * 60_000): () => number {
   return () => {
     if (typeof document === 'undefined') return visibleMs
     return document.visibilityState === 'visible' ? visibleMs : hiddenMs
