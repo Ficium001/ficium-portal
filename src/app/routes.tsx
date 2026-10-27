@@ -17,6 +17,7 @@ import { ROUTES } from './registry'
 
 // ─── Auth / shared ────────────────────────────────────────────
 const UnifiedLogin          = lazy(() => import('../shared/pages/UnifiedLogin'))
+const ResetPassword         = lazy(() => import('../shared/pages/ResetPassword'))
 const PortalRoute           = lazy(() => import('../shared/components/PortalRoute'))
 const PortalShell           = lazy(() => import('../shared/components/PortalShell'))
 
@@ -136,6 +137,7 @@ export const router = createBrowserRouter([
   // ── Public ────────────────────────────────────────────────
   { path: '/',        element: <S><UnifiedLogin /></S> },
   { path: '/login',   element: <S><UnifiedLogin /></S> },
+  { path: '/reset-password', element: <S><ResetPassword /></S> },
   { path: '/register',   element: <S><RegisterInstitution /></S>   },
   { path: '/pending',    element: <S><InstitutionPending /></S>    },
   { path: '/onboarding', element: <S><InstitutionOnboarding /></S> },
