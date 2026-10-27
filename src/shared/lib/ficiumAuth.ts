@@ -5,7 +5,7 @@
 // the registered public key.
 // =============================================================
 
-const AUTH_URL = (import.meta.env.VITE_AUTH_URL as string | undefined)
+export const AUTH_URL = (import.meta.env.VITE_AUTH_URL as string | undefined)
   ?? 'https://ficium-auth-production.up.railway.app'
 
 export interface AuthTokens {
