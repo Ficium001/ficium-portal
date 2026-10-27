@@ -223,7 +223,21 @@ export interface PendingAction {
   executed_at?: string
   execution_error?: string
   created_at: string
+  /** You initiated it. Four-eyes bars you from deciding it. */
+  is_mine?: boolean
 }
+
+/** The four lifecycle states the approval queue is split into. */
+export type ApprovalQueueState = 'pending' | 'expired' | 'approved' | 'rejected'
+
+export interface ApprovalQueuePage {
+  items: PendingAction[]
+  /** Full size of this state, not just this page. */
+  total: number
+}
+
+/** `needs_me` = pending items the caller did not initiate (the ones they can decide). */
+export type ApprovalQueueCounts = Record<ApprovalQueueState, number> & { needs_me: number }
 
 export interface InstitutionWebhook {
   id: string

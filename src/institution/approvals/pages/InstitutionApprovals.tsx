@@ -3,7 +3,12 @@
  * @route /approvals
  * @access protected — admin only (checker role)
  * @description
- *   Maker-checker approval queue. Every material action (bid submit,
+ *   Maker-checker approval queue, split by lifecycle: Pending, Expired,
+ *   Authorised, Rejected. Expired is its own state (an action nobody decided
+ *   before its deadline) and never counts as pending. Your own submissions sit
+ *   under "Waiting on others": four-eyes bars you from deciding them.
+ *
+ *   Every material action (bid submit,
  *   bid withdraw, webhook create/delete, API key operations, user
  *   management) creates a pending_action record here. The original
  *   maker CANNOT approve their own action (enforced in the RPC).
@@ -20,7 +25,8 @@
  *   with WORM semantics — no updates or deletes permitted.
  *
  * @dataSource
- *   usePendingActions  → pending_actions table (60 s cache, auto-refetch)
+ *   useApprovalQueue  → GET /approvals/queue?state=   (effective state, paged)
+ *   useApprovalQueueCounts → GET /approvals/queue/counts (tab badges)
  *   useApproveAction   → approve_action() RPC (mutation)
  *   useRejectAction    → reject_action() RPC (mutation)
  *
@@ -33,14 +39,17 @@ import {
   Clock, CheckCircle, XCircle, AlertTriangle, ChevronDown,
   ChevronUp, FileText, User, ShieldCheck,
 } from "lucide-react";
-import { usePendingActions, useApproveAction, useRejectAction } from "@/institution/hooks/useInstitution";
+import {
+  useApprovalQueue, useApprovalQueueCounts, useApproveAction, useRejectAction,
+} from "@/institution/hooks/useInstitution";
 import { formatDistanceToNow } from "@/institution/lib/utils";
-import type { PendingAction } from "@/institution/types/institution";
+import type { PendingAction, ApprovalQueueState } from "@/institution/types/institution";
 import {
   SectionHeader, InlineAlert, EmptyState,
   Btn, inputCls,
 } from "@/institution/components/primitives";
 import { PageFrame } from "@/shared/components/PageFrame"
+import { SectionTabs, type SectionTab } from "@/shared/components/SectionTabs"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Action category metadata
@@ -190,8 +199,13 @@ function ClientDossier({ action }: { action: PendingAction }) {
 // ActionCard — individual pending action item
 // ─────────────────────────────────────────────────────────────────────────────
 
+const STATE_LABEL: Record<ApprovalQueueState, string> = {
+  pending: "Pending", expired: "Expired", approved: "Authorised", rejected: "Rejected",
+};
+
 function ActionCard({
   action,
+  state,
   onApprove,
   onReject,
   isApprovePending,
@@ -200,6 +214,7 @@ function ActionCard({
   rejectError,
 }: {
   action:           PendingAction;
+  state:            ApprovalQueueState;
   onApprove:        () => void;
   onReject:         (note: string) => void;
   isApprovePending: boolean;
@@ -211,19 +226,21 @@ function ActionCard({
   const [showReject,  setShowReject]  = useState(false);
   const [rejectNote,  setRejectNote]  = useState("");
 
-  const meta        = ACTION_META[action.action_category] ?? { icon: "⬡", label: action.action_category, risk: "medium" as const };
-  const expiresMs   = new Date(action.expires_at).getTime() - Date.now();
-  const isUrgent    = expiresMs < 4 * 3_600_000 && expiresMs > 0;
-  const isExpired   = expiresMs <= 0;
+  const meta       = ACTION_META[action.action_category] ?? { icon: "⬡", label: action.action_category, risk: "medium" as const };
+  const expiresMs  = new Date(action.expires_at).getTime() - Date.now();
+  const isPending  = state === "pending";
+  const isUrgent   = isPending && expiresMs < 4 * 3_600_000 && expiresMs > 0;
+  const canDecide  = isPending && !action.is_mine;
+  const decidedAt  = action.checked_at ?? action.created_at;
 
   return (
     <article
       className={[
         "bg-white rounded-xl border overflow-hidden transition-all",
         isUrgent ? "border-amber-300" : "border-ink/[0.07]",
-        isExpired ? "opacity-60" : "",
+        state === "expired" ? "opacity-70" : "",
       ].join(" ")}
-      aria-label={`Pending action: ${meta.label}`}
+      aria-label={`${STATE_LABEL[state]} action: ${meta.label}`}
     >
       {/* Header row */}
       <div className="px-5 py-4 flex items-center gap-4">
@@ -245,19 +262,40 @@ function ActionCard({
             </code>
           </div>
           <div className="text-[12px] text-muted mt-0.5">
-            Initiated by <span className="font-medium text-ink/70">{action.maker_role}</span>
+            Initiated by{" "}
+            <span className="font-medium text-ink/70">{action.is_mine ? "you" : action.maker_role}</span>
             {" · "}
             {formatDistanceToNow(action.initiated_at)} ago
           </div>
         </div>
 
         <div className={`text-right text-[12px] shrink-0 ${isUrgent ? "text-amber-600 font-semibold" : "text-muted"}`}>
-          <div className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" aria-hidden />
-            {isExpired ? "Expired" : `Expires in ${formatDistanceToNow(action.expires_at)}`}
-          </div>
-          {isUrgent && !isExpired && (
-            <div className="flex items-center gap-1 text-[11px] text-amber-500 mt-0.5">
+          {isPending && (
+            <div className="flex items-center gap-1 justify-end">
+              <Clock className="w-3.5 h-3.5" aria-hidden />
+              Expires in {formatDistanceToNow(action.expires_at)}
+            </div>
+          )}
+          {state === "expired" && (
+            <div className="flex items-center gap-1 justify-end">
+              <Clock className="w-3.5 h-3.5" aria-hidden />
+              Expired {formatDistanceToNow(action.expires_at)} ago
+            </div>
+          )}
+          {state === "approved" && (
+            <div className="flex items-center gap-1 justify-end text-emerald-700">
+              <CheckCircle className="w-3.5 h-3.5" aria-hidden />
+              Authorised {formatDistanceToNow(decidedAt)} ago
+            </div>
+          )}
+          {state === "rejected" && (
+            <div className="flex items-center gap-1 justify-end text-red-600">
+              <XCircle className="w-3.5 h-3.5" aria-hidden />
+              Rejected {formatDistanceToNow(decidedAt)} ago
+            </div>
+          )}
+          {isUrgent && (
+            <div className="flex items-center gap-1 text-[11px] text-amber-500 mt-0.5 justify-end">
               <AlertTriangle className="w-3 h-3" aria-hidden />
               Action required soon
             </div>
@@ -280,13 +318,34 @@ function ActionCard({
       {/* Expanded detail */}
       {expanded && (
         <div className="border-t border-ink/[0.07] px-5 py-4 bg-cream/40 space-y-4">
+          {(state === "approved" || state === "rejected") && (
+            <div className="text-[13px] text-ink/80">
+              <span className="font-semibold">
+                {state === "approved" ? "Authorised" : "Rejected"} by {action.checker_role ?? "a checker"}
+              </span>
+              {action.checker_note ? <> · {action.checker_note}</> : null}
+            </div>
+          )}
+          {state === "expired" && (
+            <div className="text-[13px] text-ink/80">
+              Expired without a second approver. It can no longer be approved.
+            </div>
+          )}
           <ActionSummary  action={action} />
           <ClientDossier  action={action} />
         </div>
       )}
 
-      {/* Action buttons / reject form */}
-      {!isExpired && (
+      {/* Waiting on others: you initiated it, so you cannot decide it */}
+      {isPending && action.is_mine && (
+        <div className="border-t border-ink/[0.07] px-5 py-3 text-[12px] text-muted flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5" aria-hidden />
+          Waiting for a second approver. You can't approve your own action.
+        </div>
+      )}
+
+      {/* Action buttons / reject form: only for what you may decide */}
+      {canDecide && (
         <div className="border-t border-ink/[0.07] px-5 py-3.5">
           {showReject ? (
             <div className="flex items-center gap-3">
@@ -358,16 +417,42 @@ function ActionCard({
 // Page — thin orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
 
+const EMPTY_COPY: Record<ApprovalQueueState, { title: string; description: string }> = {
+  pending:  { title: "All clear",          description: "Nothing is waiting for a decision." },
+  expired:  { title: "Nothing expired",    description: "Actions that pass their deadline without a second approver appear here." },
+  approved: { title: "Nothing authorised yet", description: "Approved actions appear here." },
+  rejected: { title: "Nothing rejected",   description: "Rejected actions appear here, with the checker's reason." },
+};
+
+const PAGE_SIZE = 50;
+
+const STATE_ORDER: ApprovalQueueState[] = ["pending", "expired", "approved", "rejected"];
+
 export default function InstitutionApprovals() {
-  const { data: actions = [], isLoading } = usePendingActions("bids");
+  const [state, setState] = useState<ApprovalQueueState>("pending");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const { data: counts } = useApprovalQueueCounts("bids");
+  const { data, isLoading } = useApprovalQueue("bids", state, limit);
   const approveAction = useApproveAction();
   const rejectAction  = useRejectAction();
 
-  // Server returns bid.* only (scope=bids); just drop non-pending statuses.
-  const pending = actions.filter((a) => a.action_status === "pending");
-  const urgent  = pending.filter(
-    (a) => new Date(a.expires_at).getTime() - Date.now() < 4 * 3_600_000
-  ).length;
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+
+  // Pending splits in two: what you can decide, and what you started yourself.
+  const needsMe   = state === "pending" ? items.filter((a) => !a.is_mine) : items;
+  const waiting   = state === "pending" ? items.filter((a) => a.is_mine)  : [];
+  const urgent    = needsMe.filter((a) => {
+    const ms = new Date(a.expires_at).getTime() - Date.now();
+    return ms > 0 && ms < 4 * 3_600_000;
+  }).length;
+
+  const tabs: SectionTab<ApprovalQueueState>[] = STATE_ORDER.map((k) => ({
+    key: k,
+    label: STATE_LABEL[k],
+    // Pending shows only what you can act on; the rest are plain totals.
+    badge: counts ? String(k === "pending" ? counts.needs_me : counts[k]) : undefined,
+  }));
 
   const handleApprove = useCallback(
     (actionId: string) => {
@@ -384,11 +469,25 @@ export default function InstitutionApprovals() {
     [rejectAction]
   );
 
+  const card = (action: PendingAction) => (
+    <ActionCard
+      key={action.id}
+      action={action}
+      state={state}
+      onApprove={() => handleApprove(action.id)}
+      onReject={(note) => handleReject(action.id, note)}
+      isApprovePending={approveAction.isPending}
+      isRejectPending={rejectAction.isPending}
+      approveError={(approveAction.error as Error)?.message}
+      rejectError={(rejectAction.error as Error)?.message}
+    />
+  );
+
   return (
     <PageFrame className="p-6 lg:p-8 max-w-[1000px] mx-auto">
       <SectionHeader
         title="Approvals"
-        subtitle={`Maker-checker queue · ${pending.length} pending`}
+        subtitle={`Maker-checker queue · ${counts?.needs_me ?? 0} need your decision`}
         badge={
           <span className="flex items-center gap-1.5 bg-ficium/8 text-ficium text-[11px] font-bold px-3 py-1.5 rounded-full border border-ficium/20">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden />
@@ -403,7 +502,7 @@ export default function InstitutionApprovals() {
         {" "}All decisions are recorded in the immutable audit log.
       </InlineAlert>
 
-      {urgent > 0 && (
+      {state === "pending" && urgent > 0 && (
         <div className="mt-4">
           <InlineAlert variant="warning">
             <strong>{urgent} action{urgent > 1 ? "s" : ""}</strong> expiring within 4 hours — review immediately.
@@ -411,7 +510,22 @@ export default function InstitutionApprovals() {
         </div>
       )}
 
-      <div className="mt-6 space-y-4">
+      <div className="mt-6">
+        <SectionTabs
+          tabs={tabs}
+          active={state}
+          onChange={(k) => { setState(k); setLimit(PAGE_SIZE); }}
+          idPrefix="approvals"
+          label="Approval status"
+        />
+      </div>
+
+      <div
+        role="tabpanel"
+        id={`approvals-panel-${state}`}
+        aria-labelledby={`approvals-tab-${state}`}
+        className="mt-6 space-y-4"
+      >
         {isLoading && (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="bg-white rounded-xl border border-ink/[0.07] p-5 animate-pulse">
@@ -426,26 +540,35 @@ export default function InstitutionApprovals() {
           ))
         )}
 
-        {!isLoading && pending.length === 0 && (
+        {!isLoading && items.length === 0 && (
           <EmptyState
-            icon={CheckCircle}
-            title="All clear"
-            description="No pending approvals"
+            icon={state === "expired" ? Clock : CheckCircle}
+            title={EMPTY_COPY[state].title}
+            description={EMPTY_COPY[state].description}
           />
         )}
 
-        {!isLoading && pending.map((action) => (
-          <ActionCard
-            key={action.id}
-            action={action}
-            onApprove={() => handleApprove(action.id)}
-            onReject={(note) => handleReject(action.id, note)}
-            isApprovePending={approveAction.isPending}
-            isRejectPending={rejectAction.isPending}
-            approveError={(approveAction.error as Error)?.message}
-            rejectError={(rejectAction.error as Error)?.message}
-          />
-        ))}
+        {!isLoading && state === "pending" && needsMe.length > 0 && (
+          <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider">Needs your decision</h2>
+        )}
+        {!isLoading && needsMe.map(card)}
+
+        {!isLoading && waiting.length > 0 && (
+          <>
+            <h2 className="text-[11px] font-bold text-muted uppercase tracking-wider pt-2">
+              Waiting on others
+            </h2>
+            {waiting.map(card)}
+          </>
+        )}
+
+        {!isLoading && items.length < total && (
+          <div className="pt-2 text-center">
+            <Btn variant="secondary" size="sm" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
+              Show more ({total - items.length} more)
+            </Btn>
+          </div>
+        )}
       </div>
     </PageFrame>
   );

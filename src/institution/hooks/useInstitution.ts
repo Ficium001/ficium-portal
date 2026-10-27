@@ -9,7 +9,7 @@
 //   useMarketplace                                      → /marketplace/requests
 //   useMyBids                                          → /marketplace/my-bids
 //   useSubmitBid                                       → /approvals/submit
-//   usePendingActions, useApproveAction, useRejectAction → /approvals/*
+//   usePendingActions, useApprovalQueue(+Counts), useApproveAction, useRejectAction → /approvals/*
 //   useWebhooks                                        → /webhooks
 //   useProducts                                        → /products
 //   useAuditEvents                                     → /audit
@@ -22,6 +22,7 @@ import type {
   Product, AuditEvent, BidPayload,
   BenefitCategory, Benefit, DocType, InstitutionDoc, ComplianceGate,
   ApiKey, WebhookDeliveryPage,
+  ApprovalQueueState, ApprovalQueuePage, ApprovalQueueCounts,
 } from '@/institution/types/institution'
 import { poll30s, poll60s } from '@/shared/lib/polling'
 
@@ -149,6 +150,36 @@ export function usePendingActions(scope?: 'bids' | 'internal', options?: { enabl
     queryFn: () => portalApi.get<PendingAction[]>(
       scope ? `/approvals/pending?scope=${scope}` : '/approvals/pending',
     ),
+    refetchInterval: poll60s,
+    refetchOnWindowFocus: true,
+  })
+}
+
+// ─── useApprovalQueue ─── portal-api /approvals/queue ────────
+/**
+ * One lifecycle state of the approval queue (pending / expired / authorised /
+ * rejected). The server reports the EFFECTIVE state, so a pending action past
+ * its expiry arrives as expired. Keys sit under QK.pendingActions so approve
+ * and reject refresh every tab and the counts in one invalidation.
+ */
+export function useApprovalQueue(
+  scope: 'bids' | 'internal', state: ApprovalQueueState, limit = 50,
+) {
+  return useQuery<ApprovalQueuePage>({
+    queryKey: [...QK.pendingActions, 'queue', scope, state, limit],
+    queryFn: () => portalApi.get<ApprovalQueuePage>(
+      `/approvals/queue?scope=${scope}&state=${state}&limit=${limit}`,
+    ),
+    placeholderData: (prev) => prev,
+    refetchInterval: state === 'pending' ? poll60s : false,
+    refetchOnWindowFocus: true,
+  })
+}
+
+export function useApprovalQueueCounts(scope: 'bids' | 'internal') {
+  return useQuery<ApprovalQueueCounts>({
+    queryKey: [...QK.pendingActions, 'counts', scope],
+    queryFn: () => portalApi.get<ApprovalQueueCounts>(`/approvals/queue/counts?scope=${scope}`),
     refetchInterval: poll60s,
     refetchOnWindowFocus: true,
   })
