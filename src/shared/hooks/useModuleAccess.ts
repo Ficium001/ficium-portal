@@ -12,7 +12,7 @@
 //   RBAC        — the user's group holds the module key (or a matching wildcard)
 //   Entitlement — the institution's pricing plan includes the module
 // =============================================================
-import { useMyGroup } from '@/admin/hooks/useAdmin'
+import { useMyGroup } from '@/shared/hooks/useMyGroup'
 import { useMyInstitution } from '@/institution/hooks/useInstitution'
 import { MODULE_ENTITLEMENT_KEY } from '@/shared/lib/modules'
 

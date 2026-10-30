@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { portalApi } from "@/shared/lib/portalApi";
-import { useMyGroup } from "@/admin/hooks/useAdmin";
+import { useMyGroup } from '@/shared/hooks/useMyGroup';
 import { useInstitutionMembers } from "@/institution/hooks/useInstitutionMembers";
 import type { InstitutionUser, PendingAction, ApiError } from "@/institution/types/institution";
 import type { InstitutionGroup } from "@/institution/settings/components/GroupsTab";

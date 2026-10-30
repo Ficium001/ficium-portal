@@ -38,7 +38,7 @@ import {
   BarChart2, Gift, FolderCheck, GitBranch, PenLine, FileType2, Inbox,
 } from 'lucide-react'
 import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '@/shared/lib/ficiumAuth'
-import { useMyGroup } from '@/admin/hooks/useAdmin'
+import { useMyGroup } from '@/shared/hooks/useMyGroup'
 import { MODULE_CATALOGUE, allowedModules, filterByEntitlement, type PortalModule } from '@/shared/lib/modules'
 import { useMyInstitution } from '@/institution/hooks/useInstitution'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
