@@ -32,7 +32,7 @@ import {
   useMyInstitution, useMyRole,
   useDocuments, useDocTypes, useCompliance, useRegisterDocument,
 } from "@/institution/hooks/useInstitution";
-import { useMyGroup } from "@/admin/hooks/useAdmin";
+import { useMyGroup } from '@/shared/hooks/useMyGroup';
 import type { Institution, DocType, InstitutionDoc } from "@/institution/types/institution";
 import { portalApi } from "@/shared/lib/portalApi";
 import {

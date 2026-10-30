@@ -197,80 +197,8 @@ const INSTITUTION_MODULES: PortalModule[] = [
 
 // ─── Admin modules ────────────────────────────────────────────
 
-const ADMIN_MODULES: PortalModule[] = [
-  {
-    key:         'admin:dashboard',
-    label:       'Dashboard',
-    description: 'Ficium platform overview',
-    category:    'admin',
-    path:        '/dashboard',
-    iconKey:     'LayoutDashboard',
-    shortcut:    'D',
-  },
-  {
-    key:         'admin:users',
-    label:       'Users',
-    description: 'Manage admin and institution user accounts',
-    category:    'admin',
-    path:        '/users',
-    iconKey:     'Users',
-    shortcut:    'U',
-  },
-  {
-    key:         'admin:groups',
-    label:       'Groups',
-    description: 'Define user groups and module access',
-    category:    'admin',
-    path:        '/groups',
-    iconKey:     'Shield',
-    shortcut:    'G',
-  },
-  {
-    key:         'admin:institutions',
-    label:       'Institutions',
-    description: 'Review and approve institution applications',
-    category:    'admin',
-    path:        '/institutions',
-    iconKey:     'Building2',
-    shortcut:    'I',
-  },
-  {
-    key:         'admin:dual_control',
-    label:       'Dual Control',
-    description: 'Four-eyes approval queue for high-risk actions',
-    category:    'admin',
-    path:        '/dual-control',
-    iconKey:     'GitMerge',
-    shortcut:    'Q',
-  },
-  {
-    key:         'admin:sessions',
-    label:       'Sessions',
-    description: 'Active session monitoring',
-    category:    'admin',
-    path:        '/sessions',
-    iconKey:     'Radio',
-    shortcut:    'E',
-  },
-  {
-    key:         'admin:audit',
-    label:       'Audit Log',
-    description: 'Immutable platform-wide audit trail',
-    category:    'admin',
-    path:        '/admin-audit',
-    iconKey:     'ScrollText',
-    shortcut:    'L',
-  },
-  {
-    key:         'admin:system',
-    label:       'System',
-    description: 'Infrastructure health and platform config',
-    category:    'admin',
-    path:        '/system',
-    iconKey:     'MonitorDot',
-    shortcut:    'Y',
-  },
-]
+// Retired: platform admin moved to the Ficium Portal Admin site (ficium-admin).
+const ADMIN_MODULES: PortalModule[] = []
 
 // ─── Exports ──────────────────────────────────────────────────
 

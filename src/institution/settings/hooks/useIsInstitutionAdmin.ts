@@ -4,7 +4,7 @@
  * group (the group query is the one the shell already relies on).
  */
 import { useMyRole } from '@/institution/hooks/useInstitution'
-import { useMyGroup } from '@/admin/hooks/useAdmin'
+import { useMyGroup } from '@/shared/hooks/useMyGroup'
 
 export function useIsInstitutionAdmin(): boolean {
   const { data: role } = useMyRole()

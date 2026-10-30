@@ -28,11 +28,10 @@ describe("allowedModules — access control", () => {
     expect(result.some((m) => m.category === "admin")).toBe(false);
   });
 
-  it("wildcard '*' for an admin user returns ONLY admin modules", () => {
+  it("wildcard '*' for a Ficium staff (admin) user returns nothing: platform admin moved to the Portal Admin site", () => {
     const result = allowedModules(MODULE_CATALOGUE, ["*"], "admin");
-    expect(result.length).toBeGreaterThan(0);
-    expect(result.every((m) => m.category === "admin")).toBe(true);
-    expect(result.some((m) => m.category === "institution")).toBe(false);
+    expect(result).toEqual([]);
+    expect(MODULE_CATALOGUE.some((m) => m.category === "admin")).toBe(false);
   });
 
   it("wildcard with unknown user_type falls back to the full list (defensive)", () => {
@@ -62,7 +61,7 @@ describe("MODULE_CATALOGUE integrity", () => {
     // Paths may legitimately collide across categories — e.g. inst:dashboard and
     // admin:dashboard both map to /dashboard, resolved at runtime by DashboardRouter
     // based on user_type. Uniqueness is only required within a single surface.
-    for (const category of ["institution", "admin"] as const) {
+    for (const category of ["institution"] as const) {
       // Embedded modules (a tab inside another page) share their host's path.
       const categoryModules = MODULE_CATALOGUE.filter((m) => m.category === category && !m.embeddedIn);
       expect(categoryModules.length).toBeGreaterThan(0);

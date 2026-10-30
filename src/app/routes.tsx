@@ -27,24 +27,14 @@ const InstitutionPending    = lazy(() => import('../institution/auth/pages/Insti
 const InstitutionOnboarding = lazy(() => import('../institution/auth/pages/InstitutionOnboarding'))
 
 // ─── Dashboard ────────────────────────────────────────────────
-// Admin and institution each have their own dashboard page.
-// PortalShell renders the correct one based on group.user_type
-// via the /dashboard route — AdminDashboard for admin users,
-// InstitutionDashboard for institution users.
-// Resolved by a thin DashboardRouter component below.
-const AdminDashboard        = lazy(() => import('../admin/dashboard/pages/AdminDashboard'))
+// Institution users get their dashboard via the /dashboard route; Ficium staff
+// (user_type admin) see a notice that platform admin moved to the Portal Admin
+// site. Resolved by a thin DashboardRouter component below.
 const InstitutionDashboard  = lazy(() => import('../institution/dashboard/pages/InstitutionDashboard'))
 
 // ─── Institution pages ────────────────────────────────────────
 const SignCeremony           = lazy(() => import('../public/esign/pages/SignCeremony'))
 
-const AdminUsers       = lazy(() => import('../admin/users/pages/AdminUsers'))
-const AdminGroups      = lazy(() => import('../admin/groups/pages/AdminGroups'))
-const AdminInstitutions = lazy(() => import('../admin/institutions/pages/AdminInstitutions'))
-const AdminDualControl = lazy(() => import('../admin/dual-control/pages/AdminDualControl'))
-const AdminSessions    = lazy(() => import('../admin/sessions/pages/AdminSessions'))
-const AdminAudit       = lazy(() => import('../admin/audit/pages/AdminAudit'))
-const AdminSystem      = lazy(() => import('../admin/system/pages/AdminSystem'))
 
 // ─────────────────────────────────────────────────────────────
 // Infrastructure
@@ -99,7 +89,7 @@ function S({ children }: { children: ReactNode }) {
 }
 
 // ─── Dashboard router — resolves correct dashboard by user type
-import { useMyGroup } from '@/admin/hooks/useAdmin'
+import { useMyGroup } from '@/shared/hooks/useMyGroup'
 import { useModuleAccess } from '@/shared/hooks/useModuleAccess'
 
 const InstitutionAdminDashboard = lazy(() => import('../institution/dashboard/pages/InstitutionAdminDashboard'))
@@ -107,12 +97,26 @@ const InstitutionAdminDashboard = lazy(() => import('../institution/dashboard/pa
 function DashboardRouter() {
   const { data: myGroup, isLoading } = useMyGroup()
   if (isLoading) return <PageLoader />
-  if (myGroup?.user_type === 'admin') return <S><AdminDashboard /></S>
+  if (myGroup?.user_type === 'admin') return <AdminMoved />
   // Institution split — marketplace access = trading dashboard, otherwise admin dashboard
   const permissions    = myGroup?.module_permissions ?? []
   const hasMarketplace = permissions.includes('*') || permissions.includes('inst:marketplace')
   if (hasMarketplace) return <S><InstitutionDashboard /></S>
   return <S><InstitutionAdminDashboard /></S>
+}
+
+// Ficium staff administer the platform on the Portal Admin site now; the old
+// admin pages here were retired with portal-api's /admin/* routes.
+function AdminMoved() {
+  return (
+    <main className='mx-auto max-w-lg p-8 text-center'>
+      <h1 className='text-xl font-semibold'>Platform admin has moved</h1>
+      <p className='mt-3 text-sm text-slate-600'>
+        Ficium staff now manage banks, compliance and audit on the Ficium Portal Admin site,
+        with two-factor sign-in and four-eyes approval.
+      </p>
+    </main>
+  )
 }
 
 // ─── Route-level module permission guard ──────────────────────
@@ -160,15 +164,6 @@ export const router = createBrowserRouter([
               ? <RequireModule moduleKey={moduleKey}><S>{element}</S></RequireModule>
               : <S>{element}</S>,
           })),
-
-          // Admin pages
-          { path: '/users',        element: <RequireModule moduleKey="admin:users"><S><AdminUsers /></S></RequireModule> },
-          { path: '/groups',       element: <RequireModule moduleKey="admin:groups"><S><AdminGroups /></S></RequireModule> },
-          { path: '/institutions', element: <RequireModule moduleKey="admin:institutions"><S><AdminInstitutions /></S></RequireModule> },
-          { path: '/dual-control', element: <RequireModule moduleKey="admin:dual_control"><S><AdminDualControl /></S></RequireModule> },
-          { path: '/sessions',     element: <RequireModule moduleKey="admin:sessions"><S><AdminSessions /></S></RequireModule> },
-          { path: '/admin-audit',  element: <RequireModule moduleKey="admin:audit"><S><AdminAudit /></S></RequireModule> },
-          { path: '/system',       element: <RequireModule moduleKey="admin:system"><S><AdminSystem /></S></RequireModule> },
         ],
       },
     ],
