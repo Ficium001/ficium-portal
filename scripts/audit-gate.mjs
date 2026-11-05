@@ -17,40 +17,9 @@
 import { execSync } from "node:child_process";
 
 const ALLOWLIST = [
-  {
-    ghsa: "GHSA-qwww-vcr4-c8h2",
-    package: "react-router",
-    reason:
-      "CSRF bypass in React Router's RSC (React Server Components) mode. This " +
-      "app is a client-rendered Vite SPA using createBrowserRouter/RouterProvider " +
-      "(src/app/routes.tsx, src/main.tsx (ficium-portal)); it has no RSC entrypoint and no " +
-      "server-side action handling, so the vulnerable code path is not reachable. " +
-      "No fixed release exists: the advisory covers 7.12.0-8.2.0 and the latest " +
-      "published react-router-dom is 7.18.1, so the only npm-offered 'fix' is a " +
-      "downgrade to 7.11.0 -- older, breaking, and no safer for this usage.",
-    reviewBy: "2026-10-31",
-  },
-  {
-    ghsa: "GHSA-4qv8-2p9j-2685",
-    package: "undici",
-    reason:
-      "undici is a DEV-ONLY dependency here (jsdom, used by vitest); it is not in the shipped bundle, so these DoS / SRI-bypass paths are not reachable in production. The fix (undici 7.30.1, published 2026-10-15) is newer than our 14-day minimum age for new releases; bump the lockfile to >=7.30.1 on or after 2026-10-29 and delete these entries.",
-    reviewBy: "2026-10-30",
-  },
-  {
-    ghsa: "GHSA-f72v-6w45-q472",
-    package: "undici",
-    reason:
-      "undici is a DEV-ONLY dependency here (jsdom, used by vitest); it is not in the shipped bundle, so these DoS / SRI-bypass paths are not reachable in production. The fix (undici 7.30.1, published 2026-10-15) is newer than our 14-day minimum age for new releases; bump the lockfile to >=7.30.1 on or after 2026-10-29 and delete these entries.",
-    reviewBy: "2026-10-30",
-  },
-  {
-    ghsa: "GHSA-xjj6-f33q-929c",
-    package: "undici",
-    reason:
-      "undici is a DEV-ONLY dependency here (jsdom, used by vitest); it is not in the shipped bundle, so these DoS / SRI-bypass paths are not reachable in production. The fix (undici 7.30.1, published 2026-10-15) is newer than our 14-day minimum age for new releases; bump the lockfile to >=7.30.1 on or after 2026-10-29 and delete these entries.",
-    reviewBy: "2026-10-30",
-  },
+  // Empty: undici now resolves 7.30.1 (fixed) and the react-router RSC advisory
+  // no longer appears in npm audit for the installed version. Add entries only
+  // with a reason and a reviewBy date.
 ];
 
 const raw = (() => {
