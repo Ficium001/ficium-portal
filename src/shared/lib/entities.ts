@@ -56,10 +56,13 @@ export type EsignEntityType = Extract<
  */
 export function esignEntityTypeForCategory(category: DocCategory): EsignEntityType {
   switch (category) {
+    // Anything that binds the institution to lend is an offer. Mirrors
+    // ENVELOPE_TYPE_FOR_CATEGORY in ficium-portal-api app/core/offer_gate.py,
+    // which is authoritative: the server re-derives this on every envelope.
     case 'facility_letter':
-      return 'offer_letter'
     case 'loan_agreement':
     case 'legal_agreement':
+      return 'offer_letter'
     case 'terms_conditions':
     case 'other':
     default:

@@ -22,7 +22,6 @@ const PortalRoute           = lazy(() => import('../shared/components/PortalRout
 const PortalShell           = lazy(() => import('../shared/components/PortalShell'))
 
 // ─── Registration / onboarding ────────────────────────────────
-const RegisterInstitution   = lazy(() => import('../institution/auth/pages/RegisterInstitution'))
 const InstitutionPending    = lazy(() => import('../institution/auth/pages/InstitutionPending'))
 const InstitutionOnboarding = lazy(() => import('../institution/auth/pages/InstitutionOnboarding'))
 
@@ -142,7 +141,10 @@ export const router = createBrowserRouter([
   { path: '/',        element: <S><UnifiedLogin /></S> },
   { path: '/login',   element: <S><UnifiedLogin /></S> },
   { path: '/reset-password', element: <S><ResetPassword /></S> },
-  { path: '/register',   element: <S><RegisterInstitution /></S>   },
+  // The portal is restrictive: sign-in for provisioned institutions only. Applying is a
+  // public form on the borrower site; after a contract the administrator is invited by email.
+  { path: '/register',        element: <Navigate to='/login' replace /> },
+  { path: '/request-access',  element: <Navigate to='/login' replace /> },
   { path: '/pending',    element: <S><InstitutionPending /></S>    },
   { path: '/onboarding', element: <S><InstitutionOnboarding /></S> },
   { path: '/sign/:token', element: <S><SignCeremony /></S> },
