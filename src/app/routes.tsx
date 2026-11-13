@@ -22,8 +22,6 @@ const PortalRoute           = lazy(() => import('../shared/components/PortalRout
 const PortalShell           = lazy(() => import('../shared/components/PortalShell'))
 
 // ─── Registration / onboarding ────────────────────────────────
-const RequestAccess         = lazy(() => import('../institution/auth/pages/RequestAccess'))
-const VerifyAccessRequest   = lazy(() => import('../institution/auth/pages/VerifyAccessRequest'))
 const InstitutionPending    = lazy(() => import('../institution/auth/pages/InstitutionPending'))
 const InstitutionOnboarding = lazy(() => import('../institution/auth/pages/InstitutionOnboarding'))
 
@@ -143,10 +141,10 @@ export const router = createBrowserRouter([
   { path: '/',        element: <S><UnifiedLogin /></S> },
   { path: '/login',   element: <S><UnifiedLogin /></S> },
   { path: '/reset-password', element: <S><ResetPassword /></S> },
-  { path: '/request-access',        element: <S><RequestAccess /></S> },
-  { path: '/request-access/verify', element: <S><VerifyAccessRequest /></S> },
-  // Self-registration was replaced by applications (2026-11-13); old links land on the form.
-  { path: '/register',   element: <Navigate to='/request-access' replace /> },
+  // The portal is restrictive: sign-in for provisioned institutions only. Applying is a
+  // public form on the borrower site; after a contract the administrator is invited by email.
+  { path: '/register',        element: <Navigate to='/login' replace /> },
+  { path: '/request-access',  element: <Navigate to='/login' replace /> },
   { path: '/pending',    element: <S><InstitutionPending /></S>    },
   { path: '/onboarding', element: <S><InstitutionOnboarding /></S> },
   { path: '/sign/:token', element: <S><SignCeremony /></S> },
