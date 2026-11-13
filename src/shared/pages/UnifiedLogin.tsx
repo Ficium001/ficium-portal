@@ -353,8 +353,8 @@ export default function UnifiedLogin() {
 
           <div className='mt-6 pt-5 border-t border-ink/8 space-y-3'>
             <p className='text-[13px] text-muted text-center'>
-              Not yet registered?{' '}
-              <Link to='/register' className='text-ficium font-semibold hover:underline'>
+              Not yet a Ficium institution?{' '}
+              <Link to='/request-access' className='text-ficium font-semibold hover:underline'>
                 Apply for institution access
               </Link>
             </p>
