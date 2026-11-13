@@ -9,11 +9,12 @@
  * Fine at current volume; add ?entity_id= server-side before it isn't.
  */
 import { useState } from 'react'
-import { PenLine, Plus } from 'lucide-react'
+import { FileText, PenLine, Send } from 'lucide-react'
 import { useSealedUrl } from '@/institution/esign/hooks/useEsign'
 import { useDealEnvelopes } from '@/institution/pipeline/hooks/useDealEnvelopes'
 import { EnvelopeCard } from '@/institution/esign/components/EnvelopeCard'
 import { EnvelopeCreateModal } from '@/institution/esign/components/EnvelopeCreateModal'
+import { SendOfferModal } from '@/institution/esign/components/SendOfferModal'
 import { EnvelopeTimeline } from '@/institution/esign/components/EnvelopeTimeline'
 import type { EsignEnvelope } from '@/institution/types/approvalEngine'
 import { Btn, EmptyState, InlineAlert, SkeletonCard } from '@/institution/components/primitives'
@@ -32,6 +33,7 @@ export function DealSignaturesPanel({
   const { data, isLoading, isError } = useDealEnvelopes(pipelineId, true)
   const sealed = useSealedUrl()
   const [creating, setCreating] = useState(false)
+  const [sendingOffer, setSendingOffer] = useState(false)
   const [trailFor, setTrailFor] = useState<EsignEnvelope | null>(null)
   const [sealError, setSealError] = useState<string | null>(null)
 
@@ -51,7 +53,12 @@ export function DealSignaturesPanel({
         <p className="text-[12px] text-muted">
           Documents sent to the borrower and your countersigner for this deal.
         </p>
-        <Btn size="sm" icon={Plus} onClick={() => setCreating(true)}>Send for signature</Btn>
+        <div className="flex items-center gap-2 shrink-0">
+          <Btn size="sm" variant="ghost" icon={FileText} onClick={() => setCreating(true)}>
+            Other document
+          </Btn>
+          <Btn size="sm" icon={Send} onClick={() => setSendingOffer(true)}>Send offer</Btn>
+        </div>
       </div>
 
       {sealError && <InlineAlert variant="error">{sealError}</InlineAlert>}
@@ -63,7 +70,7 @@ export function DealSignaturesPanel({
         <EmptyState
           icon={PenLine}
           title="Nothing sent for signature yet"
-          description="Generate the offer letter under Documents, then send it for signature from there or here."
+          description="Send offer fills in your approved offer template from this deal and sends it to the borrower in one step."
         />
       )}
 
@@ -86,6 +93,7 @@ export function DealSignaturesPanel({
           presetBorrowerEmail={borrowerEmail}
         />
       )}
+      {sendingOffer && <SendOfferModal dealId={pipelineId} onClose={() => setSendingOffer(false)} />}
       {trailFor && <EnvelopeTimeline envelope={trailFor} onClose={() => setTrailFor(null)} />}
     </div>
   )

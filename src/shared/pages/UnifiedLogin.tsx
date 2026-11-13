@@ -18,7 +18,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Shield, ArrowRight, Building2, Zap } from 'lucide-react'
 import { ficiumAuthFetch, signIn as ficiumSignIn, getTokenPayload, hasSession, signOut as ficiumSignOut } from '@/shared/lib/ficiumAuth'
 import FiciumLogo from '@/shared/ui/FiciumLogo'
@@ -353,10 +353,8 @@ export default function UnifiedLogin() {
 
           <div className='mt-6 pt-5 border-t border-ink/8 space-y-3'>
             <p className='text-[13px] text-muted text-center'>
-              Not yet registered?{' '}
-              <Link to='/register' className='text-ficium font-semibold hover:underline'>
-                Apply for institution access
-              </Link>
+              Access to the portal is by agreement with Ficium. Your administrator receives an
+              invitation by email.
             </p>
             <p className='text-[11px] text-muted/60 text-center font-mono'>
               Your portal type (institution / admin) is determined automatically.
