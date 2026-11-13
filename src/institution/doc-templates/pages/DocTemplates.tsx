@@ -37,6 +37,7 @@ import {
   DOC_CATEGORY_LABEL, type DocCategory, type DocTemplate, type DocTemplateVersion,
 } from '../types/docTemplates'
 import { PageFrame } from '@/shared/components/PageFrame'
+import { OfferSetupChecklist } from '../components/OfferSetupChecklist'
 
 type Filter = 'all' | 'active' | 'draft' | 'retired'
 
@@ -310,7 +311,10 @@ function VersionsPanel({ template }: { template: DocTemplate }) {
       setNote('')
       if (fileRef.current) fileRef.current.value = ''
     } catch (e) {
+      // Merge-tag problems come back as a multi-line list; clear the picker so
+      // the fixed file (often the same name) can be chosen again.
       setError(e instanceof Error ? e.message : 'Upload failed.')
+      if (fileRef.current) fileRef.current.value = ''
     }
   }
 
@@ -346,7 +350,9 @@ function VersionsPanel({ template }: { template: DocTemplate }) {
         </p>
       </div>
 
-      {error && <InlineAlert variant="error">{error}</InlineAlert>}
+      {error && (
+        <InlineAlert variant="error"><span className="whitespace-pre-line">{error}</span></InlineAlert>
+      )}
 
       {isLoading && <SkeletonCard />}
 
@@ -482,6 +488,8 @@ export default function DocTemplates() {
         title="Document templates"
         subtitle="Author agreements in Word with merge fields, publish them through dual control, and generate populated documents per deal."
       />
+
+      <OfferSetupChecklist />
 
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <FilterPills options={FILTERS} value={filter} onChange={setFilter} />
