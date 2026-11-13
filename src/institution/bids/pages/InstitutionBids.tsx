@@ -26,7 +26,7 @@ import { useState, useCallback } from "react";
 import { FileText, ChevronDown, ChevronUp, XCircle, CheckCircle, AlertTriangle, Clock, User, Mail, Phone, MapPin, CreditCard } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { InstitutionBid } from "@/institution/types/institution";
-import { useMyBids, useMyInstitution, useSubmitBid } from "@/institution/hooks/useInstitution";
+import { useMyBids, useMyInstitution, useWithdrawBid } from "@/institution/hooks/useInstitution";
 import { portalApi } from "@/shared/lib/portalApi";
 import { formatDistanceToNow, formatRate, formatAmount } from "@/institution/lib/utils";
 import {
@@ -48,6 +48,9 @@ const STATUS_OPTIONS = [
 ];
 
 type StatusKey = "all" | "submitted" | "accepted" | "rejected" | "expired" | "withdrawn";
+
+/** Bids the bank can still withdraw (mirrors the API and the db/061 trigger). */
+const WITHDRAWABLE = new Set(["draft", "submitted", "under_review"]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 2 reveal types & hook
@@ -205,7 +208,7 @@ function BidDetailPanel({
             <div className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2.5">
               Outcome
             </div>
-            {bid.status === "submitted" && canWithdraw && (
+            {WITHDRAWABLE.has(bid.status) && canWithdraw && (
               <button
                 onClick={onWithdraw}
                 className="flex items-center gap-2 border border-amber-200 bg-amber-50 text-amber-700 text-[12px] font-semibold px-4 py-2 rounded-xl hover:bg-amber-100 transition-colors"
@@ -257,11 +260,12 @@ export default function InstitutionBids() {
   const { data: bids = [], isLoading }                  = useMyBids(
     statusFilter === "all" ? undefined : statusFilter
   );
-  const submitBid                                       = useSubmitBid();
+  const withdrawBid                                     = useWithdrawBid();
   const [expanded,       setExpanded]                   = useState<string | null>(null);
   const [withdrawBidId,  setWithdrawBidId]              = useState<string | null>(null);
   const [withdrawNote,   setWithdrawNote]               = useState("");
-  const [withdrawSuccess, setWithdrawSuccess]           = useState(false);
+  const [withdrawResult, setWithdrawResult]             = useState<"pending_approval" | "withdrawn" | null>(null);
+  const [withdrawError,  setWithdrawError]              = useState<string | null>(null);
 
   const modules     = institution?.modules ?? [];
   const canWithdraw = modules.includes("marketplace");
@@ -273,21 +277,20 @@ export default function InstitutionBids() {
   const winRate    = total > 0 ? Math.round((accepted / total) * 100) : 0;
 
   const handleWithdrawConfirm = useCallback(async () => {
-    const bid = bids.find((b) => b.id === withdrawBidId);
-    if (!bid || !withdrawNote.trim()) return;
-    await submitBid.mutateAsync({
-      request_id:     bid.request_id ?? "",
-      rate:           0,
-      rate_type:      "fixed",
-      amount_offered: 0,
-      term_months:    0,
-      conditions:     { withdraw_reason: withdrawNote },
-      submitted_via:  "portal",
-    });
-    setWithdrawBidId(null);
-    setWithdrawNote("");
-    setWithdrawSuccess(true);
-  }, [bids, withdrawBidId, withdrawNote, submitBid]);
+    const reason = withdrawNote.trim();
+    if (!withdrawBidId || !reason) return;
+    setWithdrawError(null);
+    try {
+      const res = await withdrawBid.mutateAsync({ bidId: withdrawBidId, reason });
+      setWithdrawResult(res.status);
+    } catch (e) {
+      // The API returns a plain-language reason (already withdrawn, accepted meanwhile, pending).
+      setWithdrawError(e instanceof Error ? e.message : "The withdrawal could not be submitted. Try again.");
+    } finally {
+      setWithdrawBidId(null);
+      setWithdrawNote("");
+    }
+  }, [withdrawBidId, withdrawNote, withdrawBid]);
 
   return (
     <main className="p-6 lg:p-8 max-w-[1440px] mx-auto">
@@ -304,13 +307,19 @@ export default function InstitutionBids() {
         <KpiCard label="Win rate"     value={`${winRate}%`}            />
       </div>
 
-      {withdrawSuccess && (
+      {withdrawResult && (
         <div className="mb-5">
-          <InlineAlert
-            variant="success"
-            onDismiss={() => setWithdrawSuccess(false)}
-          >
-            Withdrawal submitted for maker-checker approval.
+          <InlineAlert variant="success" onDismiss={() => setWithdrawResult(null)}>
+            {withdrawResult === "withdrawn"
+              ? "Offer withdrawn. The client no longer sees it."
+              : "Withdrawal sent for approval. The offer stays live until a second person approves."}
+          </InlineAlert>
+        </div>
+      )}
+      {withdrawError && (
+        <div className="mb-5">
+          <InlineAlert variant="error" onDismiss={() => setWithdrawError(null)}>
+            {withdrawError}
           </InlineAlert>
         </div>
       )}
@@ -426,14 +435,14 @@ export default function InstitutionBids() {
         onClose={() => { setWithdrawBidId(null); setWithdrawNote(""); }}
         onConfirm={handleWithdrawConfirm}
         title="Withdraw bid"
-        description="This withdrawal enters maker-checker. A second admin must approve before the bid is removed from the marketplace."
+        description="The client will no longer see this offer. If four-eyes is on for withdrawals, a second person approves first and the offer stays live until then."
         confirmLabel="Submit withdrawal"
         variant="warning"
         notePlaceholder="Reason for withdrawal (required)"
         noteRequired
         note={withdrawNote}
         onNoteChange={setWithdrawNote}
-        isPending={submitBid.isPending}
+        isPending={withdrawBid.isPending}
       />
     </main>
   );
