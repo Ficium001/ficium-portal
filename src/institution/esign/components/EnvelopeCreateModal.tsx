@@ -1,12 +1,15 @@
 /**
  * @component EnvelopeCreateModal
  * @description
- *   Creates an e-sign envelope: pick the source document (from the
- *   institution's document library or a storage path), name both
- *   signers (borrower signs first, institution countersigns), and set
- *   the expiry window. The backend hashes the source document at
- *   creation and enforces the approval gate inside
- *   institution.esign_create_envelope().
+ *   Sends an existing document for signature: pick a document generated
+ *   for this deal or one from the document library, confirm the borrower,
+ *   choose the countersigner and the expiry window. For the offer itself,
+ *   SendOfferModal does all of this in one step.
+ *
+ *   There is no document-type choice: the server derives it from the
+ *   template the document came from, and every envelope on a deal needs the
+ *   deal's credit approval whatever its type. There is no free-text storage
+ *   path either: only documents the institution already holds can be sent.
  *
  * @dataSource useCreateEnvelope → ficium-portal-api POST /esign/envelopes
  * @owner Ficium Engineering
@@ -22,11 +25,6 @@ import { useDocuments, useInstitutionUsers } from '@/institution/hooks/useInstit
 import { PortalApiError } from '@/shared/lib/portalApi'
 import { Modal, Btn, FormField, InlineAlert, inputCls } from '@/institution/components/primitives'
 
-const ENTITY_LABELS: { value: EsignEntityType; label: string }[] = [
-  { value: 'offer_letter',       label: 'Offer letter' },
-  { value: 'investment_mandate', label: 'Investment mandate' },
-  { value: 'custom',             label: 'Other document' },
-]
 
 export function EnvelopeCreateModal({
   onClose,
@@ -50,7 +48,7 @@ export function EnvelopeCreateModal({
   const { data: docs }  = useDocuments()
   const { data: users } = useInstitutionUsers()
 
-  const [entityType, setEntityType]   = useState<EsignEntityType>('offer_letter')
+  const [entityType, setEntityType]   = useState<EsignEntityType>('custom')
   const [title, setTitle]             = useState(presetTitle ?? '')
   const [documentPath, setDocumentPath] = useState('')
   const [generationId, setGenerationId] = useState<string | null>(null)
@@ -128,15 +126,6 @@ export function EnvelopeCreateModal({
       <div className="space-y-4">
         {error && <InlineAlert variant="error">{error}</InlineAlert>}
 
-        <FormField label="Document type" required>
-          <select
-            className={inputCls}
-            value={entityType}
-            onChange={e => setEntityType(e.target.value as EsignEntityType)}
-          >
-            {ENTITY_LABELS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </FormField>
 
         <FormField label="Envelope title" required hint="Shown to the borrower on the signing page and in emails.">
           <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} placeholder="Home loan offer letter — MUR 4,500,000" />
@@ -186,7 +175,10 @@ export function EnvelopeCreateModal({
               )}
             </select>
           ) : (
-            <input className={inputCls} value={documentPath} onChange={e => setDocumentPath(e.target.value)} placeholder="storage path, e.g. offers/2026/xyz.pdf" />
+            <p className="text-[12px] text-muted">
+              No documents yet. Use <span className="font-semibold text-ink">Send offer</span> to
+              generate the offer from your template, or add a file to the document library first.
+            </p>
           )}
         </FormField>
 

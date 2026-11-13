@@ -152,3 +152,44 @@ export async function downloadGeneration(generationId: string, fmt: 'pdf' | 'doc
   a.remove()
   URL.revokeObjectURL(url)
 }
+
+// ─── Offer setup ─── /institution/offer-setup/* ───────────────
+// Checklist of what an institution needs before it can send an offer, and a
+// one-click install of standard defaults. Installed items still need a
+// second admin (dual control), which the checklist shows as "waiting".
+
+export interface OfferSetupItem {
+  key: 'second_person' | 'checker' | 'credit_chain' | 'offer_template'
+  label: string
+  state: 'done' | 'waiting' | 'todo'
+  detail: string
+  /** 'install' = covered by the install button; otherwise a link label. */
+  action: string | null
+  path: string | null
+}
+
+export interface OfferSetupStatus {
+  complete: boolean
+  can_install: boolean
+  items: OfferSetupItem[]
+}
+
+const SETUP_KEY = ['doc-templates', 'offer-setup'] as const
+
+export function useOfferSetup() {
+  return useQuery<OfferSetupStatus>({
+    queryKey: SETUP_KEY,
+    queryFn: () => portalApi.get<OfferSetupStatus>('/institution/offer-setup/status'),
+  })
+}
+
+export function useInstallOfferDefaults() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => portalApi.post<OfferSetupStatus>('/institution/offer-setup/install', {}),
+    onSuccess: (data) => {
+      qc.setQueryData(SETUP_KEY, data)
+      void qc.invalidateQueries({ queryKey: DTQK.templates })
+    },
+  })
+}
