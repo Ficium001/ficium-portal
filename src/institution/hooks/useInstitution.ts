@@ -111,6 +111,23 @@ export function useSubmitBid() {
   })
 }
 
+// ─── useWithdrawBid ─── portal-api /marketplace/bids/{id}/withdraw ───
+// Goes through governance as bid.withdraw (four-eyes on by default, switchable in
+// Setup > Controls). "withdrawn" means four-eyes is off and it already took effect.
+export type WithdrawBidResult = { action_id: string; status: 'pending_approval' | 'withdrawn' }
+
+export function useWithdrawBid() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bidId, reason }: { bidId: string; reason: string }) =>
+      portalApi.post<WithdrawBidResult>(`/marketplace/bids/${bidId}/withdraw`, { reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.pendingActions })
+      qc.invalidateQueries({ queryKey: QK.myBids })
+    },
+  })
+}
+
 // ─── useRejectRequest ─── portal-api /marketplace/requests/{id}/reject ───
 // Direct action, not routed through maker-checker: declining a request
 // commits no capital and carries none of the risk a bid does, so unlike
