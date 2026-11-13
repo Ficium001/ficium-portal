@@ -22,7 +22,8 @@ const PortalRoute           = lazy(() => import('../shared/components/PortalRout
 const PortalShell           = lazy(() => import('../shared/components/PortalShell'))
 
 // ─── Registration / onboarding ────────────────────────────────
-const RegisterInstitution   = lazy(() => import('../institution/auth/pages/RegisterInstitution'))
+const RequestAccess         = lazy(() => import('../institution/auth/pages/RequestAccess'))
+const VerifyAccessRequest   = lazy(() => import('../institution/auth/pages/VerifyAccessRequest'))
 const InstitutionPending    = lazy(() => import('../institution/auth/pages/InstitutionPending'))
 const InstitutionOnboarding = lazy(() => import('../institution/auth/pages/InstitutionOnboarding'))
 
@@ -142,7 +143,10 @@ export const router = createBrowserRouter([
   { path: '/',        element: <S><UnifiedLogin /></S> },
   { path: '/login',   element: <S><UnifiedLogin /></S> },
   { path: '/reset-password', element: <S><ResetPassword /></S> },
-  { path: '/register',   element: <S><RegisterInstitution /></S>   },
+  { path: '/request-access',        element: <S><RequestAccess /></S> },
+  { path: '/request-access/verify', element: <S><VerifyAccessRequest /></S> },
+  // Self-registration was replaced by applications (2026-11-13); old links land on the form.
+  { path: '/register',   element: <Navigate to='/request-access' replace /> },
   { path: '/pending',    element: <S><InstitutionPending /></S>    },
   { path: '/onboarding', element: <S><InstitutionOnboarding /></S> },
   { path: '/sign/:token', element: <S><SignCeremony /></S> },
