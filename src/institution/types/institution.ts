@@ -203,6 +203,12 @@ export interface MarketplaceRequest {
   allocations?: { product_type: string; product_label: string; amount: number | null }[] | null
 }
 
+export interface ActionChangeRow {
+  field: string
+  before: string | null
+  after: string | null
+}
+
 export interface PendingAction {
   id: string
   action_category: string
@@ -215,6 +221,10 @@ export interface PendingAction {
   resource_id?: string
   payload: Record<string, unknown>
   payload_before?: Record<string, unknown>
+  /** Human name of the record (db/063). */
+  resource_label?: string | null
+  /** Before -> after table written by the database when the request was made (db/063). */
+  change?: { rows: ActionChangeRow[]; described?: boolean; backfilled?: boolean } | null
   checker_id?: string
   checker_role?: string
   checker_note?: string

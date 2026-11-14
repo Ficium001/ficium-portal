@@ -115,3 +115,18 @@ describe('Dual Control queue', () => {
     expect(api.get).toHaveBeenCalledWith(expect.stringContaining('/approvals/queue?scope=internal&state=expired'))
   })
 })
+
+describe('the approver sees the change before approving', () => {
+  it('shows before -> after next to Approve, without expanding the card', async () => {
+    await render({ pending: [action({
+      action_category: 'user.update', resource_label: 'Asha Test',
+      payload: { member_id: 'x', field: 'member_role', value: 'checker' },
+      change: { rows: [{ field: 'Role', before: 'viewer', after: 'checker' }], described: true },
+    })] }, { pending: 1, expired: 0, approved: 0, rejected: 0, needs_me: 1 })
+    expect(button('Approve')).toBeTruthy()
+    const table = host.querySelector('section[aria-label="What this changes"]')!
+    expect(table.textContent).toContain('Asha Test')
+    expect([...table.querySelectorAll('tbody th, tbody td')].map((c) => c.textContent?.trim())).toEqual(['Role', 'viewer', 'checker'])
+    expect(host.textContent).not.toContain('member_role')   // no raw field names
+  })
+})

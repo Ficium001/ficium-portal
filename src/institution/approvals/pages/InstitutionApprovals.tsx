@@ -44,6 +44,7 @@ import {
 } from "@/institution/hooks/useInstitution";
 import { formatDistanceToNow } from "@/institution/lib/utils";
 import type { PendingAction, ApprovalQueueState } from "@/institution/types/institution";
+import ChangeTable, { hasChange } from "@/institution/components/ChangeTable";
 import {
   SectionHeader, InlineAlert, EmptyState,
   Btn, inputCls,
@@ -92,7 +93,7 @@ function ActionSummary({ action }: { action: PendingAction }) {
     const notes = (p.conditions as Record<string, unknown>)?.notes;
     if (notes) rows.push({ label: "Conditions", value: String(notes) });
   } else if (action.action_category === "bid.withdraw") {
-    const reason = (p.conditions as Record<string, unknown>)?.withdraw_reason;
+    const reason = p.reason ?? (p.conditions as Record<string, unknown>)?.withdraw_reason;
     if (reason) rows.push({ label: "Withdrawal reason", value: String(reason) });
   } else {
     // Generic: show scalar keys only (no nested objects or internal IDs)
@@ -315,6 +316,13 @@ function ActionCard({
         </button>
       </div>
 
+      {/* What this changes: always visible, so nobody approves without seeing it */}
+      <div className="border-t border-ink/[0.07] px-5 py-4">
+        {hasChange(action)
+          ? <ChangeTable action={action} decided={state === "approved" || state === "rejected"} />
+          : <ActionSummary action={action} />}
+      </div>
+
       {/* Expanded detail */}
       {expanded && (
         <div className="border-t border-ink/[0.07] px-5 py-4 bg-cream/40 space-y-4">
@@ -331,7 +339,6 @@ function ActionCard({
               Expired without a second approver. It can no longer be approved.
             </div>
           )}
-          <ActionSummary  action={action} />
           <ClientDossier  action={action} />
         </div>
       )}

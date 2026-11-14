@@ -24,6 +24,7 @@ import {
 import { portalApi } from "@/shared/lib/portalApi";
 import { formatDistanceToNow } from "@/institution/lib/utils";
 import type { PendingAction, ApprovalQueueState } from "@/institution/types/institution";
+import ChangeTable, { hasChange } from "@/institution/components/ChangeTable";
 import {
   SectionHeader, InlineAlert, EmptyState,
   Btn, inputCls, Modal,
@@ -225,6 +226,13 @@ function ActionCard({
         </button>
       </div>
 
+      {/* What this changes: always visible, so nobody approves without seeing it */}
+      <div className="border-t border-ink/[0.07] px-5 py-4">
+        {hasChange(action)
+          ? <ChangeTable action={action} decided={state === "approved" || state === "rejected"} />
+          : <ActionSummary action={action} />}
+      </div>
+
       {expanded && (
         <div className="border-t border-ink/[0.07] px-5 py-4 bg-cream/40 space-y-4">
           {(state === "approved" || state === "rejected") && (
@@ -240,7 +248,6 @@ function ActionCard({
               Expired without a second approver. It can no longer be approved.
             </div>
           )}
-          <ActionSummary action={action} />
         </div>
       )}
 
