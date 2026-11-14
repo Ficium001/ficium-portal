@@ -153,6 +153,19 @@ export async function downloadGeneration(generationId: string, fmt: 'pdf' | 'doc
   URL.revokeObjectURL(url)
 }
 
+/** The uploaded Word file of one version, for the checker to read before approving it. */
+export async function downloadVersion(templateId: string, versionId: string, fileName: string) {
+  const blob = await portalApi.getBlob(`${BASE}/${templateId}/versions/${versionId}/download`)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 // ─── Offer setup ─── /institution/offer-setup/* ───────────────
 // Checklist of what an institution needs before it can send an offer, and a
 // one-click install of standard defaults. Installed items still need a

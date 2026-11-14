@@ -31,7 +31,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   useDocTemplates, useCreateDocTemplate, useRetireTemplate,
   useTemplateVersions, useUploadVersion, useDecideVersion,
-  useMergeFields, useGenerateDocument, downloadGeneration,
+  useMergeFields, useGenerateDocument, downloadGeneration, downloadVersion,
 } from '../hooks/useDocTemplates'
 import {
   DOC_CATEGORY_LABEL, type DocCategory, type DocTemplate, type DocTemplateVersion,
@@ -294,6 +294,19 @@ function VersionsPanel({ template }: { template: DocTemplate }) {
   const [error, setError] = useState<string | null>(null)
   const [rejectFor, setRejectFor] = useState<DocTemplateVersion | null>(null)
   const [rejectNote, setRejectNote] = useState('')
+  // Versions this checker has opened in this session: approving needs the document read first.
+  const [opened, setOpened] = useState<Set<string>>(new Set())
+  const [openingId, setOpeningId] = useState<string | null>(null)
+
+  const openVersion = async (v: DocTemplateVersion) => {
+    setError(null); setOpeningId(v.id)
+    try {
+      await downloadVersion(template.id, v.id, v.file_name)
+      setOpened(prev => new Set(prev).add(v.id))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open the document.')
+    } finally { setOpeningId(null) }
+  }
 
   const onFile = async (f: File | undefined) => {
     setError(null)
@@ -409,13 +422,21 @@ function VersionsPanel({ template }: { template: DocTemplate }) {
                   </div>
                 ) : (
                   <>
+                    <Btn size="sm" variant="secondary" icon={FileDown} loading={openingId === v.id}
+                         onClick={() => openVersion(v)}>
+                      {opened.has(v.id) ? 'Open again' : 'Open document'}
+                    </Btn>
                     <Btn size="sm" icon={CheckCircle2} loading={decide.isPending}
+                         disabled={!opened.has(v.id)}
                          onClick={() => act(v, 'approve')}>
                       Approve & publish
                     </Btn>
                     <Btn size="sm" variant="ghost" icon={XCircle} onClick={() => setRejectFor(v)}>
                       Reject
                     </Btn>
+                    {!opened.has(v.id) && (
+                      <span className="text-[11px] text-muted">Open the document and read it before approving.</span>
+                    )}
                   </>
                 )}
               </div>
