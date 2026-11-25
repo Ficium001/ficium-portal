@@ -109,4 +109,53 @@ describe('BookingPanel', () => {
     await until(() => api.put.mock.calls.length > 0)
     expect(api.put).toHaveBeenCalledWith('/pipelines/d1/booking', expect.objectContaining({ core_reference: 'LN-78' }))
   })
+
+  it('asks for the monthly amount when the commission needs it, and sends it', async () => {
+    api.get.mockImplementation(async (url: string) => {
+      if (url.endsWith('/requirements')) return { pipeline_id: 'd1', requires: { monthly_amount: true, term_months: false } }
+      throw new PortalApiError(404, 'x')
+    })
+    api.post.mockResolvedValue({ ...BOOKED, monthly_amount: 500 })
+    await render(deal({ deal_amount: 1000 }))
+    await until(() => !!input('Monthly amount'))
+    expect(host.textContent).toContain('First amount paid in')
+    type('Core banking reference', 'SP-1')
+    expect(button('Record booking').disabled).toBe(true) // monthly amount still empty
+    type('Monthly amount', '500')
+    act(() => button('Record booking').click())
+    await until(() => api.post.mock.calls.length > 0)
+    expect(api.post).toHaveBeenCalledWith('/pipelines/d1/booking', expect.objectContaining({
+      disbursed_amount: 1000, monthly_amount: 500, term_months: null,
+    }))
+  })
+
+  it('asks for the term on a term product, prefilled from the deal', async () => {
+    api.get.mockImplementation(async (url: string) => {
+      if (url.endsWith('/requirements')) return { pipeline_id: 'd1', requires: { monthly_amount: false, term_months: true } }
+      throw new PortalApiError(404, 'x')
+    })
+    await render(deal({ deal_term_months: 36 } as Partial<PipelineDetail>))
+    await until(() => !!input('Term in months'))
+    expect(input('Term in months').value).toBe('36')
+    expect(input('Monthly amount')).toBeNull()
+  })
+
+  it('records a closure, after which the booking cannot be corrected', async () => {
+    api.get.mockResolvedValue(BOOKED)
+    api.post.mockResolvedValue({ ...BOOKED, closed_on: '2026-11-20', closure_reason: 'client stopped the plan', closed_source: 'portal' })
+    await render(deal())
+    await until(() => (host.textContent ?? '').includes('LN-77'))
+    act(() => button('Record closure').click())
+    await until(() => !!host.querySelector('[aria-label="Closure reason"]'))
+    expect(host.textContent).toContain("It can't be undone")
+    const reason = host.querySelector('[aria-label="Closure reason"]') as HTMLTextAreaElement
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
+    act(() => { setter.call(reason, 'client stopped the plan'); reason.dispatchEvent(new Event('input', { bubbles: true })) })
+    const buttons = [...host.querySelectorAll('button')].filter((b) => b.textContent?.includes('Record closure'))
+    act(() => buttons[buttons.length - 1]!.click())
+    await until(() => (host.textContent ?? '').includes('Booked, now closed'))
+    expect(api.post).toHaveBeenCalledWith('/pipelines/d1/booking/closure', { closed_on: expect.any(String), reason: 'client stopped the plan' })
+    expect(button('Correct')).toBeUndefined()
+    expect(host.textContent).toContain('client stopped the plan')
+  })
 })
