@@ -35,7 +35,7 @@ import {
   Package, ScrollText, Settings,
   LogOut, Bell, Wifi, WifiOff, AlertTriangle, Shield,
   Menu, X, Users, GitMerge, Radio, MonitorDot, Building2,
-  BarChart2, Gift, FolderCheck, GitBranch, PenLine, FileType2, Inbox,
+  BarChart2, Gift, FolderCheck, GitBranch, PenLine, FileType2, Inbox, Zap,
 } from 'lucide-react'
 import { signOut as ficiumSignOut, getTokenPayload, hasSession } from '@/shared/lib/ficiumAuth'
 import { useMyGroup } from '@/shared/hooks/useMyGroup'
@@ -56,7 +56,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Store, FileText, Clock, Package,
   ScrollText, Settings, Shield, Users,
   GitMerge, Radio, MonitorDot, Building2,
-  BarChart2, Bell, Gift, FolderCheck, GitBranch, PenLine, FileType2, Inbox,
+  BarChart2, Bell, Gift, FolderCheck, GitBranch, PenLine, FileType2, Inbox, Zap,
 }
 function resolveIcon(key: string): React.ElementType {
   return ICON_MAP[key] ?? LayoutDashboard

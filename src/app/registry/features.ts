@@ -22,9 +22,10 @@ import { settingsModule }      from '@/institution/settings/manifest'
 import { productsModule }      from '@/institution/products/manifest'
 import { teamModule }          from '@/institution/team/manifest'
 import { auditModule }         from '@/institution/audit/manifest'
+import { autobidModule }       from '@/institution/autobid/manifest'
 
 export const FEATURE_MODULES: readonly ModuleManifest[] = [
-  marketplaceModule, bidsModule,
+  marketplaceModule, bidsModule, autobidModule,
   bidApprovalModule, approvalChainsModule, dualControlModule,
   dealsModule, docTemplatesModule, esignModule, bookingModule,
   analyticsModule, notificationsModule,
