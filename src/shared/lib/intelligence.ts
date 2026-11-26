@@ -1,9 +1,12 @@
 // =============================================================
 // Ficium Intelligence — frontend hook + cache
-// Fetches market intelligence from /api/intelligence and makes
-// it available to Claude prompts across the app.
+// Fetches anonymous market aggregates from portal-api
+// GET /marketplace/intelligence. (It used to fetch /api/intelligence
+// from this site's own origin, which has no API, so it always 404'd
+// and the Marketplace strip never rendered.)
 // =============================================================
 import { useState, useEffect, useRef } from "react";
+import { portalApi } from "@/shared/lib/portalApi";
 import type { FiciumIntelligence, MarketRate, RequestPattern, AcceptanceIntel, MarketCompetitiveness } from "@/shared/lib/intelligence-types";
 
 export type { FiciumIntelligence, MarketRate, RequestPattern, AcceptanceIntel, MarketCompetitiveness };
@@ -15,8 +18,7 @@ let _cache: { data: FiciumIntelligence; ts: number } | null = null;
 
 async function fetchIntelligence(): Promise<FiciumIntelligence> {
   if (_cache && Date.now() - _cache.ts < CACHE_TTL_MS) return _cache.data;
-  const res  = await fetch("/api/intelligence");
-  const data = (await res.json()) as FiciumIntelligence;
+  const data = await portalApi.get<FiciumIntelligence>("/marketplace/intelligence");
   _cache = { data, ts: Date.now() };
   return data;
 }
