@@ -68,6 +68,15 @@ const INSTITUTION_MODULES: PortalModule[] = [
     shortcut:    'B',
   },
   {
+    key:         'inst:autobid',
+    label:       'Autobid',
+    description: 'Bid automatically with your rules or your own decision engine (licensed module)',
+    category:    'institution',
+    path:        '/autobid',
+    iconKey:     'Zap',
+    shortcut:    'U',
+  },
+  {
     key:         'inst:bid_approval',
     label:       'Approval',
     description: 'Approve or reject bids as checker',
