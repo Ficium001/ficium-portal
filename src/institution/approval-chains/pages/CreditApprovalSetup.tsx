@@ -2,12 +2,13 @@
  * Setup › Credit approval — who approves what: approval chains (single,
  * dual, committee, checklist), the delegation-of-authority rules that route
  * a facility or a bid to a chain by amount and product, committees and
- * delegations. (Was Settings › Approval chains.)
+ * delegations, and how the chains perform. (Was Settings › Approval chains.)
  */
 import { PageFrame } from '@/shared/components/PageFrame'
 import { SectionHeader } from '@/institution/components/primitives'
 import { ApprovalChainsTab } from '@/institution/settings/components/ApprovalChainsTab'
 import { useIsInstitutionAdmin } from '@/institution/settings/hooks/useIsInstitutionAdmin'
+import { ApprovalPerformance } from '../components/ApprovalPerformance'
 
 export default function CreditApprovalSetup() {
   const isAdmin = useIsInstitutionAdmin()
@@ -17,6 +18,7 @@ export default function CreditApprovalSetup() {
         title="Credit approval"
         subtitle="Approval limits: which chain decides a facility or bid, by amount and product."
       />
+      <ApprovalPerformance />
       <ApprovalChainsTab isAdmin={isAdmin} />
     </PageFrame>
   )

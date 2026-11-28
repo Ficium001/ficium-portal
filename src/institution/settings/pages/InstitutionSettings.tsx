@@ -24,7 +24,7 @@
 import { openSignedDocument } from '@/shared/lib/openDocument'
 import { useState, useRef } from "react";
 import {
-  Building2, Key, Clock, FolderCheck,
+  Building2, Key, Clock, FolderCheck, Package,
   Upload, CheckCircle2, XCircle, AlertCircle, ExternalLink, ShieldCheck, ShieldAlert,
   Webhook,
 } from "lucide-react";
@@ -41,19 +41,21 @@ import {
 } from "@/institution/components/primitives";
 import { ApiKeysTab }           from "@/institution/settings/components/ApiKeysTab";
 import { WebhooksTab }          from "@/institution/settings/components/WebhooksTab";
+import { PlanUsageTab }         from "@/institution/settings/components/PlanUsageTab";
 import { PageFrame } from "@/shared/components/PageFrame"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab types
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tab = "profile" | "api-keys" | "webhooks" | "documents";
+type Tab = "profile" | "api-keys" | "webhooks" | "documents" | "plan";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "profile",   label: "Profile",    icon: Building2    },
   { key: "api-keys",  label: "API keys",   icon: Key          },
   { key: "webhooks",  label: "Webhooks",   icon: Webhook      },
   { key: "documents", label: "Compliance documents", icon: FolderCheck },
+  { key: "plan",      label: "Plan & usage", icon: Package     },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -355,6 +357,7 @@ export default function InstitutionSettings() {
       {tab === "api-keys"  && <ApiKeysTab  isAdmin={isAdmin} />}
       {tab === "webhooks"  && <WebhooksTab isAdmin={isAdmin} />}
       {tab === "documents" && <DocumentsTab />}
+      {tab === "plan"      && <PlanUsageTab />}
     </PageFrame>
   );
 }
